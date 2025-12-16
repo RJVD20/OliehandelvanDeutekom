@@ -24,8 +24,8 @@ Route::get('/categories/{slug}', function ($slug) {
     return view('themes.default.pages.category', compact('category', 'products'));
 })->name('category.show');
 
-Route::post('/cart/add/{id}', function (Request $request, $id) {
-    $product = Product::findOrFail($id);
+Route::post('/cart/add/{id}', function ($id) {
+    $product = \App\Models\Product::findOrFail($id);
 
     $cart = session()->get('cart', []);
 
@@ -41,8 +41,12 @@ Route::post('/cart/add/{id}', function (Request $request, $id) {
 
     session()->put('cart', $cart);
 
+    // 🔥 FLASH MESSAGE
+    session()->flash('toast', 'Product toegevoegd aan winkelmand');
+
     return back();
 })->name('cart.add');
+
 
 Route::get('/cart', function () {
     $cart = session('cart', []);
@@ -68,3 +72,7 @@ Route::post('/cart/update/{id}', function (Illuminate\Http\Request $request, $id
     return back();
 })->name('cart.update');
 
+Route::get('/checkout', function () {
+    $cart = session('cart', []);
+    return view('themes.default.pages.checkout', compact('cart'));
+})->name('checkout.index');

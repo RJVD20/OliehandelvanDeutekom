@@ -51,14 +51,17 @@
                         <span class="font-bold text-green-700">
                             € {{ number_format($product->price, 2, ',', '.') }}
                         </span>
-                        <form method="POST" action="{{ route('cart.add', $product->id) }}">
-                            @csrf
-                            <button
-                                type="submit"
-                                class="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition">
-                                In winkelmand
-                            </button>
-                        </form>
+<form method="POST" action="{{ route('cart.add', $product->id) }}">
+    @csrf
+    <button
+        type="submit"
+        class="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition"
+    >
+        In winkelmand
+    </button>
+</form>
+
+
                     </div>
                 </div>
             </div>

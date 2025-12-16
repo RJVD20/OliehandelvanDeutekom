@@ -13,5 +13,25 @@
     @yield('content')
 </main>
 
+<div
+    x-data="{
+        show: {{ session()->has('toast') ? 'true' : 'false' }},
+        message: '{{ session('toast') }}'
+    }"
+    x-init="
+        if (show) {
+            setTimeout(() => show = false, 3000);
+        }
+    "
+    x-show="show"
+    x-transition
+    class="fixed top-6 right-6 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50"
+    style="display: none;"
+>
+    <span x-text="message"></span>
+</div>
+
+
+
 </body>
 </html>

@@ -99,7 +99,13 @@
         <!-- Checkout -->
         <div class="text-right mt-6">
             <button class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                Afrekenen
+                <a
+    href="{{ route('checkout.index') }}"
+    class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+>
+    Afrekenen
+</a>
+
             </button>
         </div>
     </div>
