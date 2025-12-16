@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between h-16">
 
 <a href="/" class="flex items-center space-x-2">
-<img src="/images/logovd.png" alt="Logo" class="h-14 w-auto">
+<img src="/images/logovd.png" alt="Logo" class="h-18 w-auto">
   <!-- <span class="text-xl font-bold text-gray-900">
     Webshop
   </span>
@@ -12,11 +12,10 @@
 
       <!-- Center: Menu -->
       <div class="hidden md:flex absolute left-1/2 -translate-x-1/2 space-x-8">
-        <a href="#" class="text-gray-700 hover:text-green-600 font-medium">Home</a>
-        <a href="#" class="text-gray-700 hover:text-green-600 font-medium">Informatie</a>
-        <a href="#" class="text-gray-700 hover:text-green-600 font-medium">Vloeistoffen</a>
-        <a href="#" class="text-gray-700 hover:text-green-600 font-medium">Kachels</a>
-        <a href="#" class="text-gray-700 hover:text-green-600 font-medium">Locaties</a>
+        <a href="/" class="text-gray-700 hover:text-green-600 font-medium">Home</a>
+        <a href="{{ route('informatie') }}" class="text-gray-700 hover:text-green-600 font-medium">Informatie</a>
+        <a href="{{ route('products.index') }}" class="text-gray-700 hover:text-green-600 font-medium">Producten</a>
+        <a href="{{ route('locaties') }}" class="text-gray-700 hover:text-green-600 font-medium">Locaties</a>
       </div>
 
       <!-- Right: Actions -->

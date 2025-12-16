@@ -76,3 +76,59 @@ Route::get('/checkout', function () {
     $cart = session('cart', []);
     return view('themes.default.pages.checkout', compact('cart'));
 })->name('checkout.index');
+
+
+Route::get('/informatie', function () {
+    return view('themes.default.pages.informatie');
+})->name('informatie');
+
+
+Route::get('/producten', function (Request $request) {
+
+    $query = Product::where('active', true);
+
+    // ✅ Categorie filter (MOET BOVENAAN)
+    if ($request->filled('categories')) {
+        $query->whereIn('category_id', $request->categories);
+    }
+
+    // Type filter
+    if ($request->filled('types')) {
+        $query->whereIn('type', $request->types);
+    }
+
+    // Prijs filter
+    if ($request->filled('min_price')) {
+        $query->where('price', '>=', $request->min_price);
+    }
+
+    if ($request->filled('max_price')) {
+        $query->where('price', '<=', $request->max_price);
+    }
+
+    // Sortering
+    if ($request->filled('sort')) {
+        match ($request->sort) {
+            'price_asc' => $query->orderBy('price', 'asc'),
+            'price_desc' => $query->orderBy('price', 'desc'),
+            'newest' => $query->latest(),
+            default => null,
+        };
+    }
+
+    // ❗ PAS HIER PAGINATE
+    $products = $query->paginate(12)->withQueryString();
+    $categories = Category::all();
+
+    return view('themes.default.pages.products.index', compact('products', 'categories'));
+})->name('products.index');
+
+use App\Models\Location;
+
+Route::get('/locaties', function () {
+
+    $locaties = Location::orderBy('name')->get();
+
+    return view('themes.default.pages.locaties', compact('locaties'));
+
+})->name('locaties');
