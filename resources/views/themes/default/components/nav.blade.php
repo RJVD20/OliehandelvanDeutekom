@@ -21,9 +21,23 @@
 
       <!-- Right: Actions -->
       <div class="flex items-center space-x-4">
-        <a href="{{ route('cart.index') }}" class="text-gray-700 hover:text-green-700">
-            🛒 Winkelmand
-        </a>
+<div
+    x-data="{ count: {{ collect(session('cart', []))->sum('quantity') }} }"
+    @cart-updated.window="count = $event.detail"
+    class="relative"
+>
+    <a href="{{ route('cart.index') }}" class="text-gray-700 hover:text-green-700">
+        🛒
+    </a>
+
+    <template x-if="count > 0">
+        <span
+            x-text="count"
+            class="absolute -top-2 -right-2 bg-green-600 text-white text-xs rounded-full px-2"
+        ></span>
+    </template>
+</div>
+
         <a
           href="#"
           class="hidden sm:inline-block px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"

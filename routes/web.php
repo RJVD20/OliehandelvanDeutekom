@@ -57,7 +57,7 @@ Route::post('/cart/remove/{id}', function ($id) {
     return back();
 })->name('cart.remove');
 
-Route::post('/cart/update/{id}', function (\Illuminate\Http\Request $request, $id) {
+Route::post('/cart/update/{id}', function (Illuminate\Http\Request $request, $id) {
     $cart = session()->get('cart', []);
 
     if (isset($cart[$id])) {
@@ -67,3 +67,4 @@ Route::post('/cart/update/{id}', function (\Illuminate\Http\Request $request, $i
 
     return back();
 })->name('cart.update');
+
