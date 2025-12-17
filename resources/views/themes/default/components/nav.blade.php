@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between h-16">
 
 <a href="/" class="flex items-center space-x-2">
-<img src="/images/logovd.png" alt="Logo" class="h-18 w-auto">
+<img src="/images/logovd.png" alt="Logo" class="h-12 w-auto">
   <!-- <span class="text-xl font-bold text-gray-900">
     Webshop
   </span>
@@ -37,12 +37,64 @@
     </template>
 </div>
 
+@auth
+<div
+    x-data="{ open: false }"
+    class="relative"
+>
+    <button
+        @click="open = !open"
+        class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-green-700"
+    >
+        {{ auth()->user()->name }}
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M19 9l-7 7-7-7" />
+        </svg>
+    </button>
+
+    <!-- Dropdown -->
+    <div
+        x-show="open"
+        @click.outside="open = false"
+        x-transition
+        class="absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg z-50"
+    >
         <a
-          href="#"
-          class="hidden sm:inline-block px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
+            href="{{ route('account.dashboard') }}"
+            class="block px-4 py-2 text-sm hover:bg-gray-100"
         >
-          Inloggen
+            Account
         </a>
+
+        <a
+            href="{{ route('account.orders') }}"
+            class="block px-4 py-2 text-sm hover:bg-gray-100"
+        >
+            Bestellingen
+        </a>
+
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button
+                type="submit"
+                class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+            >
+                Logout
+            </button>
+        </form>
+    </div>
+</div>
+@else
+    <a
+        href="{{ route('login') }}"
+        class="text-sm font-medium text-gray-700 hover:text-green-700"
+    >
+        Login
+    </a>
+@endauth
+
+
 
         <!-- Mobile menu button -->
         <button

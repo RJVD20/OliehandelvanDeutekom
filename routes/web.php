@@ -1,33 +1,46 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+
+use App\Mail\OrderConfirmationMail;
+use Illuminate\Support\Facades\Mail;
+
+use App\Http\Controllers\ProfileController;
+
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Location;
+use App\Models\Order;
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
-require __DIR__.'/auth.php';
+/*
+|--------------------------------------------------------------------------
+| Publieke pagina’s
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', function () {
     $products = Product::where('active', true)->take(8)->get();
     $categories = Category::all();
 
     return view('themes.default.pages.home', compact('products', 'categories'));
-});
+})->name('home');
+
+Route::get('/informatie', function () {
+    return view('themes.default.pages.informatie');
+})->name('informatie');
+
+Route::get('/locaties', function () {
+    $locaties = Location::orderBy('name')->get();
+    return view('themes.default.pages.locaties', compact('locaties'));
+})->name('locaties');
+
+
+/*
+|--------------------------------------------------------------------------
+| Producten
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/product/{slug}', function ($slug) {
     $product = Product::where('slug', $slug)->firstOrFail();
@@ -36,75 +49,18 @@ Route::get('/product/{slug}', function ($slug) {
 
 Route::get('/categories/{slug}', function ($slug) {
     $category = Category::where('slug', $slug)->firstOrFail();
-    $products = $category->products()->where('active', true)->paginate(12);
+    $products = $category->products()
+        ->where('active', true)
+        ->paginate(12);
 
     return view('themes.default.pages.category', compact('category', 'products'));
 })->name('category.show');
-
-Route::post('/cart/add/{id}', function ($id) {
-    $product = \App\Models\Product::findOrFail($id);
-
-    $cart = session()->get('cart', []);
-
-    if (isset($cart[$id])) {
-        $cart[$id]['quantity']++;
-    } else {
-        $cart[$id] = [
-            'name' => $product->name,
-            'price' => $product->price,
-            'quantity' => 1,
-        ];
-    }
-
-    session()->put('cart', $cart);
-
-    // 🔥 FLASH MESSAGE
-    session()->flash('toast', 'Product toegevoegd aan winkelmand');
-
-    return back();
-})->name('cart.add');
-
-
-Route::get('/cart', function () {
-    $cart = session('cart', []);
-    return view('themes.default.pages.cart', compact('cart'));
-})->name('cart.index');
-
-Route::post('/cart/remove/{id}', function ($id) {
-    $cart = session()->get('cart', []);
-    unset($cart[$id]);
-    session()->put('cart', $cart);
-
-    return back();
-})->name('cart.remove');
-
-Route::post('/cart/update/{id}', function (Illuminate\Http\Request $request, $id) {
-    $cart = session()->get('cart', []);
-
-    if (isset($cart[$id])) {
-        $cart[$id]['quantity'] = max(1, (int) $request->quantity);
-        session()->put('cart', $cart);
-    }
-
-    return back();
-})->name('cart.update');
-
-Route::get('/checkout', function () {
-    $cart = session('cart', []);
-    return view('themes.default.pages.checkout', compact('cart'));
-})->name('checkout.index');
-
-
-Route::get('/informatie', function () {
-    return view('themes.default.pages.informatie');
-})->name('informatie');
-
 
 Route::get('/producten', function (Request $request) {
 
     $query = Product::where('active', true);
 
-    // ✅ Categorie filter (MOET BOVENAAN)
+    // Categorie filter
     if ($request->filled('categories')) {
         $query->whereIn('category_id', $request->categories);
     }
@@ -126,26 +82,193 @@ Route::get('/producten', function (Request $request) {
     // Sortering
     if ($request->filled('sort')) {
         match ($request->sort) {
-            'price_asc' => $query->orderBy('price', 'asc'),
+            'price_asc'  => $query->orderBy('price', 'asc'),
             'price_desc' => $query->orderBy('price', 'desc'),
-            'newest' => $query->latest(),
-            default => null,
+            'newest'     => $query->latest(),
+            default      => null,
         };
     }
 
-    // ❗ PAS HIER PAGINATE
     $products = $query->paginate(12)->withQueryString();
     $categories = Category::all();
 
     return view('themes.default.pages.products.index', compact('products', 'categories'));
 })->name('products.index');
 
-use App\Models\Location;
 
-Route::get('/locaties', function () {
+/*
+|--------------------------------------------------------------------------
+| Winkelmand
+|--------------------------------------------------------------------------
+*/
 
-    $locaties = Location::orderBy('name')->get();
+Route::get('/cart', function () {
+    $cart = session('cart', []);
+    return view('themes.default.pages.cart', compact('cart'));
+})->name('cart.index');
 
-    return view('themes.default.pages.locaties', compact('locaties'));
+Route::post('/cart/add/{id}', function ($id) {
 
-})->name('locaties');
+    $product = Product::findOrFail($id);
+    $cart = session()->get('cart', []);
+
+    if (isset($cart[$id])) {
+        $cart[$id]['quantity']++;
+    } else {
+        $cart[$id] = [
+            'name'     => $product->name,
+            'price'    => $product->price,
+            'quantity' => 1,
+        ];
+    }
+
+    session()->put('cart', $cart);
+    session()->flash('toast', 'Product toegevoegd aan winkelmand');
+
+    return back();
+})->name('cart.add');
+
+Route::post('/cart/update/{id}', function (Request $request, $id) {
+
+    $cart = session()->get('cart', []);
+
+    if (isset($cart[$id])) {
+        $cart[$id]['quantity'] = max(1, (int) $request->quantity);
+        session()->put('cart', $cart);
+    }
+
+    return back();
+})->name('cart.update');
+
+Route::post('/cart/remove/{id}', function ($id) {
+
+    $cart = session()->get('cart', []);
+    unset($cart[$id]);
+
+    session()->put('cart', $cart);
+
+    return back();
+})->name('cart.remove');
+
+
+/*
+|--------------------------------------------------------------------------
+| Checkout (alleen ingelogd)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/checkout', function () {
+        $cart = session('cart', []);
+        return view('themes.default.pages.checkout', compact('cart'));
+    })->name('checkout.index');
+
+   Route::post('/checkout', function (Request $request) {
+
+    $request->validate([
+        'name'     => 'required|string|max:255',
+        'email'    => 'required|email',
+        'address'  => 'required|string|max:255',
+        'postcode' => ['required','regex:/^[1-9][0-9]{3}\s?[A-Z]{2}$/i'],
+        'city'     => 'required|string|max:255',
+    ]);
+
+    $cart = session('cart', []);
+    abort_if(empty($cart), 400);
+
+    $total = collect($cart)->sum(fn ($i) => $i['price'] * $i['quantity']);
+
+    $order = Order::create([
+        'user_id' => auth()->id(),
+        'status'  => 'pending',
+        'total'   => $total,
+        'name'    => $request->name,
+        'email'   => $request->email,
+        'address' => $request->address,
+        'postcode'=> $request->postcode,
+        'city'    => $request->city,
+    ]);
+
+    foreach ($cart as $productId => $item) {
+        $order->items()->create([
+            'product_id'   => $productId,
+            'product_name' => $item['name'],
+            'price'        => $item['price'],
+            'quantity'     => $item['quantity'],
+        ]);
+    }
+
+    // ✅ HIER
+    auth()->user()->update([
+        'address'  => $request->address,
+        'postcode' => $request->postcode,
+        'city'     => $request->city,
+    ]);
+
+        Mail::to($order->email)->send(
+            new OrderConfirmationMail($order)
+        );
+
+    session()->forget('cart');
+
+    return redirect()
+        ->route('account.orders')
+        ->with('toast', 'Bestelling geplaatst 🎉');
+
+
+
+})->name('checkout.store');
+
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Account & profiel
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+
+    // Profiel (Breeze)
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Account
+    Route::get('/account', function () {
+        return view('account.dashboard');
+    })->name('account.dashboard');
+
+    Route::get('/account/orders', function () {
+        return view('account.orders');
+    })->name('account.orders');
+
+    Route::get('/account/orders/{order}', function (\App\Models\Order $order) {
+
+        abort_unless($order->user_id === auth()->id(), 403);
+
+        return view('account.order-show', compact('order'));
+    })->name('account.orders.show');
+
+    Route::get('/account/address', function () {
+        return view('account.address');
+    })->name('account.address');
+
+    // Breeze fix
+    Route::get('/dashboard', function () {
+        return redirect()->route('account.dashboard');
+    })->name('dashboard');
+
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Auth routes (login / register / logout)
+|--------------------------------------------------------------------------
+*/
+
+require __DIR__.'/auth.php';
