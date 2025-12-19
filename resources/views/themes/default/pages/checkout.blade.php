@@ -22,6 +22,17 @@
             Jouw gegevens
         </h2>
 
+@guest
+    <div class="mb-6 p-4 border rounded-lg bg-green-50 text-sm">
+        <strong>Heb je al een account?</strong><br>
+        <a href="{{ route('login') }}" class="text-green-700 underline">
+            Log in
+        </a>
+        om je bestelling op te slaan en je adres automatisch te gebruiken.
+    </div>
+@endguest
+
+
         <form method="POST" action="{{ route('checkout.store') }}" class="space-y-4">
             @csrf
 
@@ -31,7 +42,7 @@
                 </label>
                 <input
                     name="name"
-                    value="{{ auth()->user()->name }}"
+                    value="{{ old('name', optional(auth()->user())->name) }}"
                     required
                     class="w-full border rounded-lg p-3 focus:ring focus:ring-green-200"
                 >
@@ -44,7 +55,7 @@
                 <input
                     type="email"
                     name="email"
-                    value="{{ auth()->user()->email }}"
+                    value="{{ old('email', optional(auth()->user())->email) }}"
                     required
                     class="w-full border rounded-lg p-3 focus:ring focus:ring-green-200"
                 >
@@ -57,7 +68,7 @@
                 <input
                     name="address"
                     placeholder="Straat + huisnummer"
-                    value="{{ old('address', auth()->user()->address) }}"
+                    value="{{ old('address', optional(auth()->user())->address) }}"
                     required
                     class="w-full border rounded-lg p-3 focus:ring focus:ring-green-200"
                 >
@@ -70,7 +81,8 @@
                     </label>
                     <input
                         name="postcode"
-                        value="{{ old('postcode', auth()->user()->postcode) }}"
+                        placeholder="Postcode + Toevoeging"
+                        value="{{ old('postcode', optional(auth()->user())->postcode) }}"
                         required
                         class="w-full border rounded-lg p-3 focus:ring focus:ring-green-200"
                     >
@@ -82,7 +94,7 @@
                     </label>
                     <input
                         name="city"
-                        value="{{ old('city', auth()->user()->city) }}"
+                        value="{{ old('city', optional(auth()->user())->city) }}"
                         required
                         class="w-full border rounded-lg p-3 focus:ring focus:ring-green-200"
                     >
