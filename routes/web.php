@@ -4,10 +4,27 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
+/*
+|--------------------------------------------------------------------------
+| Controllers
+|--------------------------------------------------------------------------
+*/
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\ProductController;
 
+/*
+|--------------------------------------------------------------------------
+| Mail
+|--------------------------------------------------------------------------
+*/
 use App\Mail\OrderConfirmationMail;
+use App\Mail\OrderShippedMail;
 
+/*
+|--------------------------------------------------------------------------
+| Models
+|--------------------------------------------------------------------------
+*/
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Location;
@@ -35,10 +52,9 @@ Route::get('/locaties', function () {
     return view('themes.default.pages.locaties', compact('locaties'));
 })->name('locaties');
 
-
 /*
 |--------------------------------------------------------------------------
-| Producten
+| Producten (frontend)
 |--------------------------------------------------------------------------
 */
 
@@ -83,12 +99,11 @@ Route::get('/producten', function (Request $request) {
         };
     }
 
-    $products = $query->paginate(12)->withQueryString();
+    $products   = $query->paginate(12)->withQueryString();
     $categories = Category::all();
 
     return view('themes.default.pages.products.index', compact('products', 'categories'));
 })->name('products.index');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -138,12 +153,10 @@ Route::post('/cart/remove/{id}', function ($id) {
 
     $cart = session()->get('cart', []);
     unset($cart[$id]);
-
     session()->put('cart', $cart);
 
     return back();
 })->name('cart.remove');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -166,7 +179,6 @@ Route::post('/checkout', function (Request $request) {
         'city'     => 'required|string|max:255',
     ]);
 
-    // Postcode normaliseren
     $postcode = strtoupper(str_replace(' ', '', $request->postcode));
     $postcode = substr($postcode, 0, 4) . ' ' . substr($postcode, 4);
 
@@ -176,7 +188,7 @@ Route::post('/checkout', function (Request $request) {
     $total = collect($cart)->sum(fn ($i) => $i['price'] * $i['quantity']);
 
     $order = Order::create([
-        'user_id' => auth()->id(), // null bij guest
+        'user_id' => auth()->id(),
         'status'  => 'pending',
         'total'   => $total,
         'name'    => $request->name,
@@ -195,7 +207,6 @@ Route::post('/checkout', function (Request $request) {
         ]);
     }
 
-    // Alleen adres onthouden als user is ingelogd
     if (auth()->check()) {
         auth()->user()->update([
             'address'  => $request->address,
@@ -205,26 +216,16 @@ Route::post('/checkout', function (Request $request) {
     }
 
     Mail::to($order->email)->send(new OrderConfirmationMail($order));
-
     session()->forget('cart');
 
-if (auth()->check()) {
-    return redirect()
-        ->route('account.orders')
-        ->with('toast', 'Bestelling geplaatst 🎉');
-}
-
-return redirect()
-    ->route('home')
-    ->with('toast', 'Bestelling geplaatst 🎉 Check je e-mail voor de bevestiging.');
-
-
+    return auth()->check()
+        ? redirect()->route('account.orders')->with('toast', 'Bestelling geplaatst 🎉')
+        : redirect()->route('home')->with('toast', 'Bestelling geplaatst 🎉 Check je e-mail.');
 })->name('checkout.store');
-
 
 /*
 |--------------------------------------------------------------------------
-| Account & profiel (alleen ingelogd)
+| Account & profiel (ingelogd)
 |--------------------------------------------------------------------------
 */
 
@@ -234,44 +235,58 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::get('/account', function () {
-        return view('account.dashboard');
-    })->name('account.dashboard');
+    Route::get('/account', fn () => view('account.dashboard'))->name('account.dashboard');
 
-    Route::get('/account/orders', function () {
-        return view('account.orders');
-    })->name('account.orders');
+    Route::get('/account/orders', fn () => view('account.orders'))->name('account.orders');
 
     Route::get('/account/orders/{order}', function (Order $order) {
         abort_unless($order->user_id === auth()->id(), 403);
         return view('account.order-show', compact('order'));
     })->name('account.orders.show');
 
-    Route::get('/dashboard', function () {
-        return redirect()->route('account.dashboard');
-    })->name('dashboard');
-});
-
-    Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
-
-    Route::get('/', function () {
-        return view('admin.dashboard');
-    })->name('admin.dashboard');
-
-    Route::get('/orders', function () {
-        $orders = Order::latest()->paginate(20);
-        return view('admin.orders.index', compact('orders'));
-    })->name('admin.orders.index');
-
-    Route::get('/orders/{order}', function (Order $order) {
-        return view('admin.orders.show', compact('order'));
-    })->name('admin.orders.show');
-
+    Route::get('/dashboard', fn () => redirect()->route('account.dashboard'))->name('dashboard');
 });
 
 /*
 |--------------------------------------------------------------------------
-| Auth routes
+| Admin panel
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'admin'])
+    ->prefix('admin')
+    ->group(function () {
+
+        // Dashboard
+        Route::get('/', fn () => view('admin.dashboard'))->name('admin.dashboard');
+
+        // Orders
+        Route::get('/orders', function () {
+            $orders = Order::latest()->paginate(20);
+            return view('admin.orders.index', compact('orders'));
+        })->name('admin.orders.index');
+
+        Route::get('/orders/{order}', function (Order $order) {
+            return view('admin.orders.show', compact('order'));
+        })->name('admin.orders.show');
+
+        Route::post('/orders/{order}/ship', function (Order $order) {
+            $order->update(['status' => 'shipped']);
+
+            Mail::to($order->email)->send(new OrderShippedMail($order));
+
+            return back()->with('toast', 'Verzendmail verstuurd');
+        })->name('admin.orders.ship');
+
+        // Producten CRUD
+        Route::resource('products', ProductController::class)
+            ->except(['show'])
+            ->names('admin.products');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Auth (login / register / logout)
 |--------------------------------------------------------------------------
 */
 
