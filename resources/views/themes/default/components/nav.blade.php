@@ -60,6 +60,14 @@
         x-transition
         class="absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg z-50"
     >
+        @if(auth()->user()->is_admin)
+        <a
+            href="{{ route('admin.dashboard') }}"
+            class="block px-4 py-2 text-sm hover:bg-gray-100"
+        >
+            Admin paneel
+        </a>
+        @endif
         <a
             href="{{ route('account.dashboard') }}"
             class="block px-4 py-2 text-sm hover:bg-gray-100"

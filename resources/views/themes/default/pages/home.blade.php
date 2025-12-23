@@ -29,7 +29,18 @@
                    class="block h-40 bg-green-50 flex items-center justify-center rounded-t-lg
                           group-hover:bg-green-100 transition">
                     <span class="text-green-700 font-semibold text-center px-3">
-                        {{ $product->name }}
+                        @if($product->image)
+    <img
+        src="{{ asset('storage/' . $product->image) }}"
+        class="h-40 w-full object-cover rounded-t"
+    >
+@else
+    <div class="h-40 bg-green-50 flex items-center justify-center">
+        <span class="text-green-700 text-sm">
+            {{ $product->name }}
+        </span>
+    </div>
+@endif
                     </span>
                 </a>
 

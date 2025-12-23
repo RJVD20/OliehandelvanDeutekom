@@ -10,7 +10,10 @@ use Illuminate\Support\Facades\Mail;
 |--------------------------------------------------------------------------
 */
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +32,8 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Location;
 use App\Models\Order;
+use Illuminate\Support\Facades\Response;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,7 +42,11 @@ use App\Models\Order;
 */
 
 Route::get('/', function () {
-    $products = Product::where('active', true)->take(8)->get();
+    // Prefer featured products for the homepage slider; fallback to recent active products
+    $products = Product::where('active', true)->where('featured', true)->take(8)->get();
+    if ($products->isEmpty()) {
+        $products = Product::where('active', true)->take(8)->get();
+    }
     $categories = Category::all();
 
     return view('themes.default.pages.home', compact('products', 'categories'));
@@ -69,6 +78,8 @@ Route::get('/categories/{slug}', function ($slug) {
 
     return view('themes.default.pages.category', compact('category', 'products'));
 })->name('category.show');
+
+
 
 Route::get('/producten', function (Request $request) {
 
@@ -235,7 +246,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::get('/account', fn () => view('account.dashboard'))->name('account.dashboard');
+    // Redirect legacy /account to profile edit (users edit their profile directly)
+    Route::get('/account', fn () => redirect()->route('profile.edit'))
+        ->name('account.dashboard');
 
     Route::get('/account/orders', fn () => view('account.orders'))->name('account.orders');
 
@@ -244,7 +257,45 @@ Route::middleware('auth')->group(function () {
         return view('account.order-show', compact('order'));
     })->name('account.orders.show');
 
-    Route::get('/dashboard', fn () => redirect()->route('account.dashboard'))->name('dashboard');
+    // Re-order: place the same order again
+    Route::post('/account/orders/{order}/reorder', function (Order $order) {
+        abort_unless($order->user_id === auth()->id(), 403);
+
+        $new = Order::create([
+            'user_id' => auth()->id(),
+            'status'  => 'pending',
+            'total'   => $order->total,
+            'name'    => $order->name,
+            'email'   => $order->email,
+            'address' => $order->address,
+            'postcode'=> $order->postcode,
+            'city'    => $order->city,
+        ]);
+
+        foreach ($order->items as $item) {
+            $new->items()->create([
+                'product_id'   => $item->product_id,
+                'product_name' => $item->product_name,
+                'price'        => $item->price,
+                'quantity'     => $item->quantity,
+            ]);
+        }
+
+        Mail::to($new->email)->send(new OrderConfirmationMail($new));
+
+        return redirect()->route('account.orders')->with('toast', 'Bestelling opnieuw geplaatst');
+    })->name('account.orders.reorder');
+
+    // Download invoice PDF
+    Route::get('/account/orders/{order}/invoice', function (Order $order) {
+        abort_unless($order->user_id === auth()->id(), 403);
+
+        $pdf = Pdf::loadView('pdfs.invoice', compact('order'))->setPaper('a4');
+
+        return $pdf->download('factuur-' . $order->id . '.pdf');
+    })->name('account.orders.invoice');
+
+    Route::get('/dashboard', fn () => redirect()->route('profile.edit'))->name('dashboard');
 });
 
 /*
@@ -255,20 +306,25 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'admin'])
     ->prefix('admin')
+    ->name('admin.')
     ->group(function () {
 
+        // Redirect /admin → /admin/dashboard
+        Route::get('/', fn () => redirect()->route('admin.dashboard'));
+
         // Dashboard
-        Route::get('/', fn () => view('admin.dashboard'))->name('admin.dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index'])
+            ->name('dashboard');
 
         // Orders
         Route::get('/orders', function () {
             $orders = Order::latest()->paginate(20);
             return view('admin.orders.index', compact('orders'));
-        })->name('admin.orders.index');
+        })->name('orders.index');
 
         Route::get('/orders/{order}', function (Order $order) {
             return view('admin.orders.show', compact('order'));
-        })->name('admin.orders.show');
+        })->name('orders.show');
 
         Route::post('/orders/{order}/ship', function (Order $order) {
             $order->update(['status' => 'shipped']);
@@ -276,13 +332,31 @@ Route::middleware(['auth', 'admin'])
             Mail::to($order->email)->send(new OrderShippedMail($order));
 
             return back()->with('toast', 'Verzendmail verstuurd');
-        })->name('admin.orders.ship');
+        })->name('orders.ship');
 
-        // Producten CRUD
+        // Product active toggle
+        Route::patch(
+            '/products/{product}/toggle-active',
+            [ProductController::class, 'toggleActive']
+        )->name('products.toggle-active');
+
+        // Product featured toggle (for homepage slider)
+        Route::patch(
+            '/products/{product}/toggle-featured',
+            [ProductController::class, 'toggleFeatured']
+        )->name('products.toggle-featured');
+
+        // Product CRUD
         Route::resource('products', ProductController::class)
-            ->except(['show'])
-            ->names('admin.products');
-});
+            ->except(['show']);
+
+        // Users CRUD (admin)
+        Route::patch('/users/{user}/toggle-admin', [UserController::class, 'toggleAdmin'])
+            ->name('users.toggle-admin');
+
+        Route::resource('users', UserController::class)
+            ->except(['show']);
+    });
 
 /*
 |--------------------------------------------------------------------------
@@ -291,3 +365,27 @@ Route::middleware(['auth', 'admin'])
 */
 
 require __DIR__.'/auth.php';
+
+// Sitemap
+Route::get('/sitemap.xml', function () {
+    $products = Product::where('active', true)->get();
+    $categories = Category::all();
+
+    $urls = [];
+
+    $urls[] = ['loc' => url('/'), 'priority' => '1.0'];
+    $urls[] = ['loc' => route('informatie'), 'priority' => '0.6'];
+    $urls[] = ['loc' => route('locaties'), 'priority' => '0.6'];
+
+    foreach ($categories as $cat) {
+        $urls[] = ['loc' => route('category.show', $cat->slug), 'priority' => '0.7'];
+    }
+
+    foreach ($products as $p) {
+        $urls[] = ['loc' => route('product.show', $p->slug), 'lastmod' => $p->updated_at->toAtomString(), 'priority' => '0.8'];
+    }
+
+    $xml = view('sitemap', compact('urls'))->render();
+
+    return Response::make($xml, 200, ['Content-Type' => 'application/xml']);
+});

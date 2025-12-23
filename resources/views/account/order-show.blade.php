@@ -35,6 +35,18 @@
                 € {{ number_format($order->total, 2, ',', '.') }}
             </span>
         </div>
+
+        <div class="mt-4">
+            <form action="{{ route('account.orders.reorder', $order) }}" method="POST">
+                @csrf
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+                    Bestelling opnieuw plaatsen
+                </button>
+                <a href="{{ route('account.orders.invoice', $order) }}" class="inline-block bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded" target="_blank">
+                Download factuur (PDF)
+            </a>
+            </form>
+        </div>
     </div>
 
     <!-- Gegevens -->

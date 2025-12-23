@@ -20,6 +20,7 @@ class User extends Authenticatable
         'address',
         'postcode',
         'city',
+        'phone',
     ];
 
     protected $hidden = [

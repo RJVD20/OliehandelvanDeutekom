@@ -33,14 +33,19 @@ class RegisteredUserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'phone'    => ['required', 'string', 'max:30', 'regex:/^(?:\\+31|0)[1-9][0-9][\\s-]?\\d{6,7}$/'],
             'address'  => 'nullable|string|max:255',
             'postcode' => ['nullable', 'regex:/^[1-9][0-9]{3}\s?[A-Z]{2}$/i'],
             'city'     => 'nullable|string|max:255',
         ]);
 
+        // normalize phone: remove spaces and dashes before storing
+        $phone = preg_replace('/[\s-]+/', '', $request->phone);
+
         $user = User::create([
             'name'     => $request->name,
             'email'    => $request->email,
+            'phone'    => $phone,
             'password' => Hash::make($request->password),
             'address'  => $request->address,
             'postcode' => $request->postcode,

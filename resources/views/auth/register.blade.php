@@ -35,6 +35,20 @@
                 <x-input-error :messages="$errors->get('email')" class="mt-2" />
             </div>
 
+            <!-- Telefoon -->
+            <div>
+                <x-input-label for="phone" value="Telefoonnummer" />
+                <x-text-input
+                    id="phone"
+                    class="block mt-1 w-full"
+                    type="text"
+                    name="phone"
+                    :value="old('phone')"
+                    required
+                />
+                <x-input-error :messages="$errors->get('phone')" class="mt-2" />
+            </div>
+
             <!-- Adres -->
             <div>
                 <x-input-label for="address" value="Adres" />
