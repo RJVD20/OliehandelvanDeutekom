@@ -56,6 +56,10 @@ Route::get('/informatie', function () {
     return view('themes.default.pages.informatie');
 })->name('informatie');
 
+Route::get('/over-ons', function () {
+    return view('themes.default.pages.over-ons');
+})->name('over-ons');
+
 Route::get('/locaties', function () {
     $locaties = Location::orderBy('name')->get();
     return view('themes.default.pages.locaties', compact('locaties'));
@@ -68,8 +72,31 @@ Route::get('/locaties', function () {
 */
 
 Route::get('/product/{slug}', function ($slug) {
-    $product = Product::where('slug', $slug)->firstOrFail();
-    return view('themes.default.pages.product', compact('product'));
+    $product = Product::with('category')->where('slug', $slug)->firstOrFail();
+
+    $suggestedProducts = Product::query()
+        ->where('active', true)
+        ->where('id', '!=', $product->id)
+        ->when($product->category_id, fn ($q) => $q->where('category_id', $product->category_id))
+        ->inRandomOrder()
+        ->limit(4)
+        ->get();
+
+    if ($suggestedProducts->count() < 4) {
+        $remaining = 4 - $suggestedProducts->count();
+
+        $moreProducts = Product::query()
+            ->where('active', true)
+            ->where('id', '!=', $product->id)
+            ->whereNotIn('id', $suggestedProducts->pluck('id'))
+            ->inRandomOrder()
+            ->limit($remaining)
+            ->get();
+
+        $suggestedProducts = $suggestedProducts->concat($moreProducts)->values();
+    }
+
+    return view('themes.default.pages.product', compact('product', 'suggestedProducts'));
 })->name('product.show');
 
 Route::get('/categories/{slug}', function ($slug) {

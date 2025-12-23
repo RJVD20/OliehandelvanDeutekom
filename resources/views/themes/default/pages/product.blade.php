@@ -43,44 +43,130 @@
 
 @section('content')
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+<div class="max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
 
-    <!-- Afbeelding -->
-    <div class="bg-green-50 rounded-lg h-96 flex items-center justify-center">
-        <span class="text-green-700 text-xl font-semibold text-center px-4">
+        <!-- Afbeelding -->
+        <div class="bg-white border rounded-2xl shadow-sm overflow-hidden">
             @if($product->image)
-    <img
-        src="{{ asset('storage/' . $product->image) }}"
-        class="w-full h-64 object-cover rounded mb-4"
-    >
-@endif
-        </span>
-    </div>
+                <div class="h-72 md:h-80 bg-white flex items-center justify-center p-6">
+                    <img
+                        src="{{ asset('storage/' . $product->image) }}"
+                        alt="{{ $product->name }}"
+                        class="w-full h-full object-contain"
+                        loading="lazy"
+                    >
+                </div>
+            @else
+                <div class="h-72 md:h-80 bg-green-50 flex items-center justify-center px-8">
+                    <div class="text-center">
+                        <div class="text-green-700 text-lg font-semibold">
+                            {{ $product->name }}
+                        </div>
+                        <div class="text-sm text-green-600 mt-1">
+                            Geen afbeelding beschikbaar
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </div>
 
-    <!-- Info -->
-    <div>
-        <p class="text-sm text-green-600 mb-2">
-            Categorie: {{ $product->category->name }}
-        </p>
+        <!-- Info -->
+        <div class="bg-white border rounded-2xl shadow-sm p-6 md:p-8">
+            <div class="mb-4">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-100">
+                    {{ $product->category->name }}
+                </span>
+            </div>
 
-        <h1 class="text-3xl font-bold text-gray-900 mb-4">
-            {{ $product->name }}
-        </h1>
+            <h1 class="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 mb-4">
+                {{ $product->name }}
+            </h1>
 
-        <p class="text-gray-600 mb-6">
-            {{ $product->description ?? 'Geen beschrijving beschikbaar.' }}
-        </p>
+            <div class="text-gray-600 leading-relaxed">
+                {{ $product->description ?? 'Geen beschrijving beschikbaar.' }}
+            </div>
 
-        <div class="flex items-center justify-between">
-            <span class="text-2xl font-bold text-green-700">
-                € {{ number_format($product->price, 2, ',', '.') }}
-            </span>
+            <div class="mt-8 pt-6 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="text-3xl font-bold text-green-700">
+                    € {{ number_format($product->price, 2, ',', '.') }}
+                </div>
 
-            <button class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                In winkelmand
-            </button>
+                <button
+                    type="button"
+                    class="inline-flex justify-center items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
+                >
+                    In winkelmand
+                </button>
+            </div>
         </div>
     </div>
+
+    @if(isset($suggestedProducts) && $suggestedProducts->count())
+        <section class="mt-12">
+            <header class="mb-6">
+                <h2 class="text-2xl font-semibold text-gray-900">
+                    Voorgestelde producten
+                </h2>
+                <p class="text-gray-600">
+                    Andere producten die bij deze categorie passen.
+                </p>
+            </header>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                @foreach($suggestedProducts as $suggested)
+                    <div class="bg-white border rounded-lg shadow-sm hover:shadow-md transition group overflow-hidden">
+                        <a
+                            href="{{ route('product.show', $suggested->slug) }}"
+                            class="block h-40 bg-green-50 group-hover:bg-green-100 transition"
+                        >
+                            @if($suggested->image)
+                                <img
+                                    src="{{ asset('storage/' . $suggested->image) }}"
+                                    alt="{{ $suggested->name }}"
+                                    class="h-40 w-full object-cover"
+                                    loading="lazy"
+                                >
+                            @else
+                                <div class="h-40 flex items-center justify-center px-3">
+                                    <span class="text-green-700 font-semibold text-center">
+                                        {{ $suggested->name }}
+                                    </span>
+                                </div>
+                            @endif
+                        </a>
+
+                        <div class="p-4">
+                            <h3 class="font-semibold text-gray-900 mb-1">
+                                <a
+                                    href="{{ route('product.show', $suggested->slug) }}"
+                                    class="hover:text-green-700 transition"
+                                >
+                                    {{ $suggested->name }}
+                                </a>
+                            </h3>
+
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-green-700">
+                                    € {{ number_format($suggested->price, 2, ',', '.') }}
+                                </span>
+
+                                <form method="POST" action="{{ route('cart.add', $suggested->id) }}">
+                                    @csrf
+                                    <button
+                                        type="submit"
+                                        class="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition"
+                                    >
+                                        In winkelmand
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
 </div>
 
 @endsection

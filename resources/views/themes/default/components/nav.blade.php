@@ -14,6 +14,7 @@
       <div class="hidden md:flex absolute left-1/2 -translate-x-1/2 space-x-8">
         <a href="/" class="text-gray-700 hover:text-green-600 font-medium">Home</a>
         <a href="{{ route('informatie') }}" class="text-gray-700 hover:text-green-600 font-medium">Informatie</a>
+                <a href="{{ route('over-ons') }}" class="text-gray-700 hover:text-green-600 font-medium">Over ons</a>
         <a href="{{ route('products.index') }}" class="text-gray-700 hover:text-green-600 font-medium">Producten</a>
         <a href="{{ route('locaties') }}" class="text-gray-700 hover:text-green-600 font-medium">Locaties</a>
       </div>

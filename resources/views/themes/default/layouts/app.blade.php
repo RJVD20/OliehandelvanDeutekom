@@ -14,6 +14,8 @@
     @yield('content')
 </main>
 
+@include('themes.default.components.footer')
+
 <div
     x-data="{
         show: {{ session()->has('toast') ? 'true' : 'false' }},
