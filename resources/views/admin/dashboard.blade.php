@@ -26,6 +26,28 @@
 			<a href="{{ route('admin.products.index') }}" class="inline-block px-3 py-2 bg-blue-600 text-white rounded">Maak producten beheer</a>
 			<a href="{{ route('admin.orders.index') }}" class="inline-block px-3 py-2 bg-yellow-600 text-white rounded">Bekijk bestellingen</a>
 		</div>
+
+		<div class="mt-4 pt-4 border-t">
+			<div class="text-sm text-gray-500 mb-2">Onderhoudsmodus</div>
+			<div class="text-xs text-gray-500 mb-3">
+				Status:
+				<span class="font-semibold {{ $maintenanceEnabled ? 'text-red-700' : 'text-green-700' }}">
+					{{ $maintenanceEnabled ? 'AAN' : 'UIT' }}
+				</span>
+			</div>
+
+			<form method="POST" action="{{ route('admin.maintenance.toggle') }}">
+				@csrf
+				<button type="submit"
+					class="inline-block px-3 py-2 text-white rounded {{ $maintenanceEnabled ? 'bg-gray-800' : 'bg-red-600' }}">
+					{{ $maintenanceEnabled ? 'Onderhoud UIT zetten' : 'Onderhoud AAN zetten' }}
+				</button>
+			</form>
+
+			<p class="text-xs text-gray-400 mt-2">
+				Bezoekers zien de onderhoudspagina; admins kunnen nog inloggen.
+			</p>
+		</div>
 	</div>
 </div>
 

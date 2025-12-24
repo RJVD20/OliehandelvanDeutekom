@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Order;
+use App\Models\Setting;
 
 class DashboardController extends Controller
 {
@@ -16,6 +17,7 @@ class DashboardController extends Controller
             'inactiveProducts' => Product::where('active', false)->count(),
             'totalOrders'      => Order::count(),
             'recentOrders'     => Order::latest()->take(5)->get(),
+            'maintenanceEnabled' => Setting::getBool('maintenance_enabled', false),
         ]);
     }
 }

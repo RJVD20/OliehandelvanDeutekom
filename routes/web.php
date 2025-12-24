@@ -32,6 +32,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Location;
 use App\Models\Order;
+use App\Models\Setting;
 use Illuminate\Support\Facades\Response;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -342,6 +343,14 @@ Route::middleware(['auth', 'admin'])
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
+
+        // Maintenance mode toggle (site-wide except admins)
+        Route::post('/maintenance/toggle', function () {
+            $enabled = Setting::getBool('maintenance_enabled', false);
+            Setting::set('maintenance_enabled', $enabled ? '0' : '1');
+
+            return back()->with('toast', $enabled ? 'Onderhoudsmodus uitgezet' : 'Onderhoudsmodus aangezet');
+        })->name('maintenance.toggle');
 
         // Orders
         Route::get('/orders', function () {
