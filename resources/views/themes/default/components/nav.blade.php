@@ -3,24 +3,24 @@
     x-data="{ open: false, userOpen: false, searchOpen: false, logoError: false }"
     @keydown.window.escape="searchOpen = false"
 >
-    <div class="bg-[#e6e1dc] text-[13px] text-neutral-700">
+    <div class="bg-neutral-900 text-[13px] text-white/80 border-b border-white/10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex flex-wrap items-center justify-between gap-3 py-2">
                 <div class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m3 5 3 1 3-1 3 1 3-1 3 1 3-1v14l-3 1-3-1-3 1-3-1-3 1-3-1z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 8v11m6-9v11m6-9v11" />
                     </svg>
                     <span class="font-semibold">Gratis levering vanaf €100</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m12 3 2.09 4.23 4.67.68-3.38 3.29.8 4.66L12 14.77 7.82 15.9l.8-4.66L5.25 7.9l4.66-.67z" />
                     </svg>
                     <span class="font-semibold">Sinds 75 jaar specialist</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 9 9c0 7-9 9-9 9s-9-2-9-9Z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v4l2 1" />
                     </svg>
@@ -30,7 +30,7 @@
         </div>
     </div>
 
-    <div class="bg-neutral-900 text-white shadow-sm">
+    <div class="bg-neutral-900 text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex items-center justify-between h-20 gap-4">
                 <div class="flex items-center gap-3">
@@ -47,36 +47,39 @@
                         <span class="absolute inset-0 -z-10 -translate-y-2 md:-translate-y-3">
                             <span class="block h-full w-full bg-white"></span>
                         </span>
-                        <span class="relative block bg-white px-4 py-3 shadow-md">
-                            <img
-                                src="/images/logovd.png"
-                                alt="Logo"
-                                class="h-10 w-auto"
-                                x-on:error="logoError = true"
-                                x-show="!logoError"
-                            >
-                            <div
-                                class="h-10 w-32 flex items-center justify-center text-center text-sm font-black tracking-wide text-rose-700"
-                                x-show="logoError"
-                            >
-                                LOGO
+                        <span class="relative block">
+                            <div class="flex h-20 w-52 items-center justify-center rounded-lg bg-white px-5 shadow-lg border border-white/5">
+                                <img
+                                    src="/images/logovd.png"
+                                    alt="Logo"
+                                    class="max-h-16 w-auto"
+                                    x-show="!logoError"
+                                    x-on:error="logoError = true"
+                                >
+                                <div
+                                    class="leading-tight text-[#b54435] text-center"
+                                    x-show="logoError"
+                                >
+                                    <div class="text-2xl font-black tracking-wide">BAKKER</div>
+                                    <div class="text-sm font-semibold">BRANDSTOFFEN</div>
+                                </div>
                             </div>
                         </span>
                     </a>
                 </div>
 
-                <div class="hidden md:flex flex-1 justify-center items-center space-x-7 text-sm font-semibold">
-                    <a href="/" class="hover:text-white/80">Home</a>
-                    <a href="{{ route('informatie') }}" class="hover:text-white/80">Informatie</a>
-                    <a href="{{ route('over-ons') }}" class="hover:text-white/80">Over ons</a>
-                    <a href="{{ route('products.index') }}" class="hover:text-white/80">Producten</a>
-                    <a href="{{ route('locaties') }}" class="hover:text-white/80">Locaties</a>
+                <div class="hidden md:flex flex-1 justify-center items-center space-x-8 text-sm font-semibold">
+                    <a href="/" class="px-2 py-2 hover:text-white">Home</a>
+                    <a href="{{ route('informatie') }}" class="px-2 py-2 hover:text-white">Informatie</a>
+                    <a href="{{ route('over-ons') }}" class="px-2 py-2 hover:text-white">Over ons</a>
+                    <a href="{{ route('products.index') }}" class="px-2 py-2 hover:text-white">Producten</a>
+                    <a href="{{ route('locaties') }}" class="px-2 py-2 hover:text-white">Locaties</a>
                 </div>
 
                 <div class="hidden md:flex items-center gap-6 text-white/90">
                     <button
                         type="button"
-                        class="hover:text-white"
+                        class="hover:text-white focus:outline-none"
                         @click="searchOpen = true; $nextTick(() => $refs.searchInput?.focus())"
                         aria-label="Open zoekvenster"
                     >
@@ -147,7 +150,7 @@
                 <div class="md:hidden flex items-center gap-3 text-white/90">
                     <button
                         type="button"
-                        class="hover:text-white"
+                        class="hover:text-white focus:outline-none"
                         @click="searchOpen = true; $nextTick(() => $refs.searchInput?.focus())"
                         aria-label="Open zoekvenster"
                     >
@@ -177,13 +180,13 @@
     </div>
 
     <div
-        class="md:hidden bg-neutral-900/95 text-white/90"
+        class="md:hidden bg-neutral-900/95 text-white/90 fixed inset-x-0 top-0 z-40"
         x-show="open"
         x-transition
         @click.outside="open = false"
         style="display:none;"
     >
-        <div class="px-4 py-5 space-y-4 text-sm">
+        <div class="px-4 py-5 space-y-4 text-sm border-b border-white/10">
             <div class="flex items-center justify-between">
                 <span class="font-semibold text-white">Menu</span>
                 <button @click="open = false" aria-label="Close menu" class="p-2 text-white/80 hover:bg-white/10 rounded-md">
@@ -192,11 +195,11 @@
                     </svg>
                 </button>
             </div>
-            <a href="/" class="block font-semibold">Home</a>
-            <a href="{{ route('informatie') }}" class="block">Informatie</a>
-            <a href="{{ route('over-ons') }}" class="block">Over ons</a>
-            <a href="{{ route('products.index') }}" class="block">Producten</a>
-            <a href="{{ route('locaties') }}" class="block">Locaties</a>
+            <a href="/" class="block font-semibold py-2">Home</a>
+            <a href="{{ route('informatie') }}" class="block py-2">Informatie</a>
+            <a href="{{ route('over-ons') }}" class="block py-2">Over ons</a>
+            <a href="{{ route('products.index') }}" class="block py-2">Producten</a>
+            <a href="{{ route('locaties') }}" class="block py-2">Locaties</a>
 
             <div class="border-t border-white/10 pt-4 space-y-3">
                 @auth
