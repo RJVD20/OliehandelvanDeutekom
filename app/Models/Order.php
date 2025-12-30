@@ -15,6 +15,16 @@ class Order extends Model
         'address',
         'postcode',
         'city',
+        'province',
+        'route_date',
+        'route_sequence',
+        'route_travel_minutes',
+        'route_stop_minutes',
+        'route_notes',
+    ];
+
+    protected $casts = [
+        'route_date' => 'date',
     ];
 
     public function items()

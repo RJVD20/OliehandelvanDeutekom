@@ -43,13 +43,13 @@
 
 @section('content')
 
-<div class="max-w-6xl mx-auto">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+<div class="max-w-6xl mx-auto px-1 sm:px-0">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10 lg:gap-12">
 
         <!-- Afbeelding -->
         <div class="bg-white border rounded-2xl shadow-sm overflow-hidden">
             @if($product->image)
-                <div class="h-72 md:h-80 bg-white flex items-center justify-center p-6">
+                <div class="h-64 sm:h-72 md:h-80 bg-white flex items-center justify-center p-4 sm:p-6">
                     <img
                         src="{{ asset('storage/' . $product->image) }}"
                         alt="{{ $product->name }}"
@@ -58,7 +58,7 @@
                     >
                 </div>
             @else
-                <div class="h-72 md:h-80 bg-green-50 flex items-center justify-center px-8">
+                <div class="h-64 sm:h-72 md:h-80 bg-green-50 flex items-center justify-center px-8">
                     <div class="text-center">
                         <div class="text-green-700 text-lg font-semibold">
                             {{ $product->name }}
@@ -72,7 +72,7 @@
         </div>
 
         <!-- Info -->
-        <div class="bg-white border rounded-2xl shadow-sm p-6 md:p-8">
+        <div class="bg-white border rounded-2xl shadow-sm p-5 md:p-8 space-y-4">
             <div class="mb-4">
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-100">
                     {{ $product->category->name }}
@@ -83,21 +83,24 @@
                 {{ $product->name }}
             </h1>
 
-            <div class="text-gray-600 leading-relaxed">
+            <div class="text-gray-600 leading-relaxed text-base md:text-lg">
                 {{ $product->description ?? 'Geen beschrijving beschikbaar.' }}
             </div>
 
-            <div class="mt-8 pt-6 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div class="text-3xl font-bold text-green-700">
+            <div class="mt-6 pt-4 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="text-2xl md:text-3xl font-bold text-green-700">
                     € {{ number_format($product->price, 2, ',', '.') }}
                 </div>
 
-                <button
-                    type="button"
-                    class="inline-flex justify-center items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
-                >
-                    In winkelmand
-                </button>
+                <form method="POST" action="{{ route('cart.add', $product->id) }}" class="w-full sm:w-auto">
+                    @csrf
+                    <button
+                        type="submit"
+                        class="w-full sm:w-auto inline-flex justify-center items-center px-5 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
+                    >
+                        In winkelmand
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -113,7 +116,7 @@
                 </p>
             </header>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
                 @foreach($suggestedProducts as $suggested)
                     <div class="bg-white border rounded-lg shadow-sm hover:shadow-md transition group overflow-hidden">
                         <a

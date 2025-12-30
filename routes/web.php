@@ -23,6 +23,26 @@ use App\Http\Controllers\Admin\UserController;
 use App\Mail\OrderConfirmationMail;
 use App\Mail\OrderShippedMail;
 
+if (! function_exists('nl_provinces')) {
+    function nl_provinces(): array
+    {
+        return [
+            'Drenthe',
+            'Flevoland',
+            'Friesland',
+            'Gelderland',
+            'Groningen',
+            'Limburg',
+            'Noord-Brabant',
+            'Noord-Holland',
+            'Overijssel',
+            'Utrecht',
+            'Zeeland',
+            'Zuid-Holland',
+        ];
+    }
+}
+
 /*
 |--------------------------------------------------------------------------
 | Models
@@ -146,6 +166,52 @@ Route::get('/producten', function (Request $request) {
 
 /*
 |--------------------------------------------------------------------------
+| Zoeken (suggesties)
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/search/suggest', function (Request $request) {
+    $term = trim((string) $request->get('q', ''));
+
+    if (strlen($term) < 2) {
+        return response()->json([
+            'categories' => [],
+            'products'   => [],
+        ]);
+    }
+
+    $categories = Category::query()
+        ->where('name', 'like', "%{$term}%")
+        ->orderBy('name')
+        ->limit(6)
+        ->get(['id', 'name', 'slug']);
+
+    $products = Product::query()
+        ->where('active', true)
+        ->where('name', 'like', "%{$term}%")
+        ->with('category:id,name')
+        ->orderBy('name')
+        ->limit(8)
+        ->get(['id', 'name', 'slug', 'price', 'category_id', 'image']);
+
+    $products = $products->map(function (Product $product) {
+        return [
+            'name'     => $product->name,
+            'slug'     => $product->slug,
+            'price'    => $product->price,
+            'category' => optional($product->category)->name,
+            'image'    => $product->image ? asset('storage/' . ltrim($product->image, '/')) : null,
+        ];
+    });
+
+    return response()->json([
+        'categories' => $categories,
+        'products'   => $products,
+    ]);
+})->name('search.suggest');
+
+/*
+|--------------------------------------------------------------------------
 | Winkelmand
 |--------------------------------------------------------------------------
 */
@@ -205,7 +271,9 @@ Route::post('/cart/remove/{id}', function ($id) {
 
 Route::get('/checkout', function () {
     $cart = session('cart', []);
-    return view('themes.default.pages.checkout', compact('cart'));
+    $provinces = nl_provinces();
+
+    return view('themes.default.pages.checkout', compact('cart', 'provinces'));
 })->name('checkout.index');
 
 Route::post('/checkout', function (Request $request) {
@@ -216,6 +284,7 @@ Route::post('/checkout', function (Request $request) {
         'address'  => 'required|string|max:255',
         'postcode' => ['required', 'regex:/^[1-9][0-9]{3}\s?[A-Z]{2}$/i'],
         'city'     => 'required|string|max:255',
+        'province' => ['required', 'in:' . implode(',', nl_provinces())],
     ]);
 
     $postcode = strtoupper(str_replace(' ', '', $request->postcode));
@@ -235,6 +304,7 @@ Route::post('/checkout', function (Request $request) {
         'address' => $request->address,
         'postcode'=> $postcode,
         'city'    => $request->city,
+        'province'=> $request->province,
     ]);
 
     foreach ($cart as $productId => $item) {
@@ -251,6 +321,7 @@ Route::post('/checkout', function (Request $request) {
             'address'  => $request->address,
             'postcode' => $postcode,
             'city'     => $request->city,
+            'province' => $request->province,
         ]);
     }
 
@@ -298,6 +369,7 @@ Route::middleware('auth')->group(function () {
             'address' => $order->address,
             'postcode'=> $order->postcode,
             'city'    => $order->city,
+            'province'=> $order->province,
         ]);
 
         foreach ($order->items as $item) {
@@ -353,14 +425,48 @@ Route::middleware(['auth', 'admin'])
         })->name('maintenance.toggle');
 
         // Orders
-        Route::get('/orders', function () {
-            $orders = Order::latest()->paginate(20);
-            return view('admin.orders.index', compact('orders'));
+        Route::get('/orders', function (Request $request) {
+            $provinces = nl_provinces();
+
+            $filters = $request->validate([
+                'province'     => ['nullable', 'in:' . implode(',', $provinces)],
+                'route_date'   => ['nullable', 'date'],
+                'only_planned' => ['nullable', 'boolean'],
+            ]);
+
+            $orders = Order::query()
+                ->when($filters['province'] ?? null, fn ($q, $province) => $q->where('province', $province))
+                ->when($filters['route_date'] ?? null, fn ($q, $routeDate) => $q->whereDate('route_date', $routeDate))
+                ->when($request->boolean('only_planned'), fn ($q) => $q->whereNotNull('route_date'))
+                ->orderByRaw('route_date IS NULL')
+                ->orderBy('route_date')
+                ->orderByRaw('route_sequence IS NULL')
+                ->orderBy('route_sequence')
+                ->orderByDesc('created_at')
+                ->paginate(20)
+                ->withQueryString();
+
+            return view('admin.orders.index', compact('orders', 'provinces', 'filters'));
         })->name('orders.index');
 
         Route::get('/orders/{order}', function (Order $order) {
-            return view('admin.orders.show', compact('order'));
+            $provinces = nl_provinces();
+            return view('admin.orders.show', compact('order', 'provinces'));
         })->name('orders.show');
+
+        Route::patch('/orders/{order}/plan', function (Request $request, Order $order) {
+            $provinces = nl_provinces();
+
+            $data = $request->validate([
+                'province'       => ['nullable', 'in:' . implode(',', $provinces)],
+                'route_date'     => ['nullable', 'date'],
+                'route_sequence' => ['nullable', 'integer', 'min:1', 'max:65535'],
+            ]);
+
+            $order->update($data);
+
+            return back()->with('toast', 'Route planning opgeslagen');
+        })->name('orders.plan');
 
         Route::post('/orders/{order}/ship', function (Order $order) {
             $order->update(['status' => 'shipped']);
@@ -369,6 +475,82 @@ Route::middleware(['auth', 'admin'])
 
             return back()->with('toast', 'Verzendmail verstuurd');
         })->name('orders.ship');
+
+        // Routes (planning overzicht)
+        Route::get('/routes', function (Request $request) {
+            $provinces = nl_provinces();
+
+            $filters = $request->validate([
+                'route_date' => ['nullable', 'date'],
+                'province'   => ['nullable', 'in:' . implode(',', $provinces)],
+            ]);
+
+            $routeDate = $filters['route_date'] ?? now()->toDateString();
+
+            $orders = Order::query()
+                ->whereDate('route_date', $routeDate)
+                ->when($filters['province'] ?? null, fn ($q, $province) => $q->where('province', $province))
+                ->orderByRaw('route_sequence IS NULL')
+                ->orderBy('route_sequence')
+                ->orderBy('id')
+                ->get();
+
+            $mapboxToken = config('services.mapbox.token');
+
+            return view('admin.routes.index', compact('orders', 'routeDate', 'provinces', 'filters', 'mapboxToken'));
+        })->name('routes.index');
+
+        Route::post('/routes/resequence', function (Request $request) {
+            $provinces = nl_provinces();
+
+            $data = $request->validate([
+                'route_date'       => ['required', 'date'],
+                'province'         => ['nullable', 'in:' . implode(',', $provinces)],
+                'order_ids'        => ['nullable', 'array'],
+                'order_ids.*'      => ['integer', 'exists:orders,id'],
+            ]);
+
+            $ids = $data['order_ids'] ?? [];
+
+            foreach ($ids as $index => $orderId) {
+                Order::where('id', $orderId)->update([
+                    'route_date'     => $data['route_date'],
+                    'province'       => $data['province'] ?? null,
+                    'route_sequence' => $index + 1,
+                ]);
+            }
+
+            return back()->with('toast', 'Volgorde bijgewerkt');
+        })->name('routes.resequence');
+
+        Route::patch('/routes/{order}/timing', function (Request $request, Order $order) {
+            $provinces = nl_provinces();
+
+            $data = $request->validate([
+                'province'             => ['nullable', 'in:' . implode(',', $provinces)],
+                'route_date'           => ['nullable', 'date'],
+                'route_sequence'       => ['nullable', 'integer', 'min:1', 'max:65535'],
+                'route_travel_minutes' => ['nullable', 'integer', 'min:0', 'max:1440'],
+                'route_stop_minutes'   => ['nullable', 'integer', 'min:0', 'max:1440'],
+                'route_notes'          => ['nullable', 'string'],
+            ]);
+
+            $order->update($data);
+
+            return back()->with('toast', 'Routegegevens opgeslagen');
+        })->name('routes.timing');
+
+        Route::patch('/routes/{order}/remove', function (Order $order) {
+            $order->update([
+                'route_date'           => null,
+                'route_sequence'       => null,
+                'route_travel_minutes' => null,
+                'route_stop_minutes'   => null,
+                'route_notes'          => null,
+            ]);
+
+            return back()->with('toast', 'Stop verwijderd uit route');
+        })->name('routes.remove');
 
         // Product active toggle
         Route::patch(

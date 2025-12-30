@@ -20,6 +20,7 @@ class User extends Authenticatable
         'address',
         'postcode',
         'city',
+        'province',
         'phone',
         'is_admin',
     ];

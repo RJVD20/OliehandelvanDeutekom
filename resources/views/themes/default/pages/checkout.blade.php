@@ -4,7 +4,7 @@
 
 @section('content')
 
-<h1 class="text-3xl font-bold text-green-700 mb-8">
+<h1 class="text-2xl sm:text-3xl font-bold text-green-700 mb-6 sm:mb-8">
     Afrekenen
 </h1>
 
@@ -14,11 +14,11 @@
     </div>
 @else
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
 
     <!-- Gegevens -->
-    <div class="bg-white border rounded-lg p-6">
-        <h2 class="text-xl font-semibold mb-6">
+    <div class="bg-white border rounded-lg p-5 sm:p-6">
+        <h2 class="text-lg sm:text-xl font-semibold mb-5">
             Jouw gegevens
         </h2>
 
@@ -101,9 +101,30 @@
                 </div>
             </div>
 
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Provincie
+                </label>
+                <select
+                    name="province"
+                    required
+                    class="w-full border rounded-lg p-3 focus:ring focus:ring-green-200"
+                >
+                    <option value="">Kies je provincie</option>
+                    @foreach($provinces as $province)
+                        <option
+                            value="{{ $province }}"
+                            @selected(old('province', optional(auth()->user())->province) === $province)
+                        >
+                            {{ $province }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
             <button
                 type="submit"
-                class="w-full mt-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition"
+                class="w-full mt-6 py-3.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-base"
             >
                 Bestelling plaatsen
             </button>
@@ -111,12 +132,12 @@
     </div>
 
     <!-- Overzicht -->
-    <div class="bg-white border rounded-lg p-6 h-fit">
-        <h2 class="text-xl font-semibold mb-6">
+    <div class="bg-white border rounded-lg p-5 sm:p-6 h-fit">
+        <h2 class="text-lg sm:text-xl font-semibold mb-5">
             Bestellingsoverzicht
         </h2>
 
-        <div class="space-y-4 text-sm">
+        <div class="space-y-3 sm:space-y-4 text-sm">
             @php $total = 0; @endphp
 
             @foreach ($cart as $item)
