@@ -6,13 +6,20 @@
 <h1 class="text-2xl font-bold mb-6">Bestellingen</h1>
 
 <div class="bg-white rounded shadow p-4 mb-6">
-    <form class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end" method="GET">
+    <form id="order-filter-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end" method="GET">
         <div>
-            <label class="block text-sm text-gray-600 mb-1">Provincie</label>
-            <select
-                name="province"
+            <label class="block text-sm text-gray-600 mb-1">Route datum</label>
+            <input
+                type="date"
+                name="route_date"
+                value="{{ $filters['route_date'] ?? now()->toDateString() }}"
                 class="w-full border rounded p-2"
             >
+        </div>
+
+        <div>
+            <label class="block text-sm text-gray-600 mb-1">Provincie</label>
+            <select name="province" class="w-full border rounded p-2">
                 <option value="">Alle provincies</option>
                 @foreach($provinces as $province)
                     <option
@@ -23,16 +30,6 @@
                     </option>
                 @endforeach
             </select>
-        </div>
-
-        <div>
-            <label class="block text-sm text-gray-600 mb-1">Route datum</label>
-            <input
-                type="date"
-                name="route_date"
-                value="{{ $filters['route_date'] ?? '' }}"
-                class="w-full border rounded p-2"
-            >
         </div>
 
         <label class="inline-flex items-center space-x-2">
@@ -46,13 +43,8 @@
             <span class="text-sm text-gray-700">Alleen geplande routes</span>
         </label>
 
-        <div class="flex space-x-2 justify-end md:justify-start">
-            <button class="px-4 py-2 bg-green-600 text-white rounded" type="submit">
-                Filteren
-            </button>
-            <a href="{{ route('admin.orders.index') }}" class="px-4 py-2 border rounded text-gray-700">
-                Reset
-            </a>
+        <div class="md:col-span-1 flex justify-end md:justify-start">
+            <a href="{{ route('admin.orders.index') }}" class="px-4 py-2 border rounded text-gray-700">Reset</a>
         </div>
     </form>
 </div>
@@ -99,3 +91,23 @@
 
 <div class="mt-4">{{ $orders->links() }}</div>
 @endsection
+
+@push('scripts')
+<script>
+    // Auto-apply filters (date/province/only_planned) without a submit button
+    (function() {
+        const form = document.getElementById('order-filter-form');
+        if (!form) return;
+        const inputs = form.querySelectorAll('input[name="route_date"], select[name="province"], input[name="only_planned"]');
+
+        const submitForm = () => form.requestSubmit ? form.requestSubmit() : form.submit();
+
+        inputs.forEach((el) => {
+            el.addEventListener('change', submitForm);
+            el.addEventListener('input', (e) => {
+                if (e.target.tagName === 'INPUT') submitForm();
+            });
+        });
+    })();
+</script>
+@endpush

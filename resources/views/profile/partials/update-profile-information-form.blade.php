@@ -73,6 +73,24 @@
             </div>
         </div>
 
+        <div>
+            <x-input-label for="province" :value="__('Provincie')" />
+            <select
+                id="province"
+                name="province"
+                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                required
+            >
+                <option value="" disabled {{ old('province', $user->province) ? '' : 'selected' }}>{{ __('Kies je provincie') }}</option>
+                @foreach($provinces as $province)
+                    <option value="{{ $province }}" @selected(old('province', $user->province) === $province)>
+                        {{ $province }}
+                    </option>
+                @endforeach
+            </select>
+            <x-input-error class="mt-2" :messages="$errors->get('province')" />
+        </div>
+
         <div class="flex items-center gap-4">
             <x-primary-button>{{ __('Opslaan') }}</x-primary-button>
 

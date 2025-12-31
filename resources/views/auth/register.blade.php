@@ -90,6 +90,25 @@
                 </div>
             </div>
 
+            <!-- Provincie -->
+            <div>
+                <x-input-label for="province" value="Provincie" />
+                <select
+                    id="province"
+                    name="province"
+                    class="block mt-1 w-full border-gray-300 focus:border-green-600 focus:ring-green-600 rounded-md shadow-sm"
+                    required
+                >
+                    <option value="" disabled {{ old('province') ? '' : 'selected' }}>Kies je provincie</option>
+                    @foreach($provinces as $province)
+                        <option value="{{ $province }}" @selected(old('province') === $province)>
+                            {{ $province }}
+                        </option>
+                    @endforeach
+                </select>
+                <x-input-error :messages="$errors->get('province')" class="mt-2" />
+            </div>
+
             <!-- Wachtwoord -->
             <div>
                 <x-input-label for="password" value="Wachtwoord" />

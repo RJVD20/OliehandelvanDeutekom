@@ -19,7 +19,9 @@ class RegisteredUserController extends Controller
      */
     public function create(): View
     {
-        return view('auth.register');
+        return view('auth.register', [
+            'provinces' => nl_provinces(),
+        ]);
     }
 
     /**
@@ -37,6 +39,7 @@ class RegisteredUserController extends Controller
             'address'  => 'nullable|string|max:255',
             'postcode' => ['nullable', 'regex:/^[1-9][0-9]{3}\s?[A-Z]{2}$/i'],
             'city'     => 'nullable|string|max:255',
+            'province' => ['required', 'in:' . implode(',', nl_provinces())],
         ]);
 
         // normalize phone: remove spaces and dashes before storing
@@ -50,6 +53,7 @@ class RegisteredUserController extends Controller
             'address'  => $request->address,
             'postcode' => $request->postcode,
             'city'     => $request->city,
+            'province' => $request->province,
         ]);
 
         event(new Registered($user));
