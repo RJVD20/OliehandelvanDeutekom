@@ -1,4 +1,5 @@
-<nav class="relative z-30" x-data="{ open: false, userOpen: false }">
+<div x-data="{ open: false, userOpen: false, searchOpen: false }" @keydown.escape.window="searchOpen = false; open = false">
+<nav class="relative z-30">
     <div class="hidden md:block bg-[#e6e1dc] text-[13px] text-neutral-700 border-b border-neutral-200/60">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex items-center gap-4 py-2 overflow-x-auto whitespace-nowrap" style="scrollbar-width: none;">
@@ -45,11 +46,16 @@
                 </a>
 
                 <div class="ml-auto flex items-center gap-1 text-white/90">
-                    <a href="{{ route('products.index') }}" class="hover:text-white inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Zoek producten">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button
+                        type="button"
+                        class="hover:text-white inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/5"
+                        aria-label="Zoek producten"
+                        @click="searchOpen = true; $nextTick(() => document.getElementById('nav-search-input')?.focus())"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m21 21-4.35-4.35M11 6a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" />
                         </svg>
-                    </a>
+                    </button>
 
                     @auth
                         <a href="{{ route('account.dashboard') }}" class="hover:text-white inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Account">
@@ -106,11 +112,16 @@
                 </div>
 
                 <div class="hidden md:flex items-center gap-6 text-white/90">
-                    <a href="{{ route('products.index') }}" class="hover:text-white">
+                    <button
+                        type="button"
+                        class="hover:text-white"
+                        aria-label="Zoek producten"
+                        @click="searchOpen = true; $nextTick(() => document.getElementById('nav-search-input')?.focus())"
+                    >
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m21 21-4.35-4.35M11 6a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" />
                         </svg>
-                    </a>
+                    </button>
 
                     @auth
                         <div class="relative" x-data="{ openUser: false }">
@@ -217,3 +228,165 @@
         </div>
     </div>
 </nav>
+
+<!-- Search overlay -->
+<div
+    x-show="searchOpen"
+    x-transition.opacity
+    class="fixed inset-0 z-50 flex justify-center px-4 sm:px-6"
+    style="display: none;"
+>
+    <div class="absolute inset-0 bg-black/40" @click="searchOpen = false"></div>
+
+    <div
+        class="relative w-full max-w-5xl mt-24 md:mt-28"
+        x-data="{
+            query: {{ json_encode(request('q', '')) }},
+            loading: false,
+            timer: null,
+            minChars: 2,
+            results: { products: [], categories: [] },
+            baseSearch: {{ json_encode(route('products.index')) }},
+            baseCategory: {{ json_encode(url('/categories')) }},
+            baseProduct: {{ json_encode(url('/product')) }},
+            handleInput(event) {
+                this.query = event.target.value;
+                clearTimeout(this.timer);
+                if (this.query.length < this.minChars) {
+                    this.results = { products: [], categories: [] };
+                    return;
+                }
+                this.timer = setTimeout(() => this.fetchResults(), 250);
+            },
+            async fetchResults() {
+                this.loading = true;
+                try {
+                    const res = await fetch({{ json_encode(route('search.suggest')) }} + '?q=' + encodeURIComponent(this.query));
+                    if (!res.ok) throw new Error('Netwerkfout');
+                    this.results = await res.json();
+                } catch (e) {
+                    this.results = { products: [], categories: [] };
+                } finally {
+                    this.loading = false;
+                }
+            },
+            formatPrice(value) {
+                if (value === null || value === undefined) return '';
+                return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(value);
+            }
+        }"
+        x-init="if (query && query.length >= minChars) { fetchResults(); }"
+    >
+        <div class="bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
+            <div class="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100">
+                <div class="text-sm font-semibold text-gray-800">Zoeken</div>
+                <button class="p-2 text-gray-500 hover:text-gray-700" @click="searchOpen = false" aria-label="Sluit zoekvenster">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="px-4 sm:px-6 py-5 space-y-6">
+                <form method="GET" action="{{ route('products.index') }}" class="relative">
+                    <span class="absolute left-4 inset-y-0 flex items-center text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.35-4.35M11 6a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" />
+                        </svg>
+                    </span>
+                    <input
+                        id="nav-search-input"
+                        x-ref="searchInput"
+                        type="search"
+                        name="q"
+                        :value="query"
+                        @input="handleInput"
+                        class="w-full rounded-full border border-gray-200 bg-white py-3.5 pl-12 pr-4 text-sm md:text-base shadow-inner focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                        placeholder="Zoeken naar producten"
+                    >
+                </form>
+
+                <div class="bg-white border border-gray-200 rounded-xl shadow-inner p-4 sm:p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm font-semibold text-gray-800">Trending</p>
+                        <p class="text-xs text-gray-500" x-show="query.length < minChars">Minimaal 2 tekens</p>
+                        <p class="text-xs text-gray-500" x-show="loading">Bezig met zoeken...</p>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3">
+                        @php
+                            $trending = ['Gasfles', 'Petroleum', 'Aanmaak', 'Pellets'];
+                        @endphp
+                        @foreach($trending as $term)
+                            <button
+                                type="button"
+                                class="inline-flex items-center rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:border-green-600 hover:text-green-700"
+                                @click="query='{{ $term }}'; handleInput({ target: { value: '{{ $term }}' } })"
+                            >
+                                {{ $term }}
+                            </button>
+                        @endforeach
+                    </div>
+
+                    <div class="space-y-4 max-h-[360px] overflow-y-auto">
+                        <template x-if="!loading && query.length >= minChars && results.categories.length === 0 && results.products.length === 0">
+                            <p class="text-sm text-gray-500">Geen resultaten gevonden.</p>
+                        </template>
+
+                        <template x-if="results.categories.length">
+                            <div class="space-y-2">
+                                <p class="text-xs uppercase tracking-wide text-gray-500">Categorieen</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="category in results.categories" :key="category.id">
+                                        <a
+                                            class="inline-flex items-center gap-2 rounded-full bg-green-50 text-green-700 border border-green-100 px-3 py-1.5 text-sm font-semibold hover:border-green-200"
+                                            :href="baseCategory + '/' + category.slug"
+                                        >
+                                            <span x-text="category.name"></span>
+                                        </a>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="results.products.length">
+                            <div class="space-y-3">
+                                <p class="text-xs uppercase tracking-wide text-gray-500">Producten</p>
+                                <template x-for="product in results.products" :key="product.slug">
+                                    <a
+                                        class="flex items-center gap-4 rounded-xl border border-gray-100 hover:border-green-200 hover:bg-green-50/30 p-3 transition"
+                                        :href="baseProduct + '/' + product.slug"
+                                    >
+                                        <div class="h-14 w-14 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                                            <img
+                                                :src="product.image || '/images/logovd.png'"
+                                                :alt="product.name"
+                                                class="h-full w-full object-cover"
+                                            >
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-gray-900 truncate" x-text="product.name"></p>
+                                            <p class="text-xs text-gray-500" x-text="product.category"></p>
+                                        </div>
+                                        <div class="text-sm font-semibold text-green-700" x-text="formatPrice(product.price)"></div>
+                                    </a>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="pt-2 border-t border-gray-100 flex justify-end">
+                        <a
+                            class="text-sm font-semibold text-green-700 hover:text-green-800"
+                            :href="baseSearch + '?q=' + encodeURIComponent(query)"
+                            x-show="query.length >= minChars"
+                        >
+                            Bekijk alle resultaten
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>

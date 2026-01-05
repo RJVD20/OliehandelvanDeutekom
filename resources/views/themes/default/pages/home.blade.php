@@ -93,26 +93,34 @@
 
 <!-- CATEGORIES -->
 <section class="mb-10">
-        <h2 class="text-2xl md:text-3xl font-semibold text-green-700 mb-6 md:mb-8">
+    <h2 class="text-2xl md:text-3xl font-semibold text-green-700 mb-6 md:mb-8">
         Shop per categorie
     </h2>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 md:gap-8">
-        @forelse ($categories as $category)
-          <a href="{{ route('category.show', $category->slug) }}"
-                        class="group bg-green-50 border border-green-100 rounded-2xl p-6 sm:p-8 md:p-10 text-center hover:bg-green-100 transition cursor-pointer">
-                            <div class="text-green-700 text-lg sm:text-xl font-semibold mb-2">
-                  {{ $category->name }}
-              </div>
-                            <p class="text-sm md:text-base text-green-600">
-                  Bekijk producten
-              </p>
-          </a>
-        @empty
-            <p class="text-gray-500 col-span-4 text-center">
-                Geen categorieën gevonden.
-            </p>
-        @endforelse
+    <div class="bg-[#858f7b] rounded-2xl px-4 sm:px-6 md:px-8 py-8 md:py-10 overflow-hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6 md:gap-8">
+            @forelse ($categories as $category)
+                <a href="{{ route('category.show', $category->slug) }}"
+                   class="group relative block rounded-2xl bg-[#3b3b3b] text-white border border-white/5 shadow-lg overflow-hidden transition transform hover:-translate-y-1 hover:shadow-xl">
+                    <div class="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition"></div>
+
+                    <div class="relative flex flex-col items-center justify-center gap-3 px-6 sm:px-8 py-8">
+                        <span class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/90 group-hover:border-white/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-6 w-6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 3c-1.5 2.2-.4 3.8.6 5.1.8 1.1 1.4 2 .7 3.6-.6 1.5-2.1 2.3-3.3 2.9-1.3.6-2.1 1.5-2.1 3.1 0 1.6 1.2 3 4.1 3 2.8 0 4.5-1.6 4.5-4 0-1.7-.8-2.5-1.3-3.4-.7-1.2-.6-2.3.3-3.7.9-1.5 1.4-3.4-.5-6.6" />
+                            </svg>
+                        </span>
+
+                        <div class="text-center space-y-1">
+                            <div class="text-lg sm:text-xl font-semibold">{{ $category->name }}</div>
+                            <p class="text-sm text-white/80">Bekijk producten</p>
+                        </div>
+                    </div>
+                </a>
+            @empty
+                <p class="text-gray-100 col-span-3 text-center">Geen categorieën gevonden.</p>
+            @endforelse
+        </div>
     </div>
 </section>
 
