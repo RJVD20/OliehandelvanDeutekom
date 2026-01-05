@@ -15,7 +15,7 @@
                     @click="if(window.innerWidth < 768) { open.links = !open.links }"
                 >
                     <span>Snelle links</span>
-                    <span class="md:hidden text-white/60">{{ __('›') }}</span>
+                    <span class="md:hidden text-white/60">›</span>
                 </button>
                 <ul
                     class="mt-3 space-y-2 text-sm text-white/70"
@@ -37,7 +37,7 @@
                     @click="if(window.innerWidth < 768) { open.contact = !open.contact }"
                 >
                     <span>Contact</span>
-                    <span class="md:hidden text-white/60">{{ __('›') }}</span>
+                    <span class="md:hidden text-white/60">›</span>
                 </button>
                 <ul
                     class="mt-3 space-y-2 text-sm text-white/70"
