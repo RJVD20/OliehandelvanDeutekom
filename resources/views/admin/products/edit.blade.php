@@ -5,24 +5,28 @@
 @section('content')
 <h1 class="text-2xl font-bold mb-6">Product bewerken</h1>
 
-<form method="POST"
-      action="{{ route('admin.products.update', $product) }}"
-      enctype="multipart/form-data">
+<form
+    method="POST"
+    action="{{ route('admin.products.update', $product) }}"
+    enctype="multipart/form-data"
+    class="max-w-3xl space-y-5 rounded-lg bg-white p-5 shadow"
+>
     @csrf
     @method('PUT')
 
-    <div>
-        <label class="block font-medium mb-1">Naam</label>
+    <div class="space-y-2">
+        <label class="block text-sm font-semibold text-gray-700">Naam</label>
         <input
             name="name"
             value="{{ old('name', $product->name) }}"
             required
-            class="w-full border rounded px-3 py-2">
+            class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
+        >
     </div>
 
-    <div>
-        <label class="block font-medium mb-1">Categorie</label>
-        <select name="category_id" required class="w-full border rounded px-3 py-2">
+    <div class="space-y-2">
+        <label class="block text-sm font-semibold text-gray-700">Categorie</label>
+        <select name="category_id" required class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base">
             <option value="">-- Kies categorie --</option>
             @foreach($categories as $category)
                 <option
@@ -35,9 +39,9 @@
         </select>
     </div>
 
-    <div>
-        <label class="block font-medium mb-1">Type</label>
-        <select name="type" required class="w-full border rounded px-3 py-2">
+    <div class="space-y-2">
+        <label class="block text-sm font-semibold text-gray-700">Type</label>
+        <select name="type" required class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base">
             @foreach(['kachel','vloeistof','pellet','accessoire'] as $type)
                 <option
                     value="{{ $type }}"
@@ -49,34 +53,35 @@
         </select>
     </div>
 
-    <div>
-        <label class="block font-medium mb-1">Prijs (€)</label>
+    <div class="space-y-2">
+        <label class="block text-sm font-semibold text-gray-700">Prijs (€)</label>
         <input
             type="number"
             step="0.01"
             name="price"
             value="{{ old('price', $product->price) }}"
             required
-            class="w-full border rounded px-3 py-2">
+            class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
+        >
     </div>
 
-    <div>
-        <label class="block font-medium mb-1">Beschrijving</label>
+    <div class="space-y-2">
+        <label class="block text-sm font-semibold text-gray-700">Beschrijving</label>
         <textarea
             name="description"
             rows="4"
-            class="w-full border rounded px-3 py-2"
+            class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
         >{{ old('description', $product->description) }}</textarea>
     </div>
 
-    <div>
-        <label class="block font-medium mb-1">Productafbeelding</label>
+    <div class="space-y-2">
+        <label class="block text-sm font-semibold text-gray-700">Productafbeelding</label>
 
         <input
             type="file"
             name="image"
             accept="image/*"
-            class="w-full border rounded px-3 py-2"
+            class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
         >
 
         @if($product->image)
@@ -87,23 +92,24 @@
         @endif
     </div>
 
-    <div class="flex items-center gap-2">
+    <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm font-medium text-gray-800">
         <input
             type="checkbox"
             name="active"
             value="1"
             @checked(old('active', $product->active))
+            class="h-5 w-5 rounded border-gray-300"
         >
-        <label>Actief</label>
-    </div>
+        <span>Actief</span>
+    </label>
 
-    <div class="flex gap-4">
-        <button class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+    <div class="flex flex-col sm:flex-row gap-3">
+        <button class="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700">
             Opslaan
         </button>
 
         <a href="{{ route('admin.products.index') }}"
-           class="px-6 py-2 border rounded">
+           class="w-full sm:w-auto px-6 py-3 border rounded-lg text-center font-semibold text-gray-800">
             Annuleren
         </a>
     </div>

@@ -5,7 +5,7 @@
 @section('content')
 <h1 class="text-2xl font-bold mb-6">Gebruikers</h1>
 
-<div class="bg-white p-4 rounded shadow overflow-x-auto">
+<div class="hidden md:block bg-white p-4 rounded shadow overflow-x-auto">
     <table class="w-full text-left text-sm">
         <thead>
             <tr class="border-b">
@@ -45,6 +45,41 @@
             @endforeach
         </tbody>
     </table>
+
+    <div class="mt-4">
+        {{ $users->links() }}
+    </div>
+</div>
+
+<div class="md:hidden space-y-3">
+    @foreach($users as $user)
+        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <p class="text-sm font-semibold leading-tight">{{ $user->name }}</p>
+                    @if(config('app.debug'))
+                        <p class="text-xs text-gray-400">DB: {{ $user->getRawOriginal('name') }}</p>
+                    @endif
+                    <p class="text-xs text-gray-500">{{ $user->email }}</p>
+                    <p class="text-xs text-gray-500">{{ $user->phone ?? '-' }}</p>
+                </div>
+                <label class="flex items-center gap-2 text-sm font-medium text-gray-800">
+                    <input type="checkbox" class="admin-toggle h-5 w-5 rounded border-gray-300" data-url="{{ route('admin.users.toggle-admin', $user) }}" {{ $user->is_admin ? 'checked' : '' }}>
+                    <span>Admin</span>
+                </label>
+            </div>
+
+            <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
+                <a href="{{ route('admin.users.edit', $user) }}" class="inline-flex justify-center rounded-lg bg-blue-600 px-4 py-2 text-white text-sm font-semibold">Bewerk</a>
+
+                <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline" onsubmit="return confirm('Verwijder gebruiker?');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="inline-flex justify-center rounded-lg bg-red-600 px-4 py-2 text-white text-sm font-semibold">Verwijder</button>
+                </form>
+            </div>
+        </div>
+    @endforeach
 
     <div class="mt-4">
         {{ $users->links() }}

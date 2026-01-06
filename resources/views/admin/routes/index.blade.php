@@ -8,7 +8,8 @@
     rel="stylesheet"
 >
 <style>
-    #route-map { height: 420px; }
+    #route-map { height: 360px; }
+    @media (min-width: 768px) { #route-map { height: 480px; } }
     .drag-handle { cursor: grab; }
     .route-marker {
         background: #16a34a;
@@ -30,19 +31,19 @@
 <h1 class="text-2xl font-bold mb-6">Routeplanning</h1>
 
 <div class="bg-white rounded shadow p-4 mb-6">
-    <form id="route-filter-form" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end" method="GET">
-        <div>
-            <label class="block text-sm text-gray-600 mb-1">Route datum</label>
+    <form id="route-filter-form" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end" method="GET">
+        <div class="space-y-1">
+            <label class="block text-sm text-gray-600">Route datum</label>
             <input
                 type="date"
                 name="route_date"
                 value="{{ $filters['route_date'] ?? $routeDate }}"
-                class="w-full border rounded p-2"
+                class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
             >
         </div>
-        <div>
-            <label class="block text-sm text-gray-600 mb-1">Provincie</label>
-            <select name="province" class="w-full border rounded p-2">
+        <div class="space-y-1">
+            <label class="block text-sm text-gray-600">Provincie</label>
+            <select name="province" class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base">
                 <option value="">Alle provincies</option>
                 @foreach($provinces as $province)
                     <option value="{{ $province }}" @selected(($filters['province'] ?? '') === $province)>
@@ -51,8 +52,8 @@
                 @endforeach
             </select>
         </div>
-        <div class="md:col-span-2 flex justify-end md:justify-start">
-            <a href="{{ route('admin.routes.index') }}" class="px-4 py-2 border rounded text-gray-700">Reset</a>
+        <div class="md:col-span-2 flex gap-3 justify-end md:justify-start">
+            <a href="{{ route('admin.routes.index') }}" class="w-full sm:w-auto px-4 py-3 border rounded-lg text-center text-gray-800 font-semibold">Reset</a>
         </div>
     </form>
 </div>
@@ -118,79 +119,129 @@
             @endif
         </div>
     </div>
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b">
-                    <th class="p-2 text-left">Stop</th>
-                    <th class="p-2">Volgorde</th>
-                    <th class="p-2">Reistijd (min)</th>
-                    <th class="p-2">Stop (min)</th>
-                    <th class="p-2">Notities</th>
-                    <th class="p-2"></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($orders as $order)
-                    <tr class="border-b align-top">
-                        <td class="p-2">
-                            <div class="font-semibold">#{{ $order->id }} {{ $order->name }}</div>
-                            <div class="text-gray-600">{{ $order->address }}, {{ $order->postcode }} {{ $order->city }}</div>
-                        </td>
-                        <td class="p-2 text-center">
-                            <form method="POST" action="{{ route('admin.routes.timing', $order) }}" class="space-y-2">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="route_date" value="{{ $routeDate }}">
-                                <input type="hidden" name="province" value="{{ $filters['province'] ?? '' }}">
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b">
+                        <th class="p-2 text-left">Stop</th>
+                        <th class="p-2">Volgorde</th>
+                        <th class="p-2">Reistijd (min)</th>
+                        <th class="p-2">Stop (min)</th>
+                        <th class="p-2">Notities</th>
+                        <th class="p-2"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($orders as $order)
+                        <tr class="border-b align-top">
+                            <td class="p-2">
+                                <div class="font-semibold">#{{ $order->id }} {{ $order->name }}</div>
+                                <div class="text-gray-600">{{ $order->address }}, {{ $order->postcode }} {{ $order->city }}</div>
+                            </td>
+                            <td class="p-2 text-center">
+                                <form method="POST" action="{{ route('admin.routes.timing', $order) }}" class="space-y-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="route_date" value="{{ $routeDate }}">
+                                    <input type="hidden" name="province" value="{{ $filters['province'] ?? '' }}">
 
-                                <input
-                                    type="number"
-                                    name="route_sequence"
-                                    min="1"
-                                    class="w-16 border rounded p-1 text-center"
-                                    value="{{ $order->route_sequence }}"
-                                >
-                        </td>
-                        <td class="p-2 text-center">
-                                <input
-                                    type="number"
-                                    name="route_travel_minutes"
-                                    min="0"
-                                    class="w-20 border rounded p-1 text-center"
-                                    value="{{ $order->route_travel_minutes }}"
-                                >
-                        </td>
-                        <td class="p-2 text-center">
-                                <input
-                                    type="number"
-                                    name="route_stop_minutes"
-                                    min="0"
-                                    class="w-20 border rounded p-1 text-center"
-                                    value="{{ $order->route_stop_minutes }}"
-                                >
-                        </td>
-                        <td class="p-2">
-                                <textarea
-                                    name="route_notes"
-                                    class="w-full border rounded p-2"
-                                    rows="2"
-                                >{{ $order->route_notes }}</textarea>
-                        </td>
-                        <td class="p-2 text-right align-top space-y-2">
-                                <button class="px-2 py-1 text-xs bg-green-600 text-white rounded inline-flex items-center justify-center" type="submit">Opslaan</button>
+                                    <input
+                                        type="number"
+                                        name="route_sequence"
+                                        min="1"
+                                        class="w-20 rounded border border-gray-300 px-2 py-2 text-center text-sm"
+                                        value="{{ $order->route_sequence }}"
+                                    >
+                            </td>
+                            <td class="p-2 text-center">
+                                    <input
+                                        type="number"
+                                        name="route_travel_minutes"
+                                        min="0"
+                                        class="w-24 rounded border border-gray-300 px-2 py-2 text-center text-sm"
+                                        value="{{ $order->route_travel_minutes }}"
+                                    >
+                            </td>
+                            <td class="p-2 text-center">
+                                    <input
+                                        type="number"
+                                        name="route_stop_minutes"
+                                        min="0"
+                                        class="w-24 rounded border border-gray-300 px-2 py-2 text-center text-sm"
+                                        value="{{ $order->route_stop_minutes }}"
+                                    >
+                            </td>
+                            <td class="p-2">
+                                    <textarea
+                                        name="route_notes"
+                                        class="w-full rounded border border-gray-300 p-2 text-sm"
+                                        rows="2"
+                                    >{{ $order->route_notes }}</textarea>
+                            </td>
+                            <td class="p-2 text-right align-top space-y-2">
+                                    <button class="px-3 py-2 text-xs bg-green-600 text-white rounded-lg inline-flex items-center justify-center" type="submit">Opslaan</button>
                             </form>
                             <form method="POST" action="{{ route('admin.routes.remove', $order) }}">
                                 @csrf
                                 @method('PATCH')
-                                <button class="px-2 py-1 text-xs bg-red-600 text-white rounded inline-flex items-center justify-center" type="submit">Verwijder</button>
+                                <button class="px-3 py-2 text-xs bg-red-600 text-white rounded-lg inline-flex items-center justify-center" type="submit">Verwijder</button>
                             </form>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        <div class="md:hidden space-y-3">
+            @foreach($orders as $order)
+                <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs text-gray-500">Stop #{{ $order->id }}</p>
+                            <p class="font-semibold leading-tight">{{ $order->name }}</p>
+                            <p class="text-xs text-gray-500">{{ $order->address }}, {{ $order->postcode }} {{ $order->city }}</p>
+                        </div>
+                        <span class="text-sm text-gray-600">Volgorde: {{ $order->route_sequence ?? '—' }}</span>
+                    </div>
+
+                    <form method="POST" action="{{ route('admin.routes.timing', $order) }}" class="mt-3 space-y-3">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="route_date" value="{{ $routeDate }}">
+                        <input type="hidden" name="province" value="{{ $filters['province'] ?? '' }}">
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <label class="space-y-1 text-sm text-gray-700">
+                                <span>Volgorde</span>
+                                <input type="number" name="route_sequence" min="1" value="{{ $order->route_sequence }}" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-base">
+                            </label>
+                            <label class="space-y-1 text-sm text-gray-700">
+                                <span>Reistijd (min)</span>
+                                <input type="number" name="route_travel_minutes" min="0" value="{{ $order->route_travel_minutes }}" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-base">
+                            </label>
+                            <label class="space-y-1 text-sm text-gray-700">
+                                <span>Stop (min)</span>
+                                <input type="number" name="route_stop_minutes" min="0" value="{{ $order->route_stop_minutes }}" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-base">
+                            </label>
+                        </div>
+
+                        <div class="space-y-1 text-sm text-gray-700">
+                            <span>Notities</span>
+                            <textarea name="route_notes" rows="2" class="w-full rounded-lg border border-gray-300 p-3 text-base">{{ $order->route_notes }}</textarea>
+                        </div>
+
+                        <button class="w-full rounded-lg bg-green-600 px-4 py-3 text-white font-semibold" type="submit">Opslaan</button>
+                    </form>
+
+                    <form method="POST" action="{{ route('admin.routes.remove', $order) }}" class="mt-3">
+                        @csrf
+                        @method('PATCH')
+                        <button class="w-full rounded-lg bg-red-600 px-4 py-3 text-white font-semibold" type="submit">Verwijder</button>
+                    </form>
+                </div>
+            @endforeach
+        </div>
 </div>
 @endif
 @endsection
