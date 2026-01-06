@@ -21,6 +21,24 @@
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
+    <!-- Betaling -->
+    <div class="bg-white p-6 rounded shadow space-y-2 lg:col-span-1">
+        <h2 class="font-semibold mb-3">Betaling</h2>
+        @php $payment = $order->latestPayment; @endphp
+        @if($payment)
+            <p class="text-sm"><strong>Status:</strong> {{ ucfirst($payment->status->value) }}</p>
+            <p class="text-sm"><strong>Vervaldatum:</strong> {{ optional($payment->due_date)->format('d-m-Y') }}</p>
+            <p class="text-sm"><strong>Laatste herinnering:</strong> {{ optional($payment->last_reminder_at)->format('d-m-Y H:i') ?? '–' }}</p>
+            <p class="text-sm"><strong>Aantal herinneringen:</strong> {{ $payment->reminder_count }}</p>
+            <p class="text-sm font-semibold text-green-700">€ {{ number_format($payment->amount, 2, ',', '.') }}</p>
+            @if($payment->pay_link)
+                <a href="{{ $payment->pay_link }}" class="inline-flex items-center rounded bg-blue-600 px-4 py-2 text-white text-sm font-semibold mt-2" target="_blank" rel="noopener">Open betaallink</a>
+            @endif
+        @else
+            <p class="text-sm text-gray-600">Geen betaling geregistreerd.</p>
+        @endif
+    </div>
+
     <!-- Klantgegevens -->
     <div class="bg-white p-6 rounded shadow space-y-2">
         <h2 class="font-semibold mb-3">Klant</h2>

@@ -41,6 +41,12 @@
                 📦 Bestellingen
             </a>
 
+            <a href="{{ route('admin.payments.index') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded
+               {{ request()->routeIs('admin.payments.*') ? 'bg-gray-700' : 'hover:bg-gray-700' }}">
+                💳 Betalingen
+            </a>
+
             <a href="{{ route('admin.routes.index') }}"
                class="flex items-center gap-3 px-3 py-2 rounded
                {{ request()->routeIs('admin.routes.*') ? 'bg-gray-700' : 'hover:bg-gray-700' }}">

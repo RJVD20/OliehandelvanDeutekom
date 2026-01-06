@@ -14,6 +14,8 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\PaymentController;
+use App\Http\Controllers\PaymentWebhookController;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +55,9 @@ use App\Models\Category;
 use App\Models\Location;
 use App\Models\Order;
 use App\Models\Setting;
+use App\Models\Payment;
+use App\Enums\PaymentStatus;
+use App\Services\Payments\PaymentService;
 use Illuminate\Support\Facades\Response;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -316,6 +321,19 @@ Route::post('/checkout', function (Request $request) {
         ]);
     }
 
+    $payment = Payment::create([
+        'order_id'           => $order->id,
+        'provider'           => config('payments.provider', 'mock'),
+        'status'             => PaymentStatus::OPEN,
+        'amount'             => $total,
+        'currency'           => 'EUR',
+        'due_date'           => now()->addDays(14),
+        'reminder_count'     => 0,
+        'last_reminder_at'   => null,
+    ]);
+
+    app(PaymentService::class)->ensurePayLink($payment);
+
     if (auth()->check()) {
         auth()->user()->update([
             'address'  => $request->address,
@@ -574,7 +592,15 @@ Route::middleware(['auth', 'admin'])
 
         Route::resource('users', UserController::class)
             ->except(['show']);
+
+        // Payments (achteraf betalen)
+        Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::post('/payments/{payment}/remind', [PaymentController::class, 'remind'])->name('payments.remind');
+        Route::patch('/payments/{payment}/mark-paid', [PaymentController::class, 'markPaid'])->name('payments.mark-paid');
     });
+
+// Payment webhooks
+Route::post('/webhooks/payments/{provider}', [PaymentWebhookController::class, 'handle'])->name('payments.webhook');
 
 /*
 |--------------------------------------------------------------------------
