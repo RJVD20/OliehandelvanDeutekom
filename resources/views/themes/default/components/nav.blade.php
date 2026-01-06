@@ -1,6 +1,10 @@
-<div x-data="{ open: false, userOpen: false, searchOpen: false }" @keydown.escape.window="searchOpen = false; open = false">
-<nav class="relative z-30">
-    <div class="hidden md:block bg-[#e6e1dc] text-[13px] text-neutral-700 border-b border-neutral-200/60">
+<div
+    x-data="{ open: false, userOpen: false, searchOpen: false }"
+    x-effect="document.body.classList.toggle('overflow-hidden', open || searchOpen)"
+    @keydown.escape.window="searchOpen = false; open = false"
+>
+<nav class="relative z-[12000]">
+    <div class="hidden lg:block bg-[#e6e1dc] text-[13px] text-neutral-700 border-b border-neutral-200/60">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex items-center gap-4 py-2 overflow-x-auto whitespace-nowrap" style="scrollbar-width: none;">
                 <div class="flex items-center gap-2 bg-white/70 px-3 py-1 rounded-full shadow-sm">
@@ -30,7 +34,7 @@
     <div class="bg-[#3c3c3c] text-white shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <!-- Mobile bar -->
-            <div class="md:hidden relative h-10 flex items-center">
+            <div class="lg:hidden relative h-10 flex items-center">
                 <button
                     class="inline-flex h-7 w-7 items-center justify-center rounded-full text-white/90 bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30"
                     @click="open = !open"
@@ -91,7 +95,7 @@
             </div>
 
             <!-- Desktop bar -->
-            <div class="hidden md:flex items-center justify-between h-20 gap-4">
+            <div class="hidden lg:flex items-center justify-between h-20 gap-4">
                 <div class="flex items-center gap-3">
                     <a href="/" class="relative block">
                         <span class="absolute inset-0 -z-10 -translate-y-3">
@@ -103,7 +107,7 @@
                     </a>
                 </div>
 
-                <div class="hidden md:flex flex-1 justify-center items-center space-x-7 text-sm font-semibold">
+                <div class="hidden lg:flex flex-1 justify-center items-center space-x-7 text-sm font-semibold">
                     <a href="/" class="hover:text-white/80">Home</a>
                     <a href="{{ route('informatie') }}" class="hover:text-white/80">Informatie</a>
                     <a href="{{ route('over-ons') }}" class="hover:text-white/80">Over ons</a>
@@ -111,7 +115,7 @@
                     <a href="{{ route('locaties') }}" class="hover:text-white/80">Locaties</a>
                 </div>
 
-                <div class="hidden md:flex items-center gap-6 text-white/90">
+                <div class="hidden lg:flex items-center gap-6 text-white/90">
                     <button
                         type="button"
                         class="hover:text-white"
@@ -145,7 +149,7 @@
                                 <a href="{{ route('account.orders') }}" class="block px-4 py-2 text-sm hover:bg-neutral-100">Bestellingen</a>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
-                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-neutral-100">Logout</button>
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-neutral-100">Uitloggen</button>
                                 </form>
                             </div>
                         </div>
@@ -185,7 +189,7 @@
     </div>
 
     <div
-        class="md:hidden fixed inset-0 z-40 bg-neutral-950/60 backdrop-blur-sm"
+        class="lg:hidden fixed inset-0 z-[9999] bg-neutral-950"
         x-show="open"
         x-transition.opacity
         @click.self="open = false"
@@ -218,7 +222,7 @@
                         <a href="{{ route('account.orders') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Bestellingen</a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="w-full text-left rounded-xl bg-rose-600 px-4 py-3 font-semibold hover:bg-rose-500">Logout</button>
+                            <button type="submit" class="w-full text-left rounded-xl bg-rose-600 px-4 py-3 font-semibold hover:bg-rose-500">Uitloggen</button>
                         </form>
                     @else
                         <a href="{{ route('login') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Login</a>
