@@ -45,8 +45,13 @@
                     </svg>
                 </button>
 
-                <a href="/" class="absolute left-1/2 -translate-x-[90%] inline-flex items-center justify-center px-2 py-0.5 bg-white rounded-lg shadow-md border border-white/60">
-                    <img src="/images/logovd.png" alt="Logo" class="h-3.5 w-auto object-contain">
+                {{-- Previous logo block with white background kept for quick rollback
+                <a href="/" class="absolute left-1/2 -translate-x-1/2 inline-flex items-center justify-center px-1.5 py-1 bg-white rounded-lg shadow-md border border-white/60">
+                    <img src="/images/logovd.png" alt="Logo" class="h-6 w-auto object-contain">
+                </a>
+                --}}
+                <a href="/" class="absolute left-1/2 -translate-x-1/2 inline-flex items-center justify-center">
+                    <img src="/images/logovd.png" alt="Logo" class="h-6 w-auto object-contain">
                 </a>
 
                 <div class="ml-auto flex items-center gap-1 text-white/90">
@@ -97,11 +102,18 @@
             <!-- Desktop bar -->
             <div class="hidden lg:flex items-center justify-between h-20 gap-4">
                 <div class="flex items-center gap-3">
+                    {{-- Previous desktop logo block with white background retained for quick rollback
                     <a href="/" class="relative block">
                         <span class="absolute inset-0 -z-10 -translate-y-3">
                             <span class="block h-full w-full bg-white"></span>
                         </span>
                         <span class="relative block bg-white px-4 py-3 shadow-md">
+                            <img src="/images/logovd.png" alt="Logo" class="h-10 w-auto">
+                        </span>
+                    </a>
+                    --}}
+                    <a href="/" class="relative block">
+                        <span class="relative block">
                             <img src="/images/logovd.png" alt="Logo" class="h-10 w-auto">
                         </span>
                     </a>
