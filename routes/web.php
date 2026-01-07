@@ -222,12 +222,12 @@ Route::get('/search/suggest', function (Request $request) {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/cart', function () {
+Route::get('/winkelmand', function () {
     $cart = session('cart', []);
     return view('themes.default.pages.cart', compact('cart'));
 })->name('cart.index');
 
-Route::post('/cart/add/{id}', function ($id) {
+Route::post('/winkelmand/toevoegen/{id}', function ($id) {
 
     $product = Product::findOrFail($id);
     $cart = session()->get('cart', []);
@@ -248,7 +248,7 @@ Route::post('/cart/add/{id}', function ($id) {
     return back();
 })->name('cart.add');
 
-Route::post('/cart/update/{id}', function (Request $request, $id) {
+Route::post('/winkelmand/bijwerken/{id}', function (Request $request, $id) {
 
     $cart = session()->get('cart', []);
 
@@ -260,7 +260,7 @@ Route::post('/cart/update/{id}', function (Request $request, $id) {
     return back();
 })->name('cart.update');
 
-Route::post('/cart/remove/{id}', function ($id) {
+Route::post('/winkelmand/verwijderen/{id}', function ($id) {
 
     $cart = session()->get('cart', []);
     unset($cart[$id]);
@@ -268,6 +268,9 @@ Route::post('/cart/remove/{id}', function ($id) {
 
     return back();
 })->name('cart.remove');
+
+// Legacy redirect
+Route::permanentRedirect('/cart', '/winkelmand');
 
 /*
 |--------------------------------------------------------------------------
@@ -360,23 +363,23 @@ Route::post('/checkout', function (Request $request) {
 
 Route::middleware('auth')->group(function () {
 
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profiel', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profiel', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profiel', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Redirect legacy /account to profile edit (users edit their profile directly)
     Route::get('/account', fn () => redirect()->route('profile.edit'))
         ->name('account.dashboard');
 
-    Route::get('/account/orders', fn () => view('account.orders'))->name('account.orders');
+    Route::get('/account/bestellingen', fn () => view('account.orders'))->name('account.orders');
 
-    Route::get('/account/orders/{order}', function (Order $order) {
+    Route::get('/account/bestellingen/{order}', function (Order $order) {
         abort_unless($order->user_id === auth()->id(), 403);
         return view('account.order-show', compact('order'));
     })->name('account.orders.show');
 
     // Re-order: place the same order again
-    Route::post('/account/orders/{order}/reorder', function (Order $order) {
+    Route::post('/account/bestellingen/{order}/reorder', function (Order $order) {
         abort_unless($order->user_id === auth()->id(), 403);
 
         $new = Order::create([
@@ -406,7 +409,7 @@ Route::middleware('auth')->group(function () {
     })->name('account.orders.reorder');
 
     // Download invoice PDF
-    Route::get('/account/orders/{order}/invoice', function (Order $order) {
+    Route::get('/account/bestellingen/{order}/invoice', function (Order $order) {
         abort_unless($order->user_id === auth()->id(), 403);
 
         $pdf = Pdf::loadView('pdfs.invoice', compact('order'))->setPaper('a4');

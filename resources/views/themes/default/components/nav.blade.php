@@ -6,7 +6,7 @@
 <nav class="relative z-[12000]">
     <div class="hidden lg:block bg-[#e6e1dc] text-[13px] text-neutral-700 border-b border-neutral-200/60">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
-            <div class="flex items-center gap-4 py-2 overflow-x-auto whitespace-nowrap" style="scrollbar-width: none;">
+            <div class="flex items-center justify-center gap-4 py-2">
                 <div class="flex items-center gap-2 bg-white/70 px-3 py-1 rounded-full shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m3 5 3 1 3-1 3 1 3-1 3 1 3-1v14l-3 1-3-1-3 1-3-1-3 1-3-1z" />
@@ -68,7 +68,7 @@
                             </svg>
                         </a>
                     @else
-                        <a href="{{ route('login') }}" class="hover:text-white inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Login">
+                        <a href="{{ route('login') }}" class="hover:text-white inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Inloggen">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5.5 20.5a6.5 6.5 0 0 1 13 0M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
                             </svg>
@@ -158,7 +158,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5.5 20.5a6.5 6.5 0 0 1 13 0M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
                             </svg>
-                            <span class="text-sm">Login</span>
+                            <span class="text-sm">Inloggen</span>
                         </a>
                     @endauth
 

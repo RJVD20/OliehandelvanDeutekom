@@ -113,5 +113,7 @@
 
 @yield('scripts')
 @stack('scripts')
+
+@include('components.whatsapp-fab')
 </body>
 </html>

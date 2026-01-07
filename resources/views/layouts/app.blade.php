@@ -32,5 +32,7 @@
                 {{ $slot }}
             </main>
         </div>
+
+        @include('components.whatsapp-fab')
     </body>
 </html>

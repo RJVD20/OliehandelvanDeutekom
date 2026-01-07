@@ -7,12 +7,14 @@
     <title>@yield('title', 'Webshop')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-gray-50 text-gray-900">
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
 
 @include('themes.default.components.nav')
 
-<main class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-    @yield('content')
+<main class="flex-1">
+    <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        @yield('content')
+    </div>
 </main>
 
 @include('themes.default.components.footer')
@@ -35,6 +37,8 @@
     <span x-text="message"></span>
 </div>
 
+
+@include('components.whatsapp-fab')
 
 
 </body>
