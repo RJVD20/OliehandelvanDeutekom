@@ -15,6 +15,8 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\PaymentWebhookController;
+use App\Http\Controllers\Admin\NewsletterController;
+use App\Http\Controllers\NewsletterUnsubscribeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -596,10 +598,23 @@ Route::middleware(['auth', 'admin'])
         Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
         Route::post('/payments/{payment}/remind', [PaymentController::class, 'remind'])->name('payments.remind');
         Route::patch('/payments/{payment}/mark-paid', [PaymentController::class, 'markPaid'])->name('payments.mark-paid');
+
+        // Newsletters
+        Route::resource('newsletters', NewsletterController::class)->except(['destroy']);
+        Route::post('/newsletters/{newsletter}/send', [NewsletterController::class, 'send'])->name('newsletters.send');
+        Route::post('/newsletters/{newsletter}/schedule', [NewsletterController::class, 'schedule'])->name('newsletters.schedule');
+        Route::post('/newsletters/{newsletter}/cancel', [NewsletterController::class, 'cancel'])->name('newsletters.cancel');
+        Route::post('/newsletters/{newsletter}/duplicate', [NewsletterController::class, 'duplicate'])->name('newsletters.duplicate');
+        Route::post('/newsletters/{newsletter}/test', [NewsletterController::class, 'test'])->name('newsletters.test');
     });
 
 // Payment webhooks
 Route::post('/webhooks/payments/{provider}', [PaymentWebhookController::class, 'handle'])->name('payments.webhook');
+
+// Nieuwsbrief uitschrijven
+Route::get('/newsletter/unsubscribe', NewsletterUnsubscribeController::class)
+    ->middleware('signed')
+    ->name('newsletter.unsubscribe');
 
 /*
 |--------------------------------------------------------------------------

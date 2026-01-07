@@ -47,6 +47,12 @@
                 💳 Betalingen
             </a>
 
+            <a href="{{ route('admin.newsletters.index') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded
+               {{ request()->routeIs('admin.newsletters.*') ? 'bg-gray-700' : 'hover:bg-gray-700' }}">
+                ✉️ Nieuwsbrieven
+            </a>
+
             <a href="{{ route('admin.routes.index') }}"
                class="flex items-center gap-3 px-3 py-2 rounded
                {{ request()->routeIs('admin.routes.*') ? 'bg-gray-700' : 'hover:bg-gray-700' }}">
