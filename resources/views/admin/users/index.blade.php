@@ -30,7 +30,9 @@
                     <td class="p-2">{{ $user->email }}</td>
                     <td class="p-2">{{ $user->phone ?? '-' }}</td>
                     <td class="p-2">
-                        <input type="checkbox" class="admin-toggle" data-url="{{ route('admin.users.toggle-admin', $user) }}" {{ $user->is_admin ? 'checked' : '' }}>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $user->is_admin ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
+                            {{ $user->is_admin ? 'Ja' : 'Nee' }}
+                        </span>
                     </td>
                     <td class="p-2 text-right">
                         <a href="{{ route('admin.users.edit', $user) }}" class="text-blue-600 mr-3">Bewerk</a>
@@ -63,10 +65,12 @@
                     <p class="text-xs text-gray-500">{{ $user->email }}</p>
                     <p class="text-xs text-gray-500">{{ $user->phone ?? '-' }}</p>
                 </div>
-                <label class="flex items-center gap-2 text-sm font-medium text-gray-800">
-                    <input type="checkbox" class="admin-toggle h-5 w-5 rounded border-gray-300" data-url="{{ route('admin.users.toggle-admin', $user) }}" {{ $user->is_admin ? 'checked' : '' }}>
-                    <span>Admin</span>
-                </label>
+                <div class="flex flex-col items-end text-sm text-gray-700">
+                    <span class="text-xs uppercase tracking-wide text-gray-500">Admin</span>
+                    <span class="mt-1 inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold {{ $user->is_admin ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
+                        {{ $user->is_admin ? 'Ja' : 'Nee' }}
+                    </span>
+                </div>
             </div>
 
             <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
@@ -86,33 +90,4 @@
     </div>
 </div>
 
-@endsection
-
-@section('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.admin-toggle').forEach(function (el) {
-        el.addEventListener('change', async function (e) {
-            const url = e.target.dataset.url;
-            const checked = e.target.checked ? 1 : 0;
-            try {
-                const res = await fetch(url, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ is_admin: checked })
-                });
-
-                if (!res.ok) throw new Error('Network response was not ok');
-            } catch (err) {
-                alert('Kon admin status niet bijwerken');
-                e.target.checked = !e.target.checked;
-            }
-        });
-    });
-});
-</script>
 @endsection

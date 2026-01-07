@@ -5,12 +5,14 @@
 @section('content')
 
 @php
+    $normalizeOpening = fn($value) => str_replace(['\r\n', '\r'], "\n", (string) $value);
+
     $locationsJson = $locaties->map(fn($loc) => [
         'id' => 'loc-' . $loc->slug,
         'name' => $loc->name,
         'street' => $loc->street,
         'postcode_city' => $loc->postcode_city,
-        'opening' => $loc->opening,
+        'opening' => $normalizeOpening($loc->opening),
         'phone' => $loc->phone,
         'lat' => (float) $loc->lat,
         'lng' => (float) $loc->lng,
@@ -74,9 +76,18 @@
                 <p class="text-xs font-semibold uppercase text-slate-500">
                     Openingstijden
                 </p>
-                <p class="text-sm text-slate-700 whitespace-pre-line">
-                    {{ $loc->opening }}
-                </p>
+                @php
+                    $openingLines = collect(explode("\n", $normalizeOpening($loc->opening)))
+                        ->map(fn($line) => trim(str_replace('\n', ' ', $line)))
+                        ->filter();
+                @endphp
+                <ul class="text-sm text-slate-700 space-y-0.5">
+                    @forelse ($openingLines as $line)
+                        <li>{{ $line }}</li>
+                    @empty
+                        <li>Geen openingstijden beschikbaar.</li>
+                    @endforelse
+                </ul>
             </div>
 
             @if ($loc->phone)
