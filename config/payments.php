@@ -15,15 +15,5 @@ return [
         'mock' => [
             'base_url' => env('APP_URL'),
         ],
-        'mollie' => [
-            'api_key' => env('MOLLIE_API_KEY'),
-            'redirect_url' => env('MOLLIE_REDIRECT_URL'),
-            'webhook_url'  => env('MOLLIE_WEBHOOK_URL'),
-        ],
-        'stripe' => [
-            'api_key' => env('STRIPE_SECRET'),
-            'redirect_url' => env('STRIPE_REDIRECT_URL'),
-            'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
-        ],
     ],
 ];
