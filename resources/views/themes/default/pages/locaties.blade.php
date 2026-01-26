@@ -1,6 +1,19 @@
 @extends('themes.default.layouts.app')
 
-@section('title', 'Ophaallocaties')
+@php
+    use App\Models\Setting;
+    $cmsValue = function (string $key, string $default) {
+        $value = Setting::get($key, null);
+        if (is_string($value) && trim($value) === '') {
+            return $default;
+        }
+        return $value ?? $default;
+    };
+    $pageTitle = $cmsValue('locaties_title', 'Ophaallocaties');
+    $pageIntro = $cmsValue('locaties_intro', 'Hier vind je al onze afhaallocaties met adres, openingstijden en een kaart.');
+@endphp
+
+@section('title', $pageTitle)
 
 @section('content')
 
@@ -34,10 +47,10 @@
 <div class="max-w-6xl mx-auto px-4 py-10">
     <header class="mb-8">
         <h1 class="text-3xl md:text-4xl font-bold mb-2">
-            Ophaallocaties
+            {{ $pageTitle }}
         </h1>
         <p class="text-slate-600 max-w-2xl">
-            Hier vind je al onze afhaallocaties met adres, openingstijden en een kaart.
+            {{ $pageIntro }}
         </p>
     </header>
 

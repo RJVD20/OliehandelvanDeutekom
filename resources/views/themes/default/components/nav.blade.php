@@ -3,7 +3,7 @@
     x-effect="document.body.classList.toggle('overflow-hidden', open || searchOpen)"
     @keydown.escape.window="searchOpen = false; open = false"
 >
-<nav class="relative z-[12000]">
+<nav class="sticky top-0 z-[12000]">
     <div class="hidden lg:block bg-[#e6e1dc] text-[13px] text-neutral-700 border-b border-neutral-200/60">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <div class="flex items-center justify-center gap-4 py-2">

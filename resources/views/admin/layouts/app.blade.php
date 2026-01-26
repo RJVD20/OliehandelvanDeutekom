@@ -59,6 +59,18 @@
                 🗺️ Routes
             </a>
 
+            <a href="{{ route('admin.locations.index') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded
+               {{ request()->routeIs('admin.locations.*') ? 'bg-gray-700' : 'hover:bg-gray-700' }}">
+                📍 Locaties
+            </a>
+
+            <a href="{{ route('admin.content.edit') }}"
+               class="flex items-center gap-3 px-3 py-2 rounded
+               {{ request()->routeIs('admin.content.*') ? 'bg-gray-700' : 'hover:bg-gray-700' }}">
+                ✍️ CMS teksten
+            </a>
+
             <a href="{{ route('admin.products.index') }}"
                class="flex items-center gap-3 px-3 py-2 rounded
                {{ request()->routeIs('admin.products.*') ? 'bg-gray-700' : 'hover:bg-gray-700' }}">

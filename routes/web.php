@@ -59,6 +59,8 @@ use App\Models\Setting;
 use App\Models\Payment;
 use App\Enums\PaymentStatus;
 use App\Services\Payments\PaymentService;
+use App\Http\Controllers\Admin\ContentController;
+use App\Http\Controllers\Admin\LocationController;
 use Illuminate\Support\Facades\Response;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -437,6 +439,26 @@ Route::middleware(['auth', 'admin'])
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
+
+        // CMS content
+        Route::get('/content', [ContentController::class, 'edit'])
+            ->name('content.edit');
+        Route::post('/content', [ContentController::class, 'update'])
+            ->name('content.update');
+
+        // Locations
+        Route::get('/locaties', [LocationController::class, 'index'])
+            ->name('locations.index');
+        Route::get('/locaties/nieuw', [LocationController::class, 'create'])
+            ->name('locations.create');
+        Route::post('/locaties', [LocationController::class, 'store'])
+            ->name('locations.store');
+        Route::get('/locaties/{location}/edit', [LocationController::class, 'edit'])
+            ->name('locations.edit');
+        Route::put('/locaties/{location}', [LocationController::class, 'update'])
+            ->name('locations.update');
+        Route::delete('/locaties/{location}', [LocationController::class, 'destroy'])
+            ->name('locations.destroy');
 
         // Maintenance mode toggle (site-wide except admins)
         Route::post('/maintenance/toggle', function () {
