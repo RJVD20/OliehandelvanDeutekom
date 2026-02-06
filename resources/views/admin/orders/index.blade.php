@@ -12,7 +12,7 @@
             <input
                 type="date"
                 name="route_date"
-                value="{{ $filters['route_date'] ?? now()->toDateString() }}"
+                value="{{ $filters['route_date'] ?? '' }}"
                 class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
             >
         </div>
@@ -83,9 +83,17 @@
                     </td>
                     <td class="p-3">€ {{ number_format($order->total, 2, ',', '.') }}</td>
                     <td class="p-3 text-right">
-                        <a href="{{ route('admin.orders.show', $order) }}" class="text-green-700">
-                            Bekijken →
-                        </a>
+                        <div class="flex items-center justify-end gap-3">
+                            <form method="POST" action="{{ route('admin.orders.ship', $order) }}">
+                                @csrf
+                                <button class="px-3 py-2 text-xs bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700" type="submit">
+                                    Verzending mailen
+                                </button>
+                            </form>
+                            <a href="{{ route('admin.orders.show', $order) }}" class="text-green-700">
+                                Bekijken →
+                            </a>
+                        </div>
                     </td>
                 </tr>
             @endforeach
@@ -112,14 +120,22 @@
                 </div>
             </div>
 
-            <div class="mt-3 flex items-center justify-between">
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <span class="text-lg font-semibold text-green-700">€ {{ number_format($order->total, 2, ',', '.') }}</span>
-                <a
-                    href="{{ route('admin.orders.show', $order) }}"
-                    class="inline-flex items-center justify-center rounded-full bg-green-600 px-4 py-2 text-white text-sm font-semibold"
-                >
-                    Openen
-                </a>
+                <div class="flex items-center gap-2">
+                    <form method="POST" action="{{ route('admin.orders.ship', $order) }}">
+                        @csrf
+                        <button class="inline-flex items-center justify-center rounded-full bg-green-600 px-4 py-2 text-white text-xs font-semibold" type="submit">
+                            Verzending mailen
+                        </button>
+                    </form>
+                    <a
+                        href="{{ route('admin.orders.show', $order) }}"
+                        class="inline-flex items-center justify-center rounded-full border border-green-600 px-4 py-2 text-green-700 text-xs font-semibold"
+                    >
+                        Openen
+                    </a>
+                </div>
             </div>
         </div>
     @endforeach

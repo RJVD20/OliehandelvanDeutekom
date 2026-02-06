@@ -2,6 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Admin – @yield('title')</title>
 
@@ -111,10 +112,10 @@
 
     {{-- Content --}}
     <main class="flex-1 md:ml-64 w-full">
-        <div class="flex items-center justify-between px-4 py-4 border-b bg-white md:hidden">
-            <button class="p-2 rounded bg-gray-100" @click="menuOpen = true">☰</button>
-            <div class="text-sm text-gray-600">Admin</div>
-            <a href="{{ route('home') }}" class="text-sm text-green-700">Naar site</a>
+        <div class="flex items-center justify-between px-4 py-5 border-b bg-white md:hidden">
+            <button class="p-3 rounded-lg bg-gray-100 text-base" @click="menuOpen = true">☰</button>
+            <div class="text-base font-semibold text-gray-700">Admin</div>
+            <a href="{{ route('home') }}" class="text-base text-green-700">Naar site</a>
         </div>
         <div class="p-4 sm:p-6 lg:p-8">
             @yield('content')
