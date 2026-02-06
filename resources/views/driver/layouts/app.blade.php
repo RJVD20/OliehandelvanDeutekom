@@ -60,7 +60,7 @@
     </style>
 </head>
 <body class="min-h-screen text-white">
-    <main class="min-h-screen px-4 pt-6 pb-10 sm:px-6">
+    <main class="min-h-screen px-4 pt-6 pb-10 sm:px-6" style="padding-top: calc(env(safe-area-inset-top, 0px) + 1.5rem);">
         @yield('content')
     </main>
 </body>
