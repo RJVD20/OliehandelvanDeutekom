@@ -22,6 +22,7 @@ class Order extends Model
         'route_travel_minutes',
         'route_stop_minutes',
         'route_notes',
+        'assigned_admin_id',
     ];
 
     protected $casts = [
@@ -58,5 +59,10 @@ public function index()
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function assignedAdmin()
+    {
+        return $this->belongsTo(User::class, 'assigned_admin_id');
     }
 }

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,6 +58,7 @@ use App\Models\Location;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Models\Payment;
+use App\Models\User;
 use App\Enums\PaymentStatus;
 use App\Services\Payments\PaymentService;
 use App\Http\Controllers\Admin\ContentController;
@@ -93,6 +95,56 @@ Route::get('/locaties', function () {
     $locaties = Location::orderBy('name')->get();
     return view('themes.default.pages.locaties', compact('locaties'));
 })->name('locaties');
+
+/*
+|--------------------------------------------------------------------------
+| Chauffeur app
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/app', function (Request $request) {
+        $routeDate = $request->input('route_date', now()->toDateString());
+
+        $orders = Order::query()
+            ->whereDate('route_date', $routeDate)
+            ->where('assigned_admin_id', auth()->id())
+            ->orderByRaw('route_sequence IS NULL')
+            ->orderBy('route_sequence')
+            ->orderBy('id')
+            ->get();
+
+        $routeMapUrl = null;
+        if ($orders->count() >= 1) {
+            $stops = $orders->map(function ($order) {
+                return $order->address . ', ' . $order->postcode . ' ' . $order->city;
+            })->values();
+
+            $origin = 'Current Location';
+            $destination = $stops->last();
+            $waypoints = $stops->slice(0, max(0, $stops->count() - 1));
+
+            $routeMapUrl = 'https://www.google.com/maps/dir/?api=1'
+                . '&origin=' . urlencode($origin)
+                . '&destination=' . urlencode($destination)
+                . '&travelmode=driving';
+
+            if ($waypoints->isNotEmpty()) {
+                $routeMapUrl .= '&waypoints=' . urlencode($waypoints->implode('|'));
+            }
+        }
+
+        return view('driver.app', compact('orders', 'routeDate', 'routeMapUrl'));
+    })->name('driver.app');
+
+    Route::post('/app/orders/{order}/complete', function (Order $order) {
+        abort_unless((int) $order->assigned_admin_id === (int) auth()->id(), 403);
+
+        $order->update(['status' => 'completed']);
+
+        return back()->with('toast', 'Stop afgehandeld.');
+    })->name('driver.orders.complete');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -539,10 +591,44 @@ Route::middleware(['auth', 'admin'])
                 ->orderBy('id')
                 ->get();
 
+            $admins = User::where('is_admin', true)->orderBy('name')->get();
+            $uniqueAssigned = $orders->pluck('assigned_admin_id')->filter()->unique()->values();
+            $assignedAdminMixed = $uniqueAssigned->count() > 1;
+            $assignedAdminId = $uniqueAssigned->count() === 1 ? $uniqueAssigned->first() : null;
+            $assignedAdminName = $assignedAdminId
+                ? optional($admins->firstWhere('id', $assignedAdminId))->name
+                : null;
+
             $mapboxToken = config('services.mapbox.token');
 
-            return view('admin.routes.index', compact('orders', 'routeDate', 'provinces', 'filters', 'mapboxToken'));
+            return view('admin.routes.index', compact('orders', 'routeDate', 'provinces', 'filters', 'mapboxToken', 'admins', 'assignedAdminId', 'assignedAdminName', 'assignedAdminMixed'));
         })->name('routes.index');
+
+        Route::post('/routes/assign-admin', function (Request $request) {
+            $provinces = nl_provinces();
+
+            $data = $request->validate([
+                'route_date' => ['required', 'date'],
+                'province' => ['nullable', 'in:' . implode(',', $provinces)],
+                'admin_user_id' => [
+                    'nullable',
+                    Rule::exists('users', 'id')->where('is_admin', true),
+                ],
+            ]);
+
+            $adminId = $data['admin_user_id'] ?? null;
+
+            Order::query()
+                ->whereDate('route_date', $data['route_date'])
+                ->when($data['province'] ?? null, fn ($q, $province) => $q->where('province', $province))
+                ->update(['assigned_admin_id' => $adminId]);
+
+            $message = $adminId
+                ? 'Route gekoppeld aan admin.'
+                : 'Route koppeling verwijderd.';
+
+            return back()->with('toast', $message);
+        })->name('routes.assign-admin');
 
         Route::post('/routes/resequence', function (Request $request) {
             $provinces = nl_provinces();

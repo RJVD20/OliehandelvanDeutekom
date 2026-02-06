@@ -8,6 +8,8 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ContentController extends Controller
@@ -155,6 +157,32 @@ class ContentController extends Controller
 
     public function update(Request $request): RedirectResponse|JsonResponse
     {
+        $request->validate([
+            'home_hero_image' => 'nullable|image|max:4096',
+            'home_hero_image_remove' => 'nullable|boolean',
+        ]);
+
+        $currentHeroImage = Setting::get('home_hero_image', null);
+        $shouldDeleteFile = is_string($currentHeroImage)
+            && trim($currentHeroImage) !== ''
+            && ! Str::startsWith($currentHeroImage, ['http://', 'https://', '/']);
+
+        if ($request->boolean('home_hero_image_remove')) {
+            if ($shouldDeleteFile) {
+                Storage::disk('public')->delete($currentHeroImage);
+            }
+            Setting::set('home_hero_image', null);
+        }
+
+        if ($request->hasFile('home_hero_image')) {
+            if ($shouldDeleteFile) {
+                Storage::disk('public')->delete($currentHeroImage);
+            }
+
+            $path = $request->file('home_hero_image')->store('cms', 'public');
+            Setting::set('home_hero_image', $path);
+        }
+
         $data = $request->only($this->fields);
 
         foreach ($data as $key => $value) {

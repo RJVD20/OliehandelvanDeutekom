@@ -6,6 +6,7 @@
 
 @php
     use App\Models\Setting;
+    use Illuminate\Support\Str;
 
     $cmsValue = function (string $key, string $default) {
         $value = Setting::get($key, null);
@@ -18,6 +19,13 @@
     $products = $products ?? collect();
     $categories = $categories ?? collect();
     $heroImage = $heroImage ?? null;
+    $heroImageSetting = Setting::get('home_hero_image', null);
+    if (! $heroImage && is_string($heroImageSetting) && trim($heroImageSetting) !== '') {
+        $heroImageSetting = trim($heroImageSetting);
+        $heroImage = Str::startsWith($heroImageSetting, ['http://', 'https://', '/'])
+            ? $heroImageSetting
+            : asset('storage/' . $heroImageSetting);
+    }
     $fallbackProductImage = isset($products) && $products->first()?->image ? asset('storage/' . $products->first()->image) : null;
 
     $heroTitle = $cmsValue('home_hero_title', 'Bakker Brandstoffen in Den Helder');

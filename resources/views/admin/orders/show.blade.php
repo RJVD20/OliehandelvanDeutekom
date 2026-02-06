@@ -161,6 +161,20 @@
                 >
                     Reset
                 </a>
+                @if($order->route_date)
+                    @php
+                        $routeParams = ['route_date' => $order->route_date->format('Y-m-d')];
+                        if ($order->province) {
+                            $routeParams['province'] = $order->province;
+                        }
+                    @endphp
+                    <a
+                        href="{{ route('admin.routes.index', $routeParams) }}"
+                        class="w-full sm:w-auto px-5 py-3 border border-emerald-600 text-emerald-700 rounded-lg text-center font-semibold hover:bg-emerald-50"
+                    >
+                        Ga naar route
+                    </a>
+                @endif
             </div>
         </form>
     </div>

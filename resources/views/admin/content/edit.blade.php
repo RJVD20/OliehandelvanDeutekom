@@ -3,6 +3,19 @@
 @section('title', 'CMS teksten')
 
 @section('content')
+@php
+    use App\Models\Setting;
+    use Illuminate\Support\Str;
+
+    $homeHeroImageValue = Setting::get('home_hero_image');
+    $homeHeroImageUrl = null;
+    if (is_string($homeHeroImageValue) && trim($homeHeroImageValue) !== '') {
+        $homeHeroImageValue = trim($homeHeroImageValue);
+        $homeHeroImageUrl = Str::startsWith($homeHeroImageValue, ['http://', 'https://', '/'])
+            ? $homeHeroImageValue
+            : asset('storage/' . $homeHeroImageValue);
+    }
+@endphp
 <div class="flex flex-col lg:flex-row gap-6">
     <aside class="w-full lg:w-[420px] xl:w-[460px] shrink-0">
         <div class="bg-white rounded-2xl shadow-sm border overflow-hidden sticky top-6">
@@ -26,7 +39,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('admin.content.update') }}" id="content-form" class="p-4 space-y-6">
+            <form method="POST" action="{{ route('admin.content.update') }}" id="content-form" class="p-4 space-y-6" enctype="multipart/form-data">
                 @csrf
 
                 <section class="space-y-4" data-section-panel="home">
@@ -39,6 +52,25 @@
             <div>
                 <label class="text-sm font-medium">Hero intro</label>
                 <textarea name="home_hero_intro" rows="3" class="w-full rounded-lg border px-3 py-2">{{ $values['home_hero_intro'] ?? '' }}</textarea>
+            </div>
+            <div>
+                <label class="text-sm font-medium">Hero afbeelding</label>
+                <input
+                    type="file"
+                    name="home_hero_image"
+                    accept="image/*"
+                    class="block w-full text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:bg-gray-900 file:text-white file:font-semibold hover:file:bg-gray-800 border border-gray-300 rounded-lg"
+                >
+                @if($homeHeroImageUrl)
+                    <div class="mt-2 flex items-center gap-3">
+                        <img src="{{ $homeHeroImageUrl }}" alt="Hero" class="h-16 w-28 rounded-md object-cover border">
+                        <label class="inline-flex items-center gap-2 text-xs text-gray-600">
+                            <input type="checkbox" name="home_hero_image_remove" value="1" class="rounded">
+                            Verwijder huidige afbeelding
+                        </label>
+                    </div>
+                @endif
+                <p class="mt-1 text-xs text-gray-500">Als je niets kiest, blijft de huidige afbeelding staan.</p>
             </div>
             <div>
                 <label class="text-sm font-medium">Hero knoptekst</label>

@@ -58,6 +58,41 @@
     </form>
 </div>
 
+<div class="bg-white rounded shadow p-4 mb-6">
+    <form method="POST" action="{{ route('admin.routes.assign-admin') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        @csrf
+        <input type="hidden" name="route_date" value="{{ $filters['route_date'] ?? $routeDate }}">
+        <input type="hidden" name="province" value="{{ $filters['province'] ?? '' }}">
+
+        <div class="space-y-1 md:col-span-2">
+            <label class="block text-sm text-gray-600">Koppel route aan een chauffeur</label>
+            <select name="admin_user_id" class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base">
+                <option value="">Geen toewijzing</option>
+                @foreach($admins as $admin)
+                    <option value="{{ $admin->id }}" @selected($assignedAdminId === $admin->id)>
+                        {{ $admin->name }} ({{ $admin->email }})
+                    </option>
+                @endforeach
+            </select>
+            <div class="text-xs text-gray-500 mt-1">
+                @if($assignedAdminMixed)
+                    Huidig: meerdere admins
+                @elseif($assignedAdminName)
+                    Huidig: {{ $assignedAdminName }}
+                @else
+                    Huidig: geen
+                @endif
+            </div>
+        </div>
+
+        <div class="md:col-span-1 flex md:items-center">
+            <button class="w-full md:w-auto px-4 py-3 bg-green-600 text-white rounded-lg font-semibold" type="submit">
+                Koppel route
+            </button>
+        </div>
+    </form>
+</div>
+
 @if($orders->isEmpty())
     <div class="bg-white border rounded p-6 text-gray-600">Geen stops gevonden voor deze datum/provincie.</div>
 @else
