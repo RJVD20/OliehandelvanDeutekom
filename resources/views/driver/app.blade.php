@@ -24,13 +24,25 @@
                     <p class="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Route datum</p>
                     <p class="text-lg font-semibold">{{ \Carbon\Carbon::parse($routeDate)->translatedFormat('D d M Y') }}</p>
                 </div>
-                <form method="GET" action="{{ route('driver.app') }}" class="flex items-center gap-2">
+                <form method="GET" action="{{ route('driver.app') }}" class="flex flex-wrap items-center gap-2">
                     <input
                         type="date"
                         name="route_date"
                         value="{{ $routeDate }}"
                         class="driver-date rounded-lg border border-[color:var(--app-border)] px-3 py-2 text-sm [color-scheme:dark]"
                     >
+                    @if($driverRoutes->isNotEmpty())
+                        <select
+                            name="route_id"
+                            class="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-card-2)] px-3 py-2 text-sm text-white"
+                        >
+                            @foreach($driverRoutes as $route)
+                                <option value="{{ $route->id }}" @selected($selectedRoute?->id === $route->id)>
+                                    {{ $route->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
                     <button class="px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-semibold">Ga</button>
                 </form>
             </div>
@@ -58,7 +70,7 @@
                     Start route in Google Maps
                 </a>
                 <a
-                    href="{{ route('admin.routes.index', ['route_date' => $routeDate]) }}"
+                    href="{{ route('admin.routes.index', ['route_date' => $routeDate, 'route_id' => $selectedRoute?->id]) }}"
                     class="inline-flex items-center justify-center rounded-lg border border-[color:var(--app-border)] px-5 py-3 text-sm font-semibold text-white/90"
                 >
                     Routeplanning openen

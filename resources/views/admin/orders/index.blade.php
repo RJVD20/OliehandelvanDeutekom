@@ -6,13 +6,22 @@
 <h1 class="text-2xl font-bold mb-6">Bestellingen</h1>
 
 <div class="bg-white rounded shadow p-4 mb-6">
-    <form id="order-filter-form" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end" method="GET">
+    <form id="order-filter-form" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end" method="GET">
         <div class="space-y-1">
             <label class="block text-sm text-gray-600">Route datum</label>
             <input
                 type="date"
                 name="route_date"
                 value="{{ $filters['route_date'] ?? '' }}"
+                class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
+            >
+        </div>
+        <div class="space-y-1">
+            <label class="block text-sm text-gray-600">Besteldatum</label>
+            <input
+                type="date"
+                name="order_date"
+                value="{{ $filters['order_date'] ?? '' }}"
                 class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
             >
         </div>
@@ -43,7 +52,14 @@
             <span>Alleen geplande routes</span>
         </label>
 
-        <div class="md:col-span-1 flex gap-3 justify-end md:justify-start">
+        <div class="md:col-span-1 flex flex-col sm:flex-row gap-3 justify-end md:justify-start">
+            <button
+                type="button"
+                data-open-bulk
+                class="w-full md:w-auto px-4 py-3 bg-green-600 text-white rounded-lg text-center font-semibold"
+            >
+                Bulk in route
+            </button>
             <a href="{{ route('admin.orders.index') }}" class="w-full md:w-auto px-4 py-3 border rounded-lg text-center text-gray-800 font-semibold">
                 Reset
             </a>
@@ -144,6 +160,53 @@
 <div class="mt-4">{{ $orders->links() }}</div>
 @endsection
 
+<div id="bulk-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/40" data-close-bulk></div>
+    <div class="absolute inset-x-0 top-24 mx-auto w-[min(92vw,520px)] rounded-2xl bg-white shadow-xl p-5">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-semibold">Bulk naar route</h2>
+            <button type="button" class="text-gray-500" data-close-bulk>✕</button>
+        </div>
+
+        <form method="POST" action="{{ route('admin.routes.bulk-create') }}" class="space-y-4">
+            @csrf
+            <input type="hidden" name="route_date_filter" value="{{ $filters['route_date'] ?? '' }}">
+            <input type="hidden" name="order_date_filter" value="{{ $filters['order_date'] ?? '' }}">
+            <input type="hidden" name="province_filter" value="{{ $filters['province'] ?? '' }}">
+            <input type="hidden" name="only_planned_filter" value="{{ request('only_planned') ? '1' : '' }}">
+            <p class="text-xs text-gray-500">Deze bulkactie gebruikt alle bestellingen die bij de huidige filters horen, niet alleen deze pagina.</p>
+
+            <div class="space-y-1">
+                <label class="block text-sm text-gray-600">Route datum rijden</label>
+                <input
+                    type="date"
+                    name="route_date"
+                    value="{{ $filters['route_date'] ?? now()->toDateString() }}"
+                    required
+                    class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
+                >
+            </div>
+
+            <div class="space-y-1">
+                <label class="block text-sm text-gray-600">Chauffeur</label>
+                <select name="admin_user_id" class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base">
+                    <option value="">Geen toewijzing</option>
+                    @foreach($admins as $admin)
+                        <option value="{{ $admin->id }}">
+                            {{ $admin->name }} ({{ $admin->email }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="flex items-center justify-end gap-3">
+                <button type="button" data-close-bulk class="px-4 py-2 border rounded-lg text-gray-700 font-semibold">Annuleren</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold">Aanmaken</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @push('scripts')
 <script>
     // Auto-apply filters (date/province/only_planned) without a submit button
@@ -160,6 +223,19 @@
                 if (e.target.tagName === 'INPUT') submitForm();
             });
         });
+    })();
+
+    (function() {
+        const modal = document.getElementById('bulk-modal');
+        if (!modal) return;
+        const openBtn = document.querySelector('[data-open-bulk]');
+        const closeBtns = modal.querySelectorAll('[data-close-bulk]');
+
+        const open = () => modal.classList.remove('hidden');
+        const close = () => modal.classList.add('hidden');
+
+        if (openBtn) openBtn.addEventListener('click', open);
+        closeBtns.forEach(btn => btn.addEventListener('click', close));
     })();
 </script>
 @endpush

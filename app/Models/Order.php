@@ -23,6 +23,10 @@ class Order extends Model
         'route_stop_minutes',
         'route_notes',
         'assigned_admin_id',
+        'delivery_route_id',
+        'geo_lat',
+        'geo_lng',
+        'geo_address_hash',
     ];
 
     protected $casts = [
@@ -64,5 +68,10 @@ public function index()
     public function assignedAdmin()
     {
         return $this->belongsTo(User::class, 'assigned_admin_id');
+    }
+
+    public function deliveryRoute()
+    {
+        return $this->belongsTo(DeliveryRoute::class, 'delivery_route_id');
     }
 }

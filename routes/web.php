@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Http;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,6 +60,7 @@ use App\Models\Order;
 use App\Models\Setting;
 use App\Models\Payment;
 use App\Models\User;
+use App\Models\DeliveryRoute;
 use App\Enums\PaymentStatus;
 use App\Services\Payments\PaymentService;
 use App\Http\Controllers\Admin\ContentController;
@@ -106,13 +108,28 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/app', function (Request $request) {
         $routeDate = $request->input('route_date', now()->toDateString());
 
-        $orders = Order::query()
+        $driverRoutes = DeliveryRoute::query()
             ->whereDate('route_date', $routeDate)
-            ->where('assigned_admin_id', auth()->id())
-            ->orderByRaw('route_sequence IS NULL')
-            ->orderBy('route_sequence')
-            ->orderBy('id')
+            ->where('admin_id', auth()->id())
+            ->orderBy('name')
             ->get();
+
+        $selectedRoute = null;
+        if ($request->filled('route_id')) {
+            $selectedRoute = $driverRoutes->firstWhere('id', (int) $request->input('route_id'));
+        }
+        if (! $selectedRoute) {
+            $selectedRoute = $driverRoutes->first();
+        }
+
+        $orders = $selectedRoute
+            ? Order::query()
+                ->where('delivery_route_id', $selectedRoute->id)
+                ->orderByRaw('route_sequence IS NULL')
+                ->orderBy('route_sequence')
+                ->orderBy('id')
+                ->get()
+            : collect();
 
         $routeMapUrl = null;
         if ($orders->count() >= 1) {
@@ -134,11 +151,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
             }
         }
 
-        return view('driver.app', compact('orders', 'routeDate', 'routeMapUrl'));
+        return view('driver.app', compact('orders', 'routeDate', 'routeMapUrl', 'driverRoutes', 'selectedRoute'));
     })->name('driver.app');
 
     Route::post('/app/orders/{order}/complete', function (Order $order) {
-        abort_unless((int) $order->assigned_admin_id === (int) auth()->id(), 403);
+        $assignedAdminId = $order->deliveryRoute?->admin_id;
+        abort_unless((int) $assignedAdminId === (int) auth()->id(), 403);
 
         $order->update(['status' => 'completed']);
 
@@ -527,12 +545,14 @@ Route::middleware(['auth', 'admin'])
             $filters = $request->validate([
                 'province'     => ['nullable', 'in:' . implode(',', $provinces)],
                 'route_date'   => ['nullable', 'date'],
+                'order_date'   => ['nullable', 'date'],
                 'only_planned' => ['nullable', 'boolean'],
             ]);
 
             $orders = Order::query()
                 ->when($filters['province'] ?? null, fn ($q, $province) => $q->where('province', $province))
                 ->when($filters['route_date'] ?? null, fn ($q, $routeDate) => $q->whereDate('route_date', $routeDate))
+                ->when($filters['order_date'] ?? null, fn ($q, $orderDate) => $q->whereDate('created_at', $orderDate))
                 ->when($request->boolean('only_planned'), fn ($q) => $q->whereNotNull('route_date'))
                 ->orderByRaw('route_date IS NULL')
                 ->orderBy('route_date')
@@ -542,12 +562,21 @@ Route::middleware(['auth', 'admin'])
                 ->paginate(20)
                 ->withQueryString();
 
-            return view('admin.orders.index', compact('orders', 'provinces', 'filters'));
+            $admins = User::where('is_admin', true)->orderBy('name')->get();
+
+            return view('admin.orders.index', compact('orders', 'provinces', 'filters', 'admins'));
         })->name('orders.index');
 
         Route::get('/orders/{order}', function (Order $order) {
             $provinces = nl_provinces();
-            return view('admin.orders.show', compact('order', 'provinces'));
+            $routeDate = $order->route_date?->toDateString() ?? now()->toDateString();
+
+            $deliveryRoutes = DeliveryRoute::query()
+                ->whereDate('route_date', $routeDate)
+                ->orderBy('name')
+                ->get();
+
+            return view('admin.orders.show', compact('order', 'provinces', 'deliveryRoutes'));
         })->name('orders.show');
 
         Route::patch('/orders/{order}/plan', function (Request $request, Order $order) {
@@ -557,7 +586,20 @@ Route::middleware(['auth', 'admin'])
                 'province'       => ['nullable', 'in:' . implode(',', $provinces)],
                 'route_date'     => ['nullable', 'date'],
                 'route_sequence' => ['nullable', 'integer', 'min:1', 'max:65535'],
+                'delivery_route_id' => ['nullable', 'exists:delivery_routes,id'],
             ]);
+
+            if (! empty($data['delivery_route_id'])) {
+                $route = DeliveryRoute::find($data['delivery_route_id']);
+                if ($route) {
+                    $data['route_date'] = $route->route_date->toDateString();
+                    if (! empty($route->province)) {
+                        $data['province'] = $route->province;
+                    }
+                }
+            } else {
+                $data['delivery_route_id'] = null;
+            }
 
             $order->update($data);
 
@@ -579,63 +621,233 @@ Route::middleware(['auth', 'admin'])
             $filters = $request->validate([
                 'route_date' => ['nullable', 'date'],
                 'province'   => ['nullable', 'in:' . implode(',', $provinces)],
+                'route_id'   => ['nullable', 'exists:delivery_routes,id'],
             ]);
 
             $routeDate = $filters['route_date'] ?? now()->toDateString();
 
-            $orders = Order::query()
+            $routes = DeliveryRoute::query()
                 ->whereDate('route_date', $routeDate)
                 ->when($filters['province'] ?? null, fn ($q, $province) => $q->where('province', $province))
-                ->orderByRaw('route_sequence IS NULL')
-                ->orderBy('route_sequence')
-                ->orderBy('id')
+                ->orderBy('name')
                 ->get();
 
+            $selectedRoute = null;
+            if (! empty($filters['route_id'])) {
+                $selectedRoute = $routes->firstWhere('id', (int) $filters['route_id']);
+            }
+            if (! $selectedRoute) {
+                $selectedRoute = $routes->first();
+            }
+
+            $orders = $selectedRoute
+                ? Order::query()
+                    ->where('delivery_route_id', $selectedRoute->id)
+                    ->orderByRaw('route_sequence IS NULL')
+                    ->orderBy('route_sequence')
+                    ->orderBy('id')
+                    ->get()
+                : collect();
+
             $admins = User::where('is_admin', true)->orderBy('name')->get();
-            $uniqueAssigned = $orders->pluck('assigned_admin_id')->filter()->unique()->values();
-            $assignedAdminMixed = $uniqueAssigned->count() > 1;
-            $assignedAdminId = $uniqueAssigned->count() === 1 ? $uniqueAssigned->first() : null;
+            $assignedAdminId = $selectedRoute?->admin_id;
             $assignedAdminName = $assignedAdminId
                 ? optional($admins->firstWhere('id', $assignedAdminId))->name
                 : null;
 
             $mapboxToken = config('services.mapbox.token');
 
-            return view('admin.routes.index', compact('orders', 'routeDate', 'provinces', 'filters', 'mapboxToken', 'admins', 'assignedAdminId', 'assignedAdminName', 'assignedAdminMixed'));
+            return view('admin.routes.index', compact('routes', 'selectedRoute', 'orders', 'routeDate', 'provinces', 'filters', 'mapboxToken', 'admins', 'assignedAdminId', 'assignedAdminName'));
         })->name('routes.index');
 
-        Route::post('/routes/assign-admin', function (Request $request) {
+        Route::post('/routes', function (Request $request) {
             $provinces = nl_provinces();
 
             $data = $request->validate([
-                'route_date' => ['required', 'date'],
-                'province' => ['nullable', 'in:' . implode(',', $provinces)],
+                'route_date'   => ['required', 'date'],
+                'name'         => ['required', 'string', 'max:255'],
+                'province'     => ['nullable', 'in:' . implode(',', $provinces)],
                 'admin_user_id' => [
                     'nullable',
                     Rule::exists('users', 'id')->where('is_admin', true),
                 ],
             ]);
 
+            $route = DeliveryRoute::create([
+                'route_date' => $data['route_date'],
+                'name' => $data['name'],
+                'province' => $data['province'] ?? null,
+                'admin_id' => $data['admin_user_id'] ?? null,
+            ]);
+
+            return redirect()->route('admin.routes.index', [
+                'route_date' => $route->route_date->toDateString(),
+                'province' => $route->province,
+                'route_id' => $route->id,
+            ])->with('toast', 'Route aangemaakt.');
+        })->name('routes.store');
+
+        Route::post('/routes/bulk-create', function (Request $request) {
+            $provinces = nl_provinces();
+
+            $data = $request->validate([
+                'route_date'         => ['required', 'date'],
+                'admin_user_id'      => ['nullable', Rule::exists('users', 'id')->where('is_admin', true)],
+                'route_date_filter'  => ['nullable', 'date'],
+                'order_date_filter'  => ['nullable', 'date'],
+                'province_filter'    => ['nullable', 'in:' . implode(',', $provinces)],
+                'only_planned_filter' => ['nullable', 'boolean'],
+            ]);
+
+            $ordersQuery = Order::query()
+                ->when($data['province_filter'] ?? null, fn ($q, $province) => $q->where('province', $province))
+                ->when($data['route_date_filter'] ?? null, fn ($q, $routeDate) => $q->whereDate('route_date', $routeDate))
+                ->when($data['order_date_filter'] ?? null, fn ($q, $orderDate) => $q->whereDate('created_at', $orderDate))
+                ->when(!empty($data['only_planned_filter']), fn ($q) => $q->whereNotNull('route_date'));
+
+            $orders = $ordersQuery->get();
+
+            if ($orders->isEmpty()) {
+                return back()->with('toast', 'Geen bestellingen gevonden voor bulk route.');
+            }
+
+            $route = DeliveryRoute::create([
+                'route_date' => $data['route_date'],
+                'name' => 'Bulk ' . \Carbon\Carbon::parse($data['route_date'])->format('d-m-Y'),
+                'province' => $data['province_filter'] ?? null,
+                'admin_id' => $data['admin_user_id'] ?? null,
+            ]);
+
+            $mapboxToken = config('services.mapbox.token');
+            $coords = [];
+            $coordOrderIds = [];
+            $addressHashById = [];
+
+            foreach ($orders as $order) {
+                $addressKey = trim($order->address . '|' . $order->postcode . '|' . $order->city . '|' . ($order->province ?? ''));
+                $addressHash = hash('sha256', strtolower($addressKey));
+                $addressHashById[$order->id] = $addressHash;
+
+                if ($order->geo_lat && $order->geo_lng && $order->geo_address_hash === $addressHash) {
+                    $coords[] = [$order->geo_lng, $order->geo_lat];
+                    $coordOrderIds[] = $order->id;
+                    continue;
+                }
+
+                $query = trim($order->address . ', ' . $order->postcode . ' ' . $order->city . ', ' . ($order->province ?? 'Nederland'));
+                $geoUrl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' . urlencode($query) . '.json';
+                $geoResponse = Http::get($geoUrl, [
+                    'access_token' => $mapboxToken,
+                    'limit' => 1,
+                    'country' => 'nl',
+                    'language' => 'nl',
+                ]);
+
+                if ($geoResponse->ok() && !empty($geoResponse->json('features.0.center'))) {
+                    $center = $geoResponse->json('features.0.center');
+                    $lon = $center[0] ?? null;
+                    $lat = $center[1] ?? null;
+
+                    if ($lon !== null && $lat !== null) {
+                        $order->update([
+                            'geo_lat' => $lat,
+                            'geo_lng' => $lon,
+                            'geo_address_hash' => $addressHash,
+                        ]);
+
+                        $coords[] = [$lon, $lat];
+                        $coordOrderIds[] = $order->id;
+                        continue;
+                    }
+                }
+            }
+
+            $orderedIds = [];
+            $maxOptimizable = 25;
+
+            if ($mapboxToken && count($coords) >= 2 && count($coords) <= $maxOptimizable) {
+                $coordPairs = collect($coords)
+                    ->map(fn ($c) => $c[0] . ',' . $c[1])
+                    ->implode(';');
+
+                $optUrl = 'https://api.mapbox.com/optimized-trips/v1/mapbox/driving/' . $coordPairs;
+                $optResponse = Http::get($optUrl, [
+                    'access_token' => $mapboxToken,
+                    'roundtrip' => 'false',
+                    'source' => 'first',
+                    'destination' => 'last',
+                ]);
+
+                if ($optResponse->ok() && !empty($optResponse->json('waypoints'))) {
+                    $waypoints = $optResponse->json('waypoints');
+                    $indexed = collect($waypoints)
+                        ->sortBy('waypoint_index')
+                        ->pluck('waypoint_index', 'location_index');
+
+                    $orderedIds = collect($coordOrderIds)
+                        ->mapWithKeys(fn ($id, $idx) => [$idx => $id])
+                        ->sortBy(fn ($id, $idx) => $indexed[$idx] ?? $idx)
+                        ->values()
+                        ->all();
+                }
+            }
+
+            if (empty($orderedIds)) {
+                $orderedIds = $orders->sortBy([
+                    fn ($o) => $o->postcode ?? '',
+                    fn ($o) => $o->address ?? '',
+                    fn ($o) => $o->city ?? '',
+                ])->pluck('id')->values()->all();
+            }
+
+            foreach ($orderedIds as $index => $orderId) {
+                $order = Order::find($orderId);
+                if (! $order) {
+                    continue;
+                }
+                Order::where('id', $orderId)->update([
+                    'delivery_route_id' => $route->id,
+                    'assigned_admin_id' => $route->admin_id,
+                    'route_date' => $route->route_date,
+                    'province' => $route->province ?? $order->province,
+                    'route_sequence' => $index + 1,
+                ]);
+            }
+
+            return redirect()->route('admin.routes.index', [
+                'route_date' => $route->route_date->toDateString(),
+                'province' => $route->province,
+                'route_id' => $route->id,
+            ])->with('toast', 'Bulk route aangemaakt en gesorteerd.');
+        })->name('routes.bulk-create');
+
+        Route::post('/routes/assign-admin', function (Request $request) {
+            $data = $request->validate([
+                'route_id' => ['required', 'exists:delivery_routes,id'],
+                'admin_user_id' => [
+                    'nullable',
+                    Rule::exists('users', 'id')->where('is_admin', true),
+                ],
+            ]);
+
+            $route = DeliveryRoute::findOrFail($data['route_id']);
             $adminId = $data['admin_user_id'] ?? null;
 
-            Order::query()
-                ->whereDate('route_date', $data['route_date'])
-                ->when($data['province'] ?? null, fn ($q, $province) => $q->where('province', $province))
+            $route->update(['admin_id' => $adminId]);
+
+            Order::where('delivery_route_id', $route->id)
                 ->update(['assigned_admin_id' => $adminId]);
 
             $message = $adminId
-                ? 'Route gekoppeld aan admin.'
+                ? 'Route gekoppeld aan chauffeur.'
                 : 'Route koppeling verwijderd.';
 
             return back()->with('toast', $message);
         })->name('routes.assign-admin');
 
         Route::post('/routes/resequence', function (Request $request) {
-            $provinces = nl_provinces();
-
             $data = $request->validate([
-                'route_date'       => ['required', 'date'],
-                'province'         => ['nullable', 'in:' . implode(',', $provinces)],
+                'route_id'         => ['required', 'exists:delivery_routes,id'],
                 'order_ids'        => ['nullable', 'array'],
                 'order_ids.*'      => ['integer', 'exists:orders,id'],
             ]);
@@ -643,22 +855,18 @@ Route::middleware(['auth', 'admin'])
             $ids = $data['order_ids'] ?? [];
 
             foreach ($ids as $index => $orderId) {
-                Order::where('id', $orderId)->update([
-                    'route_date'     => $data['route_date'],
-                    'province'       => $data['province'] ?? null,
-                    'route_sequence' => $index + 1,
-                ]);
+                Order::where('id', $orderId)
+                    ->where('delivery_route_id', $data['route_id'])
+                    ->update([
+                        'route_sequence' => $index + 1,
+                    ]);
             }
 
             return back()->with('toast', 'Volgorde bijgewerkt');
         })->name('routes.resequence');
 
         Route::patch('/routes/{order}/timing', function (Request $request, Order $order) {
-            $provinces = nl_provinces();
-
             $data = $request->validate([
-                'province'             => ['nullable', 'in:' . implode(',', $provinces)],
-                'route_date'           => ['nullable', 'date'],
                 'route_sequence'       => ['nullable', 'integer', 'min:1', 'max:65535'],
                 'route_travel_minutes' => ['nullable', 'integer', 'min:0', 'max:1440'],
                 'route_stop_minutes'   => ['nullable', 'integer', 'min:0', 'max:1440'],
@@ -672,7 +880,9 @@ Route::middleware(['auth', 'admin'])
 
         Route::patch('/routes/{order}/remove', function (Order $order) {
             $order->update([
+                'delivery_route_id'    => null,
                 'route_date'           => null,
+                'province'             => null,
                 'route_sequence'       => null,
                 'route_travel_minutes' => null,
                 'route_stop_minutes'   => null,

@@ -135,6 +135,19 @@
             @method('PATCH')
 
             <div class="space-y-1">
+                <label class="block text-sm text-gray-600">Route</label>
+                <select name="delivery_route_id" class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base">
+                    <option value="">— geen route —</option>
+                    @foreach($deliveryRoutes as $route)
+                        <option value="{{ $route->id }}" @selected($order->delivery_route_id === $route->id)>
+                            {{ $route->name }} — {{ $route->route_date->format('d-m-Y') }}
+                        </option>
+                    @endforeach
+                </select>
+                <div class="text-xs text-gray-500 mt-1">Kies een route om datum/provincie automatisch te vullen.</div>
+            </div>
+
+            <div class="space-y-1">
                 <label class="block text-sm text-gray-600">Provincie</label>
                 <select name="province" class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base">
                     <option value="">— kies provincie —</option>
