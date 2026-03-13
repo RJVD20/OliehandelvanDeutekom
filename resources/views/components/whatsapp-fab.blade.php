@@ -2,6 +2,9 @@
     $rawNumber = config('contact.whatsapp_number');
     $message    = trim((string) config('contact.whatsapp_message'));
     $number     = $rawNumber ? preg_replace('/\D+/', '', $rawNumber) : null;
+    if ($number && str_starts_with($number, '0') && strlen($number) === 10) {
+        $number = '31' . substr($number, 1);
+    }
 @endphp
 
 @if ($number)

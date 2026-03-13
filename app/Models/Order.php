@@ -23,6 +23,11 @@ class Order extends Model
         'route_travel_minutes',
         'route_stop_minutes',
         'route_notes',
+        'assigned_admin_id',
+        'delivery_route_id',
+        'geo_lat',
+        'geo_lng',
+        'geo_address_hash',
     ];
 
     protected $casts = [
@@ -50,59 +55,13 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Create an order and its items from a shopping cart session array.
-     *
-     * @param  array  $cart  ['productId' => ['name', 'price', 'quantity'], ...]
-     * @param  array  $customerData  Validated customer fields (name, email, address, …)
-     */
-    public static function createFromCart(array $cart, array $customerData): self
+    public function assignedAdmin()
     {
-        $total = collect($cart)->sum(fn ($i) => $i['price'] * $i['quantity']);
-
-        $order = self::create(array_merge($customerData, [
-            'status' => OrderStatus::PENDING,
-            'total'  => $total,
-        ]));
-
-        foreach ($cart as $productId => $item) {
-            $order->items()->create([
-                'product_id'   => $productId,
-                'product_name' => $item['name'],
-                'price'        => $item['price'],
-                'quantity'     => $item['quantity'],
-            ]);
-        }
-
-        return $order;
+        return $this->belongsTo(User::class, 'assigned_admin_id');
     }
 
-    /**
-     * Duplicate this order as a new pending order (re-order).
-     */
-    public function duplicate(): self
+    public function deliveryRoute()
     {
-        $new = self::create([
-            'user_id'  => $this->user_id,
-            'status'   => OrderStatus::PENDING,
-            'total'    => $this->total,
-            'name'     => $this->name,
-            'email'    => $this->email,
-            'address'  => $this->address,
-            'postcode' => $this->postcode,
-            'city'     => $this->city,
-            'province' => $this->province,
-        ]);
-
-        foreach ($this->items as $item) {
-            $new->items()->create([
-                'product_id'   => $item->product_id,
-                'product_name' => $item->product_name,
-                'price'        => $item->price,
-                'quantity'     => $item->quantity,
-            ]);
-        }
-
-        return $new;
+        return $this->belongsTo(DeliveryRoute::class, 'delivery_route_id');
     }
 }

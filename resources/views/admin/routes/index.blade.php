@@ -28,55 +28,157 @@
 @endpush
 
 @section('content')
-<h1 class="text-2xl font-bold mb-6">Routeplanning</h1>
-
-<div class="bg-white rounded shadow p-4 mb-6">
-    <form id="route-filter-form" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end" method="GET">
-        <div class="space-y-1">
-            <label class="block text-sm text-gray-600">Route datum</label>
-            <input
-                type="date"
-                name="route_date"
-                value="{{ $filters['route_date'] ?? $routeDate }}"
-                class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
-            >
-        </div>
-        <div class="space-y-1">
-            <label class="block text-sm text-gray-600">Provincie</label>
-            <select name="province" class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base">
-                <option value="">Alle provincies</option>
-                @foreach($provinces as $province)
-                    <option value="{{ $province }}" @selected(($filters['province'] ?? '') === $province)>
-                        {{ $province }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-        <div class="md:col-span-2 flex gap-3 justify-end md:justify-start">
-            <a href="{{ route('admin.routes.index') }}" class="w-full sm:w-auto px-4 py-3 border rounded-lg text-center text-gray-800 font-semibold">Reset</a>
-        </div>
-    </form>
+<div class="mb-6">
+    <h1 class="text-2xl font-bold">Routeplanning</h1>
+    <p class="text-sm text-gray-500 mt-1">Maak routes per dag, koppel chauffeurs en beheer de stops.</p>
 </div>
 
-@if($orders->isEmpty())
-    <div class="bg-white border rounded p-6 text-gray-600">Geen stops gevonden voor deze datum/provincie.</div>
-@else
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-white rounded shadow p-4">
-        <div class="flex items-center justify-between mb-3">
-            <h2 class="font-semibold">Volgorde (sleep om te herschikken)</h2>
-            <form id="resequence-form" method="POST" action="{{ route('admin.routes.resequence') }}">
-                @csrf
-                <input type="hidden" name="route_date" value="{{ $routeDate }}">
-                <input type="hidden" name="province" value="{{ $filters['province'] ?? '' }}">
-                <div id="order-ids"></div>
-                <button class="px-3 py-2 bg-green-600 text-white rounded" type="submit">Volgorde opslaan</button>
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h2 class="text-base font-semibold">Snelacties</h2>
+            <p class="text-xs text-gray-500">Beheer filters, routes en chauffeurs vanuit popups.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <button type="button" data-open-modal="filters" class="px-4 py-2 rounded-xl border text-sm font-semibold">Filters</button>
+            <button type="button" data-open-modal="open-route" class="px-4 py-2 rounded-xl border text-sm font-semibold">Route openen</button>
+            <button type="button" data-open-modal="new-route" class="px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-semibold">Nieuwe route</button>
+            <button type="button" data-open-modal="assign-driver" class="px-4 py-2 rounded-xl border text-sm font-semibold">Chauffeur koppelen</button>
+        </div>
+    </div>
+</div>
+
+<div id="routes-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/40" data-close-modal></div>
+    <div class="absolute inset-x-0 top-20 mx-auto w-[min(92vw,720px)] rounded-2xl bg-white shadow-xl p-5">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-semibold" data-modal-title>Actie</h2>
+            <button type="button" class="text-gray-500" data-close-modal>✕</button>
+        </div>
+
+        <div data-modal-panel="filters" class="space-y-4">
+            <form id="route-filter-form" method="GET" action="{{ route('admin.routes.index') }}" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-sm text-gray-600">Route datum</label>
+                    <input type="date" name="route_date" value="{{ $filters['route_date'] ?? $routeDate }}" class="w-full rounded-xl border border-gray-300 px-3 py-3 text-base">
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm text-gray-600">Provincie</label>
+                    <select name="province" class="w-full rounded-xl border border-gray-300 px-3 py-3 text-base">
+                        <option value="">Alle provincies</option>
+                        @foreach($provinces as $province)
+                            <option value="{{ $province }}" @selected(($filters['province'] ?? '') === $province)>
+                                {{ $province }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex gap-3">
+                    <a href="{{ route('admin.routes.index') }}" class="px-4 py-2 border rounded-xl text-gray-700 font-semibold">Reset</a>
+                    <button class="px-4 py-2 bg-green-600 text-white rounded-xl font-semibold" type="submit">Toon</button>
+                </div>
             </form>
         </div>
+
+        <div data-modal-panel="open-route" class="space-y-4 hidden">
+            <form method="GET" action="{{ route('admin.routes.index') }}" class="grid grid-cols-1 sm:grid-cols-[1fr,auto] gap-3 items-end">
+                <input type="hidden" name="route_date" value="{{ $filters['route_date'] ?? $routeDate }}">
+                <input type="hidden" name="province" value="{{ $filters['province'] ?? '' }}">
+
+                <div class="space-y-1">
+                    <label class="block text-sm text-gray-600">Route</label>
+                    <select name="route_id" class="w-full rounded-xl border border-gray-300 px-3 py-3 text-base">
+                        @if($routes->isEmpty())
+                            <option value="">Geen routes gevonden</option>
+                        @else
+                            @foreach($routes as $route)
+                                <option value="{{ $route->id }}" @selected($selectedRoute?->id === $route->id)>
+                                    {{ $route->name }} — {{ $route->route_date->format('d-m-Y') }}
+                                </option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+                <button class="w-full sm:w-auto px-4 py-3 border rounded-xl text-center text-gray-800 font-semibold" type="submit">Open route</button>
+            </form>
+        </div>
+
+        <div data-modal-panel="new-route" class="space-y-4 hidden">
+            <form method="POST" action="{{ route('admin.routes.store') }}" class="grid grid-cols-1 sm:grid-cols-[1fr,1fr,auto] gap-3 items-end">
+                @csrf
+                <input type="hidden" name="route_date" value="{{ $filters['route_date'] ?? $routeDate }}">
+                <input type="hidden" name="province" value="{{ $filters['province'] ?? '' }}">
+
+                <div class="space-y-1">
+                    <label class="block text-sm text-gray-600">Nieuwe route naam</label>
+                    <input type="text" name="name" placeholder="Bijv. Route A" class="w-full rounded-xl border border-gray-300 px-3 py-3 text-base" required>
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-sm text-gray-600">Chauffeur</label>
+                    <select name="admin_user_id" class="w-full rounded-xl border border-gray-300 px-3 py-3 text-base">
+                        <option value="">Geen toewijzing</option>
+                        @foreach($admins as $admin)
+                            <option value="{{ $admin->id }}">{{ $admin->name }} ({{ $admin->email }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button class="w-full sm:w-auto px-4 py-3 bg-green-600 text-white rounded-xl font-semibold" type="submit">Route maken</button>
+            </form>
+        </div>
+
+        <div data-modal-panel="assign-driver" class="space-y-4 hidden">
+            <form method="POST" action="{{ route('admin.routes.assign-admin') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                @csrf
+                <input type="hidden" name="route_id" value="{{ $selectedRoute?->id }}">
+
+                <div class="space-y-1 md:col-span-2">
+                    <label class="block text-sm text-gray-600">Koppel route aan een chauffeur</label>
+                    <select name="admin_user_id" class="w-full rounded-xl border border-gray-300 px-3 py-3 text-base" @disabled(!$selectedRoute)>
+                        <option value="">Geen toewijzing</option>
+                        @foreach($admins as $admin)
+                            <option value="{{ $admin->id }}" @selected($assignedAdminId === $admin->id)>
+                                {{ $admin->name }} ({{ $admin->email }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="text-xs text-gray-500 mt-1">
+                        @if($assignedAdminName)
+                            Huidig: {{ $assignedAdminName }}
+                        @else
+                            Huidig: geen
+                        @endif
+                    </div>
+                </div>
+
+                <div class="md:col-span-1 flex md:items-center">
+                    <button class="w-full md:w-auto px-4 py-3 bg-green-600 text-white rounded-xl font-semibold" type="submit" @disabled(!$selectedRoute)>Koppel route</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@if(!$selectedRoute)
+    <div class="bg-white border border-dashed rounded-2xl p-6 text-gray-600">Maak of selecteer eerst een route.</div>
+@elseif($orders->isEmpty())
+    <div class="bg-white border border-dashed rounded-2xl p-6 text-gray-600">Geen stops gevonden voor deze route.</div>
+@else
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="font-semibold">Volgorde</h2>
+            <form id="resequence-form" method="POST" action="{{ route('admin.routes.resequence') }}">
+                @csrf
+                <input type="hidden" name="route_id" value="{{ $selectedRoute?->id }}">
+                <div id="order-ids"></div>
+                <button class="px-3 py-2 bg-green-600 text-white rounded-lg text-xs font-semibold" type="submit">Volgorde opslaan</button>
+            </form>
+        </div>
+        <p class="text-xs text-gray-500 mb-3">Sleep stops om de volgorde te bepalen.</p>
         <ul id="route-list" class="space-y-3">
             @foreach($orders as $order)
                 <li
-                    class="border rounded p-3 bg-gray-50 flex items-start gap-3"
+                    class="border border-gray-200 rounded-xl p-3 bg-gray-50 flex items-start gap-3"
                     data-order-id="{{ $order->id }}"
                     draggable="true"
                 >
@@ -94,7 +196,7 @@
         </ul>
     </div>
 
-    <div class="bg-white rounded shadow p-4">
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div class="flex items-center justify-between mb-3">
             <h2 class="font-semibold">Kaart</h2>
             <span class="text-xs text-gray-600">Marker nummers volgen de volgorde</span>
@@ -103,7 +205,7 @@
     </div>
 </div>
 
-<div class="bg-white rounded shadow p-4 mt-6">
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mt-6">
     @php
         $totalTravel = $orders->sum('route_travel_minutes');
         $totalStop   = $orders->sum('route_stop_minutes');
@@ -112,7 +214,7 @@
 
     <div class="flex items-center justify-between mb-4">
         <h2 class="font-semibold">Tijden en notities</h2>
-        <div class="text-sm text-gray-700 bg-gray-100 px-3 py-1 rounded">
+        <div class="text-sm text-gray-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
             Totale route: {{ $totalRoute ?: 0 }} min
             @if($totalRoute)
                 (≈ {{ floor($totalRoute / 60) }}u {{ $totalRoute % 60 }}m)
@@ -142,8 +244,6 @@
                                 <form method="POST" action="{{ route('admin.routes.timing', $order) }}" class="space-y-2">
                                     @csrf
                                     @method('PATCH')
-                                    <input type="hidden" name="route_date" value="{{ $routeDate }}">
-                                    <input type="hidden" name="province" value="{{ $filters['province'] ?? '' }}">
 
                                     <input
                                         type="number"
@@ -208,8 +308,6 @@
                     <form method="POST" action="{{ route('admin.routes.timing', $order) }}" class="mt-3 space-y-3">
                         @csrf
                         @method('PATCH')
-                        <input type="hidden" name="route_date" value="{{ $routeDate }}">
-                        <input type="hidden" name="province" value="{{ $filters['province'] ?? '' }}">
 
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <label class="space-y-1 text-sm text-gray-700">
@@ -249,6 +347,37 @@
 @push('scripts')
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
 <script>
+    (function() {
+        const modal = document.getElementById('routes-modal');
+        if (!modal) return;
+        const openButtons = document.querySelectorAll('[data-open-modal]');
+        const closeButtons = modal.querySelectorAll('[data-close-modal]');
+        const panels = modal.querySelectorAll('[data-modal-panel]');
+        const title = modal.querySelector('[data-modal-title]');
+
+        const titles = {
+            filters: 'Filters',
+            'open-route': 'Route openen',
+            'new-route': 'Nieuwe route',
+            'assign-driver': 'Chauffeur koppelen',
+        };
+
+        const openModal = (key) => {
+            panels.forEach(panel => panel.classList.add('hidden'));
+            const panel = modal.querySelector(`[data-modal-panel="${key}"]`);
+            if (panel) panel.classList.remove('hidden');
+            if (title) title.textContent = titles[key] || 'Actie';
+            modal.classList.remove('hidden');
+        };
+
+        const closeModal = () => modal.classList.add('hidden');
+
+        openButtons.forEach(btn => {
+            btn.addEventListener('click', () => openModal(btn.getAttribute('data-open-modal')));
+        });
+
+        closeButtons.forEach(btn => btn.addEventListener('click', closeModal));
+    })();
     (function() {
         const list = document.getElementById('route-list');
         if (!list) return;
