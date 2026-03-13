@@ -3,24 +3,25 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Product;
+use App\Http\Requests\Admin\ProductRequest;
 use App\Models\Category;
 use App\Models\Order;
-use Illuminate\Http\Request;
+use App\Models\Product;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-public function index()
-{
-    return view('admin.products.index', [
-        'products'         => Product::latest()->paginate(20),
-        'totalProducts'    => Product::count(),
-        'activeProducts'   => Product::where('active', true)->count(),
-        'inactiveProducts' => Product::where('active', false)->count(),
-        'totalOrders'      => Order::count(),
-    ]);
-}
-
+    public function index()
+    {
+        return view('admin.products.index', [
+            'products'         => Product::latest()->paginate(20),
+            'totalProducts'    => Product::count(),
+            'activeProducts'   => Product::where('active', true)->count(),
+            'inactiveProducts' => Product::where('active', false)->count(),
+            'totalOrders'      => Order::count(),
+        ]);
+    }
 
     public function create()
     {
@@ -28,27 +29,17 @@ public function index()
         return view('admin.products.create', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(ProductRequest $request)
     {
-$data = $request->validate([
-    'name'        => 'required|string|max:255',
-    'price'       => 'required|numeric',
-    'category_id' => 'required|exists:categories,id',
-    'type'        => 'nullable|string|max:100',
-    'description' => 'nullable|string',
-    'image'       => 'nullable|image|max:2048',
-    'active'      => 'sometimes|boolean',
-]);
+        $data = $request->validated();
+        $data['slug']   = Str::slug($data['name']);
+        $data['active'] = $request->boolean('active');
 
-$data['slug']   = \Str::slug($data['name']);
-$data['active'] = $request->boolean('active');
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
 
-if ($request->hasFile('image')) {
-    $data['image'] = $request->file('image')->store('products', 'public');
-}
-
-Product::create($data);
-
+        Product::create($data);
 
         return redirect()
             ->route('admin.products.index')
@@ -61,25 +52,18 @@ Product::create($data);
         return view('admin.products.edit', compact('product', 'categories'));
     }
 
-    public function update(Request $request, Product $product)
+    public function update(ProductRequest $request, Product $product)
     {
-        $data = $request->validate([
-            'name'        => 'required|string|max:255',
-            'price'       => 'required|numeric',
-            'category_id' => 'required|exists:categories,id',
-            'type'        => 'nullable|string|max:100',
-            'description' => 'nullable|string',
-            'image'       => 'nullable|image|max:2048',
-            'active'      => 'sometimes|boolean',
-        ]);
-
-        $data['slug']   = \Str::slug($data['name']);
+        $data = $request->validated();
+        $data['slug']   = Str::slug($data['name']);
         $data['active'] = $request->boolean('active');
 
         if ($request->hasFile('image')) {
-        $data['image'] = $request->file('image')->store('products', 'public');
-}
-
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $data['image'] = $request->file('image')->store('products', 'public');
+        }
 
         $product->update($data);
 
@@ -88,35 +72,32 @@ Product::create($data);
             ->with('toast', 'Product bijgewerkt');
     }
 
-
     public function destroy(Product $product)
-{
-    $product->delete();
+    {
+        $product->delete();
 
-    return redirect()
-        ->route('admin.products.index')
-        ->with('toast', 'Product verwijderd');
-}
+        return redirect()
+            ->route('admin.products.index')
+            ->with('toast', 'Product verwijderd');
+    }
 
-public function toggleActive(Product $product)
-{
-    $product->active = ! (bool) $product->active;
-    $product->save();
+    public function toggleActive(Product $product)
+    {
+        $product->active = ! (bool) $product->active;
+        $product->save();
 
-    return response()->json([
-        'active' => $product->active
-    ]);
-}
+        return response()->json([
+            'active' => $product->active,
+        ]);
+    }
 
-public function toggleFeatured(Product $product)
-{
-    $product->featured = ! (bool) $product->featured;
-    $product->save();
+    public function toggleFeatured(Product $product)
+    {
+        $product->featured = ! (bool) $product->featured;
+        $product->save();
 
-    return response()->json([
-        'featured' => $product->featured
-    ]);
-}
-
-
+        return response()->json([
+            'featured' => $product->featured,
+        ]);
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Payment;
 
@@ -31,6 +32,7 @@ class Order extends Model
 
     protected $casts = [
         'route_date' => 'date',
+        'status'     => OrderStatus::class,
     ];
 
     public function items()
@@ -47,18 +49,6 @@ class Order extends Model
     {
         return $this->hasOne(Payment::class)->latestOfMany();
     }
-
-
-public function index()
-{
-    return view('admin.products.index', [
-        'products'         => Product::latest()->paginate(20),
-        'totalProducts'    => Product::count(),
-        'activeProducts'   => Product::where('active', true)->count(),
-        'inactiveProducts' => Product::where('active', false)->count(),
-        'totalOrders'      => Order::count(),
-    ]);
-}
 
     public function user()
     {

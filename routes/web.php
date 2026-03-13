@@ -301,7 +301,7 @@ Route::get('/winkelmand', function () {
 
 Route::post('/winkelmand/toevoegen/{id}', function ($id) {
 
-    $product = Product::findOrFail($id);
+    $product = Product::where('active', true)->findOrFail($id);
     $cart = session()->get('cart', []);
 
     if (isset($cart[$id])) {
@@ -374,34 +374,21 @@ Route::post('/checkout', function (Request $request) {
     $cart = session('cart', []);
     abort_if(empty($cart), 400);
 
-    $total = collect($cart)->sum(fn ($i) => $i['price'] * $i['quantity']);
-
-    $order = Order::create([
-        'user_id' => auth()->id(),
-        'status'  => 'pending',
-        'total'   => $total,
-        'name'    => $request->name,
-        'email'   => $request->email,
-        'address' => $request->address,
-        'postcode'=> $postcode,
-        'city'    => $request->city,
-        'province'=> $request->province,
+    $order = Order::createFromCart($cart, [
+        'user_id'  => auth()->id(),
+        'name'     => $request->name,
+        'email'    => $request->email,
+        'address'  => $request->address,
+        'postcode' => $postcode,
+        'city'     => $request->city,
+        'province' => $request->province,
     ]);
-
-    foreach ($cart as $productId => $item) {
-        $order->items()->create([
-            'product_id'   => $productId,
-            'product_name' => $item['name'],
-            'price'        => $item['price'],
-            'quantity'     => $item['quantity'],
-        ]);
-    }
 
     $payment = Payment::create([
         'order_id'           => $order->id,
         'provider'           => config('payments.provider', 'mock'),
         'status'             => PaymentStatus::OPEN,
-        'amount'             => $total,
+        'amount'             => $order->total,
         'currency'           => 'EUR',
         'due_date'           => now()->addDays(14),
         'reminder_count'     => 0,
@@ -454,26 +441,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/account/bestellingen/{order}/reorder', function (Order $order) {
         abort_unless($order->user_id === auth()->id(), 403);
 
-        $new = Order::create([
-            'user_id' => auth()->id(),
-            'status'  => 'pending',
-            'total'   => $order->total,
-            'name'    => $order->name,
-            'email'   => $order->email,
-            'address' => $order->address,
-            'postcode'=> $order->postcode,
-            'city'    => $order->city,
-            'province'=> $order->province,
-        ]);
-
-        foreach ($order->items as $item) {
-            $new->items()->create([
-                'product_id'   => $item->product_id,
-                'product_name' => $item->product_name,
-                'price'        => $item->price,
-                'quantity'     => $item->quantity,
-            ]);
-        }
+        $new = $order->duplicate();
 
         Mail::to($new->email)->send(new OrderConfirmationMail($new));
 
@@ -607,7 +575,7 @@ Route::middleware(['auth', 'admin'])
         })->name('orders.plan');
 
         Route::post('/orders/{order}/ship', function (Order $order) {
-            $order->update(['status' => 'shipped']);
+            $order->update(['status' => OrderStatus::SHIPPED]);
 
             Mail::to($order->email)->send(new OrderShippedMail($order));
 
