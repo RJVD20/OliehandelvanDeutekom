@@ -18,10 +18,12 @@ class PostcodeLookupController extends Controller
         $postcode   = strtoupper(str_replace(' ', '', $request->postcode));
         $huisnummer = $request->huisnummer;
 
-        $response = Http::timeout(5)->get('https://postcode.tech/api/v1/postcode/full', [
-            'postcode' => $postcode,
-            'number'   => $huisnummer,
-        ]);
+        $response = Http::timeout(5)
+            ->withToken(config('services.postcode_tech.key'))
+            ->get('https://postcode.tech/api/v1/postcode/full', [
+                'postcode' => $postcode,
+                'number'   => $huisnummer,
+            ]);
 
         if (! $response->successful() || empty($response->json('street'))) {
             return response()->json(['message' => 'Postcode niet gevonden'], 422);
