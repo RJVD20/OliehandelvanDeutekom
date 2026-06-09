@@ -81,7 +81,7 @@
             type="file"
             name="image"
             accept="image/*"
-            class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
+            class="block w-full text-sm text-gray-600 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:bg-gray-900 file:text-white file:font-semibold hover:file:bg-gray-800 border border-gray-300 rounded-lg"
         >
 
         @if($product->image)

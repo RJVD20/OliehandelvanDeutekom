@@ -1,0 +1,17 @@
+title: Page
+sections:
+  main:
+    display: Tekst
+    fields:
+      - handle: title
+        field:
+          type: text
+          display: Titel
+          instructions: Paginatitel
+          validate:
+            - required
+      - handle: content
+        field:
+          type: textarea
+          display: Inhoud
+          instructions: Pagina-inhoud (alleen tekst)

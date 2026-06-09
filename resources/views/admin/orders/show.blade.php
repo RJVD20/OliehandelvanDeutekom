@@ -4,29 +4,35 @@
 
 @section('content')
 
-<h1 class="text-2xl font-bold mb-6">
-    Bestelling #{{ $order->id }}
-</h1>
-
-<div class="mb-4">
-    <span class="px-3 py-1 rounded text-sm
-        @if($order->status === 'pending') bg-yellow-100 text-yellow-700
-        @elseif($order->status === 'shipped') bg-blue-100 text-blue-700
-        @elseif($order->status === 'completed') bg-green-100 text-green-700
-        @endif
-    ">
-        Status: {{ ucfirst($order->status) }}
-    </span>
+<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-bold">Bestelling #{{ $order->id }}</h1>
+        <p class="text-sm text-gray-500 mt-1">Aangemaakt op {{ $order->created_at->format('d-m-Y') }}</p>
+    </div>
+    <div class="flex items-center gap-3">
+        <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide
+            @if($order->status === 'pending') bg-yellow-100 text-yellow-700
+            @elseif($order->status === 'shipped') bg-blue-100 text-blue-700
+            @elseif($order->status === 'completed') bg-green-100 text-green-700
+            @endif
+        ">
+            {{ ucfirst($order->status) }}
+        </span>
+        <span class="text-sm font-semibold text-green-700">€ {{ number_format($order->total, 2, ',', '.') }}</span>
+    </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
     <!-- Betaling -->
-    <div class="bg-white p-6 rounded shadow space-y-2 lg:col-span-1">
-        <h2 class="font-semibold mb-3">Betaling</h2>
+    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-2 lg:col-span-1">
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold">Betaling</h2>
+            <span class="text-xs text-gray-500">Status</span>
+        </div>
         @php $payment = $order->latestPayment; @endphp
         @if($payment)
-            <p class="text-sm"><strong>Status:</strong> {{ ucfirst($payment->status->value) }}</p>
+            <p class="text-sm flex items-center justify-between"><span class="text-gray-600">Status</span><strong>{{ ucfirst($payment->status->value) }}</strong></p>
             <p class="text-sm"><strong>Vervaldatum:</strong> {{ optional($payment->due_date)->format('d-m-Y') }}</p>
             <p class="text-sm"><strong>Laatste herinnering:</strong> {{ optional($payment->last_reminder_at)->format('d-m-Y H:i') ?? '–' }}</p>
             <p class="text-sm"><strong>Aantal herinneringen:</strong> {{ $payment->reminder_count }}</p>
@@ -40,11 +46,11 @@
     </div>
 
     <!-- Klantgegevens -->
-    <div class="bg-white p-6 rounded shadow space-y-2">
-        <h2 class="font-semibold mb-3">Klant</h2>
+    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-2">
+        <h2 class="font-semibold">Klant</h2>
 
-        <p class="text-sm"><strong>Naam:</strong> {{ $order->name }}</p>
-        <p class="text-sm"><strong>Email:</strong> {{ $order->email }}</p>
+        <p class="text-sm"><span class="text-gray-600">Naam</span><br><strong>{{ $order->name }}</strong></p>
+        <p class="text-sm"><span class="text-gray-600">Email</span><br><strong>{{ $order->email }}</strong></p>
 
         <p class="mt-2 text-sm leading-relaxed">
             <strong>Adres:</strong><br>
@@ -55,13 +61,13 @@
     </div>
 
     <!-- Bestelling -->
-    <div class="bg-white p-6 rounded shadow lg:col-span-2">
-        <h2 class="font-semibold mb-3">Producten</h2>
+    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm lg:col-span-2">
+        <h2 class="font-semibold">Producten</h2>
 
-        <div class="hidden md:block overflow-x-auto">
+        <div class="hidden md:block overflow-x-auto mt-4">
             <table class="w-full text-sm">
                 <thead>
-                    <tr class="border-b">
+                    <tr class="border-b text-gray-500">
                         <th class="text-left p-2">Product</th>
                         <th class="p-2">Aantal</th>
                         <th class="p-2">Prijs</th>
@@ -109,12 +115,37 @@
 
 <!-- Routeplanning en acties -->
 <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-white p-6 rounded shadow">
-        <h2 class="font-semibold mb-3">Route plannen</h2>
+    <div class="bg-gradient-to-br from-white via-white to-emerald-50/40 p-6 rounded-2xl border border-emerald-100/60 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-4 w-4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 11l19-7-7 19-2-7-7-2z" />
+                    </svg>
+                </span>
+                <h2 class="font-semibold">Route plannen</h2>
+            </div>
+            @if($order->route_date)
+                <span class="text-xs text-gray-500">{{ $order->route_date->format('d-m-Y') }}</span>
+            @endif
+        </div>
 
-        <form method="POST" action="{{ route('admin.orders.plan', $order) }}" class="space-y-4">
+        <form id="order-plan-form" method="POST" action="{{ route('admin.orders.plan', $order) }}" class="space-y-4">
             @csrf
             @method('PATCH')
+
+            <div class="space-y-1">
+                <label class="block text-sm text-gray-600">Route</label>
+                <select name="delivery_route_id" class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base">
+                    <option value="">— geen route —</option>
+                    @foreach($deliveryRoutes as $route)
+                        <option value="{{ $route->id }}" @selected($order->delivery_route_id === $route->id)>
+                            {{ $route->name }} — {{ $route->route_date->format('d-m-Y') }}
+                        </option>
+                    @endforeach
+                </select>
+                <div class="text-xs text-gray-500 mt-1">Kies een route om datum/provincie automatisch te vullen.</div>
+            </div>
 
             <div class="space-y-1">
                 <label class="block text-sm text-gray-600">Provincie</label>
@@ -151,33 +182,39 @@
                 </div>
             </div>
 
-            <div class="flex flex-col sm:flex-row gap-3">
-                <button class="w-full sm:w-auto px-5 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700" type="submit">
-                    Opslaan
-                </button>
-                <a
-                    href="{{ route('admin.orders.show', $order) }}"
-                    class="w-full sm:w-auto px-5 py-3 border rounded-lg text-center text-gray-800 font-semibold"
-                >
-                    Reset
-                </a>
-            </div>
         </form>
-    </div>
-
-    <div class="bg-white p-6 rounded shadow space-y-3">
-        <h2 class="font-semibold mb-3">Acties</h2>
-
-        <form method="POST" action="{{ route('admin.orders.ship', $order) }}" class="space-y-3">
-            @csrf
-
+        <div class="mt-2 flex flex-col sm:flex-row gap-3">
             <button
-                class="w-full px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700"
+                form="order-plan-form"
+                class="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700"
+                type="submit"
             >
-                ✉️ Verzending morgen mailen
+                Opslaan
             </button>
-        </form>
+            @if($order->route_date)
+                <form method="POST" action="{{ route('admin.routes.remove', $order) }}" class="w-full sm:w-auto">
+                    @csrf
+                    @method('PATCH')
+                    <button class="w-full px-4 py-2 border rounded-lg text-center text-sm font-semibold text-gray-800" type="submit">
+                        Reset route
+                    </button>
+                </form>
+                @php
+                    $routeParams = ['route_date' => $order->route_date->format('Y-m-d')];
+                    if ($order->province) {
+                        $routeParams['province'] = $order->province;
+                    }
+                @endphp
+                <a
+                    href="{{ route('admin.routes.index', $routeParams) }}"
+                    class="w-full sm:w-auto px-4 py-2 border border-emerald-600 text-emerald-700 rounded-lg text-center text-sm font-semibold hover:bg-emerald-50"
+                >
+                    Ga naar route
+                </a>
+            @endif
+        </div>
     </div>
+
 </div>
 
 @endsection
