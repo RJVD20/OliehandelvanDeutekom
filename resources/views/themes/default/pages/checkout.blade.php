@@ -33,13 +33,49 @@
 @endguest
 
 
-        <form method="POST" action="{{ route('checkout.store') }}" class="space-y-4">
+        <form
+            method="POST"
+            action="{{ route('checkout.store') }}"
+            class="space-y-4"
+            x-data="{
+                postcode: '{{ old('postcode', optional(auth()->user())->postcode) }}',
+                huisnummer: '',
+                straat: '',
+                stad: '{{ old('city', optional(auth()->user())->city) }}',
+                provincie: '{{ old('province', optional(auth()->user())->province) }}',
+                loading: false,
+                fout: null,
+                async lookup() {
+                    if (!this.postcode || !this.huisnummer) return;
+                    this.loading = true;
+                    this.fout = null;
+                    try {
+                        const params = new URLSearchParams({ postcode: this.postcode, huisnummer: this.huisnummer });
+                        const res = await fetch('/api/postcode-lookup?' + params);
+                        const data = await res.json();
+                        if (!res.ok) {
+                            this.fout = data.message || 'Postcode niet gevonden';
+                        } else {
+                            this.straat = data.straat;
+                            this.stad = data.stad;
+                            this.provincie = data.provincie;
+                        }
+                    } catch (e) {
+                        this.fout = 'Verbindingsfout, vul handmatig in';
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }"
+            @submit="if (huisnummer && straat) $el.querySelector('[name=address]').value = straat + ' ' + huisnummer"
+        >
             @csrf
 
+            {{-- Verborgen address veld: wordt gevuld bij submit --}}
+            <input type="hidden" name="address" value="{{ old('address', optional(auth()->user())->address) }}">
+
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Naam
-                </label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Naam</label>
                 <input
                     name="name"
                     value="{{ old('name', optional(auth()->user())->name) }}"
@@ -49,9 +85,7 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    E-mailadres
-                </label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">E-mailadres</label>
                 <input
                     type="email"
                     name="email"
@@ -61,65 +95,68 @@
                 >
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Adres
-                </label>
-                <input
-                    name="address"
-                    placeholder="Straat + huisnummer"
-                    value="{{ old('address', optional(auth()->user())->address) }}"
-                    required
-                    class="w-full border rounded-lg p-3 focus:ring focus:ring-green-200"
-                >
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {{-- Postcode + Huisnummer --}}
+            <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Postcode
-                    </label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Postcode</label>
                     <input
                         name="postcode"
-                        placeholder="Postcode + Toevoeging"
-                        value="{{ old('postcode', optional(auth()->user())->postcode) }}"
+                        x-model="postcode"
+                        placeholder="1234 AB"
                         required
                         class="w-full border rounded-lg p-3 focus:ring focus:ring-green-200"
                     >
                 </div>
-
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        Plaats
-                    </label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Huisnummer</label>
                     <input
-                        name="city"
-                        value="{{ old('city', optional(auth()->user())->city) }}"
+                        x-model="huisnummer"
+                        placeholder="10"
                         required
+                        @blur="lookup()"
                         class="w-full border rounded-lg p-3 focus:ring focus:ring-green-200"
                     >
+                    <p x-show="fout" x-text="fout" class="mt-1 text-xs text-red-600"></p>
                 </div>
             </div>
 
+            {{-- Straat (auto-ingevuld) --}}
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
-                    Provincie
-                </label>
-                <select
-                    name="province"
+                <label class="block text-sm font-medium text-gray-700 mb-1">Straat</label>
+                <input
+                    x-model="straat"
+                    :placeholder="loading ? '...' : 'Wordt automatisch ingevuld'"
                     required
                     class="w-full border rounded-lg p-3 focus:ring focus:ring-green-200"
                 >
-                    <option value="">Kies je provincie</option>
-                    @foreach($provinces as $province)
-                        <option
-                            value="{{ $province }}"
-                            @selected(old('province', optional(auth()->user())->province) === $province)
-                        >
-                            {{ $province }}
-                        </option>
-                    @endforeach
-                </select>
+            </div>
+
+            {{-- Stad + Provincie --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Plaats</label>
+                    <input
+                        name="city"
+                        x-model="stad"
+                        :placeholder="loading ? '...' : 'Wordt automatisch ingevuld'"
+                        required
+                        class="w-full border rounded-lg p-3 focus:ring focus:ring-green-200"
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Provincie</label>
+                    <select
+                        name="province"
+                        x-model="provincie"
+                        required
+                        class="w-full border rounded-lg p-3 focus:ring focus:ring-green-200"
+                    >
+                        <option value="">Kies je provincie</option>
+                        @foreach($provinces as $province)
+                            <option value="{{ $province }}">{{ $province }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <button

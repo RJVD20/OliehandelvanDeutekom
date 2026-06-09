@@ -18,4 +18,8 @@ return [
         'token' => env('MAPBOX_TOKEN'),
     ],
 
+    'postcode_tech' => [
+        'key' => env('POSTCODE_TECH_KEY'),
+    ],
+
 ];

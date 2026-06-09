@@ -911,6 +911,10 @@ Route::get('/newsletter/unsubscribe', NewsletterUnsubscribeController::class)
 |--------------------------------------------------------------------------
 */
 
+// Postcode lookup proxy
+Route::get('/api/postcode-lookup', \App\Http\Controllers\PostcodeLookupController::class)
+    ->name('api.postcode-lookup');
+
 require __DIR__.'/auth.php';
 
 // Sitemap

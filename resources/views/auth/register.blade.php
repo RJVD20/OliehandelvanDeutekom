@@ -3,7 +3,42 @@
         Account aanmaken
     </h1>
 
-        <form method="POST" action="{{ route('register') }}" class="space-y-4">
+        <form
+            method="POST"
+            action="{{ route('register') }}"
+            class="space-y-4"
+            x-data="{
+                postcode: '{{ old('postcode') }}',
+                huisnummer: '{{ old('huisnummer') }}',
+                straat: '{{ old('straat') }}',
+                stad: '{{ old('city') }}',
+                provincie: '{{ old('province') }}',
+                loading: false,
+                fout: null,
+                async lookup() {
+                    if (!this.postcode || !this.huisnummer) return;
+                    this.loading = true;
+                    this.fout = null;
+                    try {
+                        const params = new URLSearchParams({ postcode: this.postcode, huisnummer: this.huisnummer });
+                        const res = await fetch('/api/postcode-lookup?' + params);
+                        const data = await res.json();
+                        if (!res.ok) {
+                            this.fout = data.message || 'Postcode niet gevonden';
+                        } else {
+                            this.straat = data.straat;
+                            this.stad = data.stad;
+                            this.provincie = data.provincie;
+                        }
+                    } catch (e) {
+                        this.fout = 'Verbindingsfout, vul handmatig in';
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }"
+            @submit="if (huisnummer && straat) $el.querySelector('[name=address]').value = straat + ' ' + huisnummer"
+        >
             @csrf
 
             <!-- Naam -->
@@ -49,64 +84,81 @@
                 <x-input-error :messages="$errors->get('phone')" class="mt-2" />
             </div>
 
-            <!-- Adres -->
-            <div>
-                <x-input-label for="address" value="Adres" />
-                <x-text-input
-                    id="address"
-                    class="block mt-1 w-full"
-                    type="text"
-                    name="address"
-                    :value="old('address')"
-                    placeholder="Straat + huisnummer"
-                />
-                <x-input-error :messages="$errors->get('address')" class="mt-2" />
-            </div>
+            {{-- Verborgen address veld: wordt gevuld bij submit --}}
+            <input type="hidden" name="address" value="{{ old('address') }}">
 
-            <!-- Postcode + Plaats -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Postcode + Huisnummer -->
+            <div class="grid grid-cols-2 gap-4">
                 <div>
                     <x-input-label for="postcode" value="Postcode" />
-                    <x-text-input
+                    <input
                         id="postcode"
-                        class="block mt-1 w-full"
-                        type="text"
                         name="postcode"
-                        :value="old('postcode')"
-                    />
+                        x-model="postcode"
+                        placeholder="1234 AB"
+                        required
+                        class="block mt-1 w-full border-gray-300 focus:border-green-600 focus:ring-green-600 rounded-md shadow-sm"
+                    >
                     <x-input-error :messages="$errors->get('postcode')" class="mt-2" />
                 </div>
-
                 <div>
-                    <x-input-label for="city" value="Plaats" />
-                    <x-text-input
-                        id="city"
-                        class="block mt-1 w-full"
-                        type="text"
-                        name="city"
-                        :value="old('city')"
-                    />
-                    <x-input-error :messages="$errors->get('city')" class="mt-2" />
+                    <x-input-label for="huisnummer" value="Huisnummer" />
+                    <input
+                        id="huisnummer"
+                        name="huisnummer"
+                        x-model="huisnummer"
+                        placeholder="10"
+                        required
+                        @blur="lookup()"
+                        class="block mt-1 w-full border-gray-300 focus:border-green-600 focus:ring-green-600 rounded-md shadow-sm"
+                    >
+                    <p x-show="fout" x-text="fout" class="mt-1 text-xs text-red-600"></p>
                 </div>
             </div>
 
-            <!-- Provincie -->
+            <!-- Straat (auto-ingevuld) -->
             <div>
-                <x-input-label for="province" value="Provincie" />
-                <select
-                    id="province"
-                    name="province"
-                    class="block mt-1 w-full border-gray-300 focus:border-green-600 focus:ring-green-600 rounded-md shadow-sm"
+                <x-input-label for="straat" value="Straat" />
+                <input
+                    id="straat"
+                    name="straat"
+                    x-model="straat"
+                    :placeholder="loading ? '...' : 'Wordt automatisch ingevuld'"
                     required
+                    class="block mt-1 w-full border-gray-300 focus:border-green-600 focus:ring-green-600 rounded-md shadow-sm"
                 >
-                    <option value="" disabled {{ old('province') ? '' : 'selected' }}>Kies je provincie</option>
-                    @foreach($provinces as $province)
-                        <option value="{{ $province }}" @selected(old('province') === $province)>
-                            {{ $province }}
-                        </option>
-                    @endforeach
-                </select>
-                <x-input-error :messages="$errors->get('province')" class="mt-2" />
+            </div>
+
+            <!-- Plaats + Provincie -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <x-input-label for="city" value="Plaats" />
+                    <input
+                        id="city"
+                        name="city"
+                        x-model="stad"
+                        :placeholder="loading ? '...' : 'Wordt automatisch ingevuld'"
+                        required
+                        class="block mt-1 w-full border-gray-300 focus:border-green-600 focus:ring-green-600 rounded-md shadow-sm"
+                    >
+                    <x-input-error :messages="$errors->get('city')" class="mt-2" />
+                </div>
+                <div>
+                    <x-input-label for="province" value="Provincie" />
+                    <select
+                        id="province"
+                        name="province"
+                        x-model="provincie"
+                        required
+                        class="block mt-1 w-full border-gray-300 focus:border-green-600 focus:ring-green-600 rounded-md shadow-sm"
+                    >
+                        <option value="">Kies je provincie</option>
+                        @foreach($provinces as $province)
+                            <option value="{{ $province }}">{{ $province }}</option>
+                        @endforeach
+                    </select>
+                    <x-input-error :messages="$errors->get('province')" class="mt-2" />
+                </div>
             </div>
 
             <!-- Wachtwoord -->
