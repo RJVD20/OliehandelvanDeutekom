@@ -390,6 +390,10 @@ Route::post('/checkout', function (Request $request) {
     Mail::to($order->email)->send(new OrderConfirmationMail($order));
     session()->forget('cart');
 
+    if ($payment->pay_link) {
+        return redirect()->away($payment->pay_link, 303);
+    }
+
     return auth()->check()
         ? redirect()->route('account.orders')->with('toast', 'Bestelling geplaatst 🎉')
         : redirect()->route('home')->with('toast', 'Bestelling geplaatst 🎉 Check je e-mail.');
@@ -880,6 +884,9 @@ Route::middleware(['auth', 'admin'])
 
 // Payment webhooks
 Route::post('/webhooks/payments/{provider}', [PaymentWebhookController::class, 'handle'])->name('payments.webhook');
+Route::get('/betaling/terug/{payment}', [PaymentWebhookController::class, 'returnFromProvider'])
+    ->middleware('signed')
+    ->name('payments.return');
 
 // Nieuwsbrief uitschrijven
 Route::get('/newsletter/unsubscribe', NewsletterUnsubscribeController::class)

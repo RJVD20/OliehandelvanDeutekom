@@ -15,7 +15,7 @@ class MaintenanceModeMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Setting::getBool('maintenance_enabled', false)) {
+        if (! Setting::getBool('maintenance_enabled', false)) {
             return $next($request);
         }
 
@@ -34,6 +34,11 @@ class MaintenanceModeMiddleware
     {
         // Always allow the admin panel (auth/admin middleware will protect it).
         if ($request->is('admin') || $request->is('admin/*')) {
+            return true;
+        }
+
+        // Payment providers must always be able to confirm payment statuses.
+        if ($request->is('webhooks/payments/*')) {
             return true;
         }
 

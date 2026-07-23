@@ -14,6 +14,7 @@ class NewsletterMailable extends Mailable implements ShouldQueue
     use SerializesModels;
 
     private string $renderedHtml;
+
     private string $renderedText;
 
     public function __construct(
@@ -23,11 +24,16 @@ class NewsletterMailable extends Mailable implements ShouldQueue
     ) {
         $this->renderedHtml = $html;
         $this->renderedText = $text;
+        $this->mailer('info');
     }
 
     public function build(): self
     {
         return $this
+            ->from(
+                config('mail.addresses.info.address'),
+                config('mail.addresses.info.name'),
+            )
             ->subject($this->newsletter->subject)
             ->view('emails.newsletter')
             ->text('emails.newsletter-text')

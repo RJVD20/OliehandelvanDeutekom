@@ -3,14 +3,13 @@
 namespace App\Mail;
 
 use App\Models\Order;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Mail\Mailables\Attachment;
-
 
 class OrderShippedMail extends Mailable
 {
@@ -18,7 +17,9 @@ class OrderShippedMail extends Mailable
 
     public function __construct(
         public Order $order
-    ) {}
+    ) {
+        $this->mailer('orders');
+    }
 
     /**
      * Mail onderwerp
@@ -26,6 +27,12 @@ class OrderShippedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
+            from: [
+                new \Illuminate\Mail\Mailables\Address(
+                    config('mail.addresses.orders.address'),
+                    config('mail.addresses.orders.name'),
+                ),
+            ],
             subject: 'Je bestelling wordt morgen geleverd'
         );
     }
@@ -44,19 +51,19 @@ class OrderShippedMail extends Mailable
     }
 
     /**
-     * Bijlagen 
+     * Bijlagen
      */
     public function attachments(): array
     {
         $pdf = Pdf::loadView('pdfs.invoice', [
-            'order' => $this->order
+            'order' => $this->order,
         ]);
 
         return [
             Attachment::fromData(
                 fn () => $pdf->output(),
-                'factuur-' . $this->order->id . '.pdf'
-            )->withMime('application/pdf')
+                'factuur-'.$this->order->id.'.pdf'
+            )->withMime('application/pdf'),
         ];
     }
 }

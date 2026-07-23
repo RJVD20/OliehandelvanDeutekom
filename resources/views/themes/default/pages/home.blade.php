@@ -67,7 +67,7 @@
     });
 @endphp
 
-<section class="relative overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8 -mt-6 mb-16 md:mb-24">
+<section class="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden -mt-6 mb-16 md:mb-24">
     <div class="relative h-[360px] sm:h-[440px] md:h-[520px]">
         <div class="absolute inset-0 bg-[#c7d1c2]"></div>
         @if($heroImage)

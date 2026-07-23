@@ -2,13 +2,10 @@
 
 namespace App\Mail;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 use App\Models\Order;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
 
 class OrderConfirmationMail extends Mailable
 {
@@ -19,12 +16,18 @@ class OrderConfirmationMail extends Mailable
      */
     public function __construct(
         public Order $order
-    ) {}
+    ) {
+        $this->mailer('orders');
+    }
 
     public function build()
     {
         return $this
-            ->subject('Orderbevestiging #' . $this->order->id)
+            ->from(
+                config('mail.addresses.orders.address'),
+                config('mail.addresses.orders.name'),
+            )
+            ->subject('Orderbevestiging #'.$this->order->id)
             ->view('emails.order-confirmation');
     }
 }
