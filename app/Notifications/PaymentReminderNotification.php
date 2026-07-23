@@ -12,9 +12,7 @@ class PaymentReminderNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(private readonly Payment $payment)
-    {
-    }
+    public function __construct(private readonly Payment $payment) {}
 
     public function via(object $notifiable): array
     {
@@ -26,6 +24,11 @@ class PaymentReminderNotification extends Notification implements ShouldQueue
         $payment = $this->payment;
 
         return (new MailMessage)
+            ->mailer('orders')
+            ->from(
+                config('mail.addresses.orders.address'),
+                config('mail.addresses.orders.name'),
+            )
             ->subject('Herinnering betaling bestelling #'.$payment->order_id)
             ->greeting('Hallo '.$payment->order->name)
             ->line('We hebben nog geen betaling ontvangen voor je bestelling.')

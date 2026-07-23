@@ -34,13 +34,13 @@
     <div class="bg-[#3c3c3c] text-white shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <!-- Mobile bar -->
-            <div class="lg:hidden relative h-10 flex items-center">
+            <div class="lg:hidden relative h-12 flex items-center">
                 <button
-                    class="inline-flex h-7 w-7 items-center justify-center rounded-full text-white/90 bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-full text-white/90 bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30"
                     @click="open = !open"
                     aria-label="Open menu"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
@@ -51,37 +51,37 @@
                 </a>
                 --}}
                 <a href="/" class="absolute left-1/2 -translate-x-1/2 inline-flex items-center justify-center">
-                    <img src="/images/logovd.png" alt="Logo" class="h-6 w-auto object-contain">
+                    <img src="/images/logovd-navbar.png" alt="Logo" class="h-8 w-auto object-contain">
                 </a>
 
-                <div class="ml-auto flex items-center gap-1 text-white/90">
+                <div class="ml-auto flex items-center gap-1.5 text-white/90">
                     <button
                         type="button"
-                        class="hover:text-white inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/5"
+                        class="hover:text-white inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/5"
                         aria-label="Zoek producten"
                         @click="searchOpen = true; $nextTick(() => document.getElementById('nav-search-input')?.focus())"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m21 21-4.35-4.35M11 6a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" />
                         </svg>
                     </button>
 
                     @auth
-                        <a href="{{ route('account.dashboard') }}" class="hover:text-white inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Account">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <a href="{{ route('account.dashboard') }}" class="hover:text-white inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Account">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5.5 20.5a6.5 6.5 0 0 1 13 0M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
                             </svg>
                         </a>
                     @else
-                        <a href="{{ route('login') }}" class="hover:text-white inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Inloggen">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <a href="{{ route('login') }}" class="hover:text-white inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Inloggen">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5.5 20.5a6.5 6.5 0 0 1 13 0M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
                             </svg>
                         </a>
                     @endauth
 
-                    <a href="{{ route('cart.index') }}" class="hover:text-white relative inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Winkelwagen">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <a href="{{ route('cart.index') }}" class="hover:text-white relative inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Winkelwagen">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 4h2l1 14h12l1-10H6" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11H7" />
                             <circle cx="9" cy="20" r="1.2" />
@@ -100,7 +100,7 @@
             </div>
 
             <!-- Desktop bar -->
-            <div class="hidden lg:flex items-center justify-between h-20 gap-4">
+            <div class="hidden lg:flex items-center justify-between h-24 gap-4">
                 <div class="flex items-center gap-3">
                     {{-- Previous desktop logo block with white background retained for quick rollback
                     <a href="/" class="relative block">
@@ -114,7 +114,7 @@
                     --}}
                     <a href="/" class="relative block">
                         <span class="relative block">
-                            <img src="/images/logovd.png" alt="Logo" class="h-10 w-auto">
+                            <img src="/images/logovd-navbar.png" alt="Logo" class="h-12 w-auto object-contain">
                         </span>
                     </a>
                 </div>

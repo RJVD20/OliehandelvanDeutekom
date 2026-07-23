@@ -24,6 +24,12 @@
     € {{ number_format($order->total, 2, ',', '.') }}
 </p>
 
+@if($order->latestPayment?->pay_link)
+    <p>
+        <a href="{{ $order->latestPayment->pay_link }}">Betaal deze bestelling via Mollie</a>
+    </p>
+@endif
+
 <h3>Afleveradres</h3>
 <p>
     {{ $order->address }}<br>

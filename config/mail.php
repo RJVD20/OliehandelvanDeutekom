@@ -37,6 +37,28 @@ return [
 
     'mailers' => [
 
+        'info' => [
+            'transport' => 'smtp',
+            'scheme' => env('INFO_MAIL_SCHEME', 'smtp'),
+            'host' => env('INFO_MAIL_HOST'),
+            'port' => env('INFO_MAIL_PORT', 587),
+            'username' => env('INFO_MAIL_USERNAME'),
+            'password' => env('INFO_MAIL_PASSWORD'),
+            'timeout' => 15,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+        ],
+
+        'orders' => [
+            'transport' => 'smtp',
+            'scheme' => env('ORDERS_MAIL_SCHEME', 'smtp'),
+            'host' => env('ORDERS_MAIL_HOST'),
+            'port' => env('ORDERS_MAIL_PORT', 587),
+            'username' => env('ORDERS_MAIL_USERNAME'),
+            'password' => env('ORDERS_MAIL_PASSWORD'),
+            'timeout' => 15,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+        ],
+
         'smtp' => [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
@@ -113,6 +135,17 @@ return [
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
         'name' => env('MAIL_FROM_NAME', 'Example'),
+    ],
+
+    'addresses' => [
+        'info' => [
+            'address' => env('INFO_MAIL_FROM_ADDRESS', env('INFO_MAIL_USERNAME')),
+            'name' => env('INFO_MAIL_FROM_NAME', env('MAIL_FROM_NAME')),
+        ],
+        'orders' => [
+            'address' => env('ORDERS_MAIL_FROM_ADDRESS', env('ORDERS_MAIL_USERNAME')),
+            'name' => env('ORDERS_MAIL_FROM_NAME', env('MAIL_FROM_NAME')),
+        ],
     ],
 
 ];

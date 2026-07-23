@@ -6,12 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Jobs\NewsletterDispatchJob;
 use App\Models\Newsletter;
 use App\Models\NewsletterSend;
-use App\Models\NewsletterUnsubscribe;
 use App\Services\Newsletter\NewsletterRenderer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -88,7 +87,7 @@ class NewsletterController extends Controller
         $newsletter->update([
             'status' => Newsletter::STATUS_SENDING,
             'scheduled_at' => null,
-            'send_lock_at' => now(),
+            'send_lock_at' => null,
         ]);
 
         NewsletterDispatchJob::dispatch($newsletter->id);
