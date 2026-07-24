@@ -7,12 +7,11 @@ use App\Models\NewsletterSend;
 use App\Models\NewsletterUnsubscribe;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class NewsletterDispatchJob implements ShouldQueue
 {
@@ -21,9 +20,7 @@ class NewsletterDispatchJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public function __construct(public readonly int $newsletterId)
-    {
-    }
+    public function __construct(public readonly int $newsletterId) {}
 
     public function handle(): void
     {
@@ -82,6 +79,7 @@ class NewsletterDispatchJob implements ShouldQueue
                             'user_id' => $user->id,
                             'email' => $user->email,
                             'name' => $user->name,
+                            'first_name' => Str::before($user->name, ' '),
                         ];
                     }
 
