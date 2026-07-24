@@ -188,15 +188,20 @@ Route::get('/categories/{slug}', function ($slug) {
 
 
 
-Route::get('/producten', function (Request $request) {
+$productListing = function (Request $request, string $title, string $routeName, ?string $type = null) {
+    $query = Product::query()->where('active', true);
 
-    $query = Product::where('active', true);
+    if ($type) {
+        $query->where('type', $type);
+    } else {
+        $query->whereNotIn('type', ['kachel', 'vloeistof']);
+    }
 
     if ($request->filled('categories')) {
         $query->whereIn('category_id', $request->categories);
     }
 
-    if ($request->filled('types')) {
+    if (! $type && $request->filled('types')) {
         $query->whereIn('type', $request->types);
     }
 
@@ -218,10 +223,47 @@ Route::get('/producten', function (Request $request) {
     }
 
     $products   = $query->paginate(12)->withQueryString();
-    $categories = Category::all();
+    $categories = Category::query()
+        ->whereHas('products', function ($query) use ($type) {
+            $query->where('active', true);
 
-    return view('themes.default.pages.products.index', compact('products', 'categories'));
-})->name('products.index');
+            if ($type) {
+                $query->where('type', $type);
+            } else {
+                $query->whereNotIn('type', ['kachel', 'vloeistof']);
+            }
+        })
+        ->orderBy('name')
+        ->get();
+
+    return view('themes.default.pages.products.index', compact(
+        'products',
+        'categories',
+        'title',
+        'routeName',
+        'type'
+    ));
+};
+
+Route::get('/producten', fn (Request $request) => $productListing(
+    $request,
+    'Overige producten',
+    'products.index'
+))->name('products.index');
+
+Route::get('/kachels', fn (Request $request) => $productListing(
+    $request,
+    'Kachels',
+    'products.heaters',
+    'kachel'
+))->name('products.heaters');
+
+Route::get('/vloeistoffen', fn (Request $request) => $productListing(
+    $request,
+    'Vloeistoffen',
+    'products.liquids',
+    'vloeistof'
+))->name('products.liquids');
 
 /*
 |--------------------------------------------------------------------------

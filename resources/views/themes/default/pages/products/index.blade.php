@@ -1,11 +1,11 @@
 @extends('themes.default.layouts.app')
 
-@section('title', 'Alle producten')
+@section('title', $title)
 
 @section('content')
 
 <h1 class="text-3xl font-bold text-green-700 mb-8">
-    Alle producten
+    {{ $title }}
 </h1>
 
 <div
@@ -20,7 +20,7 @@
 
         <form
             method="GET"
-            action="{{ route('products.index') }}"
+            action="{{ route($routeName) }}"
             x-data="{
                 min: {{ request('min_price', 0) }},
                 max: {{ request('max_price', 500) }}
@@ -54,26 +54,28 @@
                 </ul>
             </div>
 
-            <!-- TYPE -->
-            <div>
-                <h3 class="font-semibold mb-3">Type</h3>
-                <ul class="space-y-2 text-sm">
-                    @foreach (['kachel','vloeistof','pellet','accessoire'] as $type)
-                        <li>
-                            <label class="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    name="types[]"
-                                    value="{{ $type }}"
-                                    @checked(in_array($type, request('types', [])))
-                                    class="accent-green-600"
-                                >
-                                {{ ucfirst($type) }}
-                            </label>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
+            @unless($type)
+                <!-- TYPE -->
+                <div>
+                    <h3 class="font-semibold mb-3">Type</h3>
+                    <ul class="space-y-2 text-sm">
+                        @foreach (['pellet','accessoire'] as $filterType)
+                            <li>
+                                <label class="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        name="types[]"
+                                        value="{{ $filterType }}"
+                                        @checked(in_array($filterType, request('types', [])))
+                                        class="accent-green-600"
+                                    >
+                                    {{ ucfirst($filterType) }}
+                                </label>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endunless
 
             <!-- PRIJS -->
             <div class="space-y-3">
@@ -120,7 +122,7 @@
             </p>
 
             <!-- SORTEREN -->
-            <form method="GET" action="{{ route('products.index') }}">
+            <form method="GET" action="{{ route($routeName) }}">
                 {{-- filters behouden --}}
                 @foreach (request()->except('sort', 'page') as $key => $value)
                     @if (is_array($value))
@@ -230,7 +232,7 @@
 
         <form
             method="GET"
-            action="{{ route('products.index') }}"
+            action="{{ route($routeName) }}"
             x-data="{
                 min: {{ request('min_price', 0) }},
                 max: {{ request('max_price', 500) }}
@@ -260,23 +262,25 @@
                 </div>
             </div>
 
-            <div class="space-y-3">
-                <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Type</div>
-                <div class="flex flex-wrap gap-2">
-                    @foreach (['kachel','vloeistof','pellet','accessoire'] as $type)
-                        <label class="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-2 bg-gray-50 text-gray-700">
-                            <input
-                                type="checkbox"
-                                name="types[]"
-                                value="{{ $type }}"
-                                @checked(in_array($type, request('types', [])))
-                                class="accent-green-600"
-                            >
-                            <span class="text-sm">{{ ucfirst($type) }}</span>
-                        </label>
-                    @endforeach
+            @unless($type)
+                <div class="space-y-3">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Type</div>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach (['pellet','accessoire'] as $filterType)
+                            <label class="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-2 bg-gray-50 text-gray-700">
+                                <input
+                                    type="checkbox"
+                                    name="types[]"
+                                    value="{{ $filterType }}"
+                                    @checked(in_array($filterType, request('types', [])))
+                                    class="accent-green-600"
+                                >
+                                <span class="text-sm">{{ ucfirst($filterType) }}</span>
+                            </label>
+                        @endforeach
+                    </div>
                 </div>
-            </div>
+            @endunless
 
             <div class="space-y-3">
                 <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">Prijs</div>

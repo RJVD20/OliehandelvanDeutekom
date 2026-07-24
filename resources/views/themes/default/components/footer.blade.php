@@ -24,7 +24,7 @@
                 >
                     <li><a href="{{ url('/') }}" class="hover:text-white transition">Home</a></li>
                     <li><a href="{{ route('over-ons') }}" class="hover:text-white transition">Over ons</a></li>
-                    <li><a href="{{ route('products.index') }}" class="hover:text-white transition">Producten</a></li>
+                    <li><a href="{{ route('products.index') }}" class="hover:text-white transition">Overige producten</a></li>
                     <li><a href="{{ route('locaties') }}" class="hover:text-white transition">Locaties</a></li>
                     <li><a href="{{ route('informatie') }}" class="hover:text-white transition">Informatie</a></li>
                 </ul>

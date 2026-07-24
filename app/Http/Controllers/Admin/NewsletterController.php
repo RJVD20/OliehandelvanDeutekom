@@ -7,11 +7,13 @@ use App\Jobs\NewsletterDispatchJob;
 use App\Models\Newsletter;
 use App\Models\NewsletterSend;
 use App\Services\Newsletter\NewsletterRenderer;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class NewsletterController extends Controller
@@ -98,12 +100,24 @@ class NewsletterController extends Controller
     public function schedule(Request $request, Newsletter $newsletter): RedirectResponse
     {
         $request->validate([
-            'scheduled_at' => ['required', 'date', 'after:now'],
+            'scheduled_at' => ['required', 'date_format:Y-m-d\TH:i'],
         ]);
+
+        $scheduledAt = CarbonImmutable::createFromFormat(
+            'Y-m-d\TH:i',
+            $request->string('scheduled_at')->toString(),
+            config('newsletter.timezone')
+        );
+
+        if ($scheduledAt->isPast()) {
+            throw ValidationException::withMessages([
+                'scheduled_at' => 'Kies een tijdstip in de toekomst.',
+            ]);
+        }
 
         $newsletter->update([
             'status' => Newsletter::STATUS_SCHEDULED,
-            'scheduled_at' => $request->scheduled_at,
+            'scheduled_at' => $scheduledAt->utc(),
             'send_lock_at' => null,
         ]);
 

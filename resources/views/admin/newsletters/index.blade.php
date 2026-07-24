@@ -12,13 +12,13 @@
         @forelse($newsletters as $newsletter)
             <div class="p-4 flex items-center justify-between">
                 <div>
-                    <div class="text-sm text-gray-500">{{ $newsletter->created_at->format('d-m-Y H:i') }}</div>
+                    <div class="text-sm text-gray-500">{{ $newsletter->created_at->timezone(config('newsletter.timezone'))->format('d-m-Y H:i') }}</div>
                     <div class="font-semibold">{{ $newsletter->title }}</div>
                     <div class="text-sm text-gray-600">Subject: {{ $newsletter->subject }}</div>
                     <div class="text-xs mt-1 text-gray-500">
                         Status: <span class="font-medium">{{ $newsletter->status }}</span>
                         @if($newsletter->scheduled_at)
-                            · Gepland: {{ $newsletter->scheduled_at->format('d-m-Y H:i') }}
+                            · Gepland: {{ $newsletter->scheduled_at->timezone(config('newsletter.timezone'))->format('d-m-Y H:i') }}
                         @endif
                         · Verzonden: {{ $newsletter->sent_count }}
                         · Fouten: {{ $newsletter->failed_count }}

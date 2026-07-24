@@ -22,8 +22,8 @@
             <ul class="text-sm space-y-2">
                 <li>Verzonden: {{ $newsletter->sent_count }}</li>
                 <li>Fouten: {{ $newsletter->failed_count }}</li>
-                <li>Gepland: {{ $newsletter->scheduled_at ?? '—' }}</li>
-                <li>Verzonden op: {{ $newsletter->sent_at ?? '—' }}</li>
+                <li>Gepland: {{ $newsletter->scheduled_at?->timezone(config('newsletter.timezone'))->format('d-m-Y H:i') ?? '—' }}</li>
+                <li>Verzonden op: {{ $newsletter->sent_at?->timezone(config('newsletter.timezone'))->format('d-m-Y H:i') ?? '—' }}</li>
             </ul>
         </div>
     </div>
