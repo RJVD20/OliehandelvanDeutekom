@@ -45,7 +45,7 @@
                 </label>
 
                 <label class="block">
-                    <span class="text-sm font-medium">Inhoud (HTML, placeholders: {voornaam}, {email}, {unsubscribe_url})</span>
+                    <span class="text-sm font-medium">Inhoud (placeholders: {voornaam}, {naam}, {email}, {unsubscribe_url})</span>
                     <input id="content_html" type="hidden" name="content_html" value="{{ old('content_html', $newsletter->content_html) }}">
                     <trix-editor input="content_html" class="trix-content bg-white border rounded"></trix-editor>
                 </label>

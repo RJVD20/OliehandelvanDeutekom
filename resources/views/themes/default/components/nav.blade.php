@@ -121,10 +121,11 @@
 
                 <div class="hidden lg:flex flex-1 justify-center items-center space-x-7 text-sm font-semibold">
                     <a href="/" class="hover:text-white/80">Home</a>
-                    <a href="{{ route('informatie') }}" class="hover:text-white/80">Informatie</a>
-                    <a href="{{ route('over-ons') }}" class="hover:text-white/80">Over ons</a>
+                    <a href="{{ route('category.show', 'kachels') }}" class="hover:text-white/80">Kachels</a>
+                    <a href="{{ route('category.show', 'vloeistoffen') }}" class="hover:text-white/80">Vloeistoffen</a>
                     <a href="{{ route('products.index') }}" class="hover:text-white/80">Producten</a>
                     <a href="{{ route('locaties') }}" class="hover:text-white/80">Locaties</a>
+                    <a href="{{ route('over-ons') }}" class="hover:text-white/80">Over ons</a>
                 </div>
 
                 <div class="hidden lg:flex items-center gap-6 text-white/90">
@@ -220,10 +221,11 @@
 
             <div class="px-4 grid gap-3 text-sm">
                 <a href="/" class="block rounded-xl bg-white/5 px-4 py-3 font-semibold hover:bg-white/10">Home</a>
-                <a href="{{ route('informatie') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Informatie</a>
-                <a href="{{ route('over-ons') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Over ons</a>
+                <a href="{{ route('category.show', 'kachels') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Kachels</a>
+                <a href="{{ route('category.show', 'vloeistoffen') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Vloeistoffen</a>
                 <a href="{{ route('products.index') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Producten</a>
                 <a href="{{ route('locaties') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Locaties</a>
+                <a href="{{ route('over-ons') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Over ons</a>
 
                 <div class="border-t border-white/10 pt-3 space-y-3">
                     @auth
