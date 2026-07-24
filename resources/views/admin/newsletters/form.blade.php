@@ -60,7 +60,7 @@
                 <div class="text-sm text-gray-500">
                     Huidige status: <span class="font-medium">{{ $newsletter->status }}</span>
                     @if($newsletter->scheduled_at)
-                        · Gepland: {{ $newsletter->scheduled_at }}
+                        · Gepland: {{ $newsletter->scheduled_at->timezone(config('newsletter.timezone'))->format('d-m-Y H:i') }}
                     @endif
                 </div>
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Opslaan als concept</button>
@@ -74,7 +74,8 @@
                     @csrf
                     <label class="flex-1">
                         <span class="text-sm font-medium">Datum & tijd</span>
-                        <input type="datetime-local" name="scheduled_at" value="{{ old('scheduled_at', optional($newsletter->scheduled_at)->format('Y-m-d\TH:i')) }}" class="mt-1 w-full border rounded px-3 py-2" required>
+                        <input type="datetime-local" name="scheduled_at" value="{{ old('scheduled_at', optional($newsletter->scheduled_at)->timezone(config('newsletter.timezone'))?->format('Y-m-d\TH:i')) }}" class="mt-1 w-full border rounded px-3 py-2" required>
+                        <p class="mt-1 text-xs text-gray-500">Nederlandse tijd (Europe/Amsterdam)</p>
                     </label>
                     <button class="px-4 py-2 bg-indigo-600 text-white rounded">Inplannen</button>
                 </form>
