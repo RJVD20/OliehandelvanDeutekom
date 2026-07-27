@@ -41,33 +41,33 @@
 @section('content')
 
 <!-- HERO -->
-<section class="mb-16 md:mb-20">
+<section class="mb-10 md:mb-20">
     <div class="bg-white border rounded-2xl shadow-sm overflow-hidden">
         <div class="grid grid-cols-1 lg:grid-cols-2">
-            <div class="px-6 py-10 md:px-10 md:py-14">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-100">
+            <div class="px-5 py-7 sm:px-6 sm:py-10 md:px-10 md:py-14">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-semibold bg-green-50 text-green-700 border border-green-100">
                     Over ons
                 </span>
 
-                <h1 class="mt-4 text-4xl md:text-5xl font-bold tracking-tight text-gray-900">
+                <h1 class="mt-3 sm:mt-4 text-3xl sm:text-4xl md:text-5xl font-bold leading-tight tracking-tight text-gray-900">
                     {{ $heroTitle }}
                 </h1>
 
-                <p class="mt-4 text-gray-600 text-lg leading-relaxed">
+                <p class="mt-4 max-w-prose text-[15px] sm:text-lg leading-7 sm:leading-relaxed text-gray-600">
                     {{ $heroIntro }}
                 </p>
 
-                <div class="mt-8 flex flex-col sm:flex-row gap-3">
+                <div class="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3">
                     <a
                         href="{{ route('products.index') }}"
-                        class="inline-flex justify-center items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
+                        class="inline-flex justify-center items-center px-5 sm:px-6 py-3 bg-green-600 text-white text-sm sm:text-base font-semibold rounded-lg hover:bg-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
                     >
                         Bekijk producten
                     </a>
 
                     <a
                         href="{{ route('locaties') }}"
-                        class="inline-flex justify-center items-center px-6 py-3 bg-white text-gray-900 font-semibold rounded-lg border hover:bg-gray-50 transition"
+                        class="inline-flex justify-center items-center px-5 sm:px-6 py-3 bg-white text-gray-900 text-sm sm:text-base font-semibold rounded-lg border hover:bg-gray-50 transition"
                     >
                         Ophaallocaties
                     </a>
@@ -78,7 +78,7 @@
                 <img
                     src="/images/informatie/service.jpg"
                     alt="Service"
-                    class="w-full h-64 lg:h-full object-cover"
+                    class="w-full h-52 sm:h-64 lg:h-full object-cover"
                     loading="lazy"
                 >
             </div>
@@ -87,32 +87,32 @@
 </section>
 
 <!-- USP / WAARDEN -->
-<section class="mb-16 md:mb-20">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-        <div class="bg-white border rounded-2xl shadow-sm p-6 md:p-7">
-            <div class="text-green-700 font-semibold">{{ $usp1Title }}</div>
-            <p class="text-gray-600 mt-2 leading-relaxed">
+<section class="mb-10 md:mb-20">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 md:gap-8">
+        <div class="bg-white border border-l-4 border-l-turbo-gold rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-7">
+            <div class="text-green-700 text-sm sm:text-base font-semibold">{{ $usp1Title }}</div>
+            <p class="text-gray-600 mt-1.5 text-[14px] sm:text-base leading-6 sm:leading-relaxed">
                 {{ $usp1Text }}
             </p>
         </div>
 
-        <div class="bg-white border rounded-2xl shadow-sm p-6 md:p-7">
-            <div class="text-green-700 font-semibold">{{ $usp2Title }}</div>
-            <p class="text-gray-600 mt-2 leading-relaxed">
+        <div class="bg-white border border-l-4 border-l-turbo-gold rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-7">
+            <div class="text-green-700 text-sm sm:text-base font-semibold">{{ $usp2Title }}</div>
+            <p class="text-gray-600 mt-1.5 text-[14px] sm:text-base leading-6 sm:leading-relaxed">
                 {{ $usp2Text }}
             </p>
         </div>
 
-        <div class="bg-white border rounded-2xl shadow-sm p-6 md:p-7">
-            <div class="text-green-700 font-semibold">{{ $usp3Title }}</div>
-            <p class="text-gray-600 mt-2 leading-relaxed">
+        <div class="bg-white border border-l-4 border-l-turbo-gold rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-7">
+            <div class="text-green-700 text-sm sm:text-base font-semibold">{{ $usp3Title }}</div>
+            <p class="text-gray-600 mt-1.5 text-[14px] sm:text-base leading-6 sm:leading-relaxed">
                 {{ $usp3Text }}
             </p>
         </div>
 
-        <div class="bg-white border rounded-2xl shadow-sm p-6 md:p-7">
-            <div class="text-green-700 font-semibold">{{ $usp4Title }}</div>
-            <p class="text-gray-600 mt-2 leading-relaxed">
+        <div class="bg-white border border-l-4 border-l-turbo-gold rounded-xl sm:rounded-2xl shadow-sm p-4 sm:p-6 md:p-7">
+            <div class="text-green-700 text-sm sm:text-base font-semibold">{{ $usp4Title }}</div>
+            <p class="text-gray-600 mt-1.5 text-[14px] sm:text-base leading-6 sm:leading-relaxed">
                 {{ $usp4Text }}
             </p>
         </div>
@@ -120,40 +120,40 @@
 </section>
 
 <!-- VERHAAL (AFWISSELEN) -->
-<section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16 md:mb-20">
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center mb-10 md:mb-20">
     <img
         src="/images/informatie/laserkachel.jpg"
         alt="Kachels"
-        class="w-full rounded-2xl border bg-white"
+        class="w-full max-h-64 sm:max-h-none object-cover rounded-xl sm:rounded-2xl border bg-white"
         loading="lazy"
     >
 
     <div>
-        <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-4">
+        <h2 class="text-xl sm:text-2xl md:text-3xl font-semibold leading-snug text-gray-900 mb-3 sm:mb-4">
             {{ $story1Title }}
         </h2>
-        <p class="text-gray-700 leading-relaxed">
+        <p class="max-w-prose text-[15px] sm:text-base text-gray-700 leading-7">
             {{ $story1Text1 }}
         </p>
-        <p class="text-gray-700 leading-relaxed mt-4">
+        <p class="max-w-prose text-[15px] sm:text-base text-gray-700 leading-7 mt-3 sm:mt-4">
             {{ $story1Text2 }}
         </p>
     </div>
 </section>
 
-<section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16 md:mb-20">
+<section class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12 items-center mb-10 md:mb-20">
     <div>
-        <h2 class="text-2xl md:text-3xl font-semibold text-gray-900 mb-4">
+        <h2 class="text-xl sm:text-2xl md:text-3xl font-semibold leading-snug text-gray-900 mb-3 sm:mb-4">
             {{ $story2Title }}
         </h2>
-        <p class="text-gray-700 leading-relaxed">
+        <p class="max-w-prose text-[15px] sm:text-base text-gray-700 leading-7">
             {{ $story2Text1 }}
         </p>
-        <p class="text-gray-700 leading-relaxed mt-4">
+        <p class="max-w-prose text-[15px] sm:text-base text-gray-700 leading-7 mt-3 sm:mt-4">
             {{ $story2Text2 }}
         </p>
 
-        <div class="mt-6">
+        <div class="mt-4 sm:mt-6">
             <a href="{{ route('informatie') }}" class="text-green-700 font-semibold hover:underline">
                 Naar informatie
             </a>
@@ -163,27 +163,27 @@
     <img
         src="/images/informatie/pelletkachel.jpg"
         alt="Duurzame oplossingen"
-        class="w-full rounded-2xl border bg-white"
+        class="w-full max-h-64 sm:max-h-none object-cover rounded-xl sm:rounded-2xl border bg-white"
         loading="lazy"
     >
 </section>
 
 <!-- CTA / CONTACT -->
 <section class="mb-6">
-    <div class="bg-white border rounded-2xl shadow-sm p-8 md:p-10">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div class="bg-white border rounded-xl sm:rounded-2xl shadow-sm p-5 sm:p-8 md:p-10">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 sm:gap-6">
             <div>
-                <h2 class="text-2xl md:text-3xl font-semibold text-gray-900">
+                <h2 class="text-xl sm:text-2xl md:text-3xl font-semibold text-gray-900">
                     {{ $ctaTitle }}
                 </h2>
-                <p class="text-gray-600 mt-2 leading-relaxed">
+                <p class="text-[15px] sm:text-base text-gray-600 mt-1.5 sm:mt-2 leading-7">
                     {{ $ctaText }}
                 </p>
             </div>
 
             <a
                 href="mailto:info@oliehandelvandeutekom.nl"
-                class="inline-flex justify-center items-center px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
+                class="inline-flex justify-center items-center px-5 sm:px-6 py-3 bg-green-600 text-white text-sm sm:text-base font-semibold rounded-lg hover:bg-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
             >
                 {{ $ctaButton }}
             </a>

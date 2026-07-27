@@ -11,8 +11,21 @@ export default {
 
     theme: {
         extend: {
+            colors: {
+                turbo: {
+                    navy: '#03182B',
+                    dark: '#08243D',
+                    blue: '#123A5A',
+                    gold: '#D9A42E',
+                    'gold-light': '#F0BA3C',
+                    white: '#F7F8FA',
+                    gray: '#E9EDF2',
+                    ink: '#10263D',
+                },
+            },
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Inter', ...defaultTheme.fontFamily.sans],
+                heading: ['Manrope', 'Inter', ...defaultTheme.fontFamily.sans],
             },
         },
     },

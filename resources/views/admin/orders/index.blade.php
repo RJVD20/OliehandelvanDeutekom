@@ -3,7 +3,12 @@
 @section('title', 'Bestellingen')
 
 @section('content')
-<h1 class="text-2xl font-bold mb-6">Bestellingen</h1>
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-2xl font-bold">Bestellingen</h1>
+    <a href="{{ route('admin.orders.create') }}" class="rounded-lg bg-green-600 px-4 py-3 font-semibold text-white hover:bg-green-700">
+        + Handmatige bestelling
+    </a>
+</div>
 
 <div class="bg-white rounded shadow p-4 mb-6">
     <form id="order-filter-form" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end" method="GET">
@@ -84,7 +89,12 @@
             @foreach($orders as $order)
                 <tr class="border-b hover:bg-gray-50">
                     <td class="p-3">{{ $order->id }}</td>
-                    <td class="p-3">{{ $order->name }}</td>
+                    <td class="p-3">
+                        {{ $order->name }}
+                        @if($order->source === 'manual')
+                            <span class="ml-1 rounded-full bg-purple-100 px-2 py-1 text-[10px] font-semibold text-purple-700">Handmatig</span>
+                        @endif
+                    </td>
                     <td class="p-3">{{ $order->province ?? 'n.v.t.' }}</td>
                     <td class="p-3">{{ $order->created_at->format('d-m-Y') }}</td>
                     <td class="p-3">
@@ -123,7 +133,12 @@
             <div class="flex items-start justify-between gap-3">
                 <div>
                     <p class="text-xs text-gray-500">Bestelling #{{ $order->id }}</p>
-                    <p class="font-semibold leading-tight">{{ $order->name }}</p>
+                    <p class="font-semibold leading-tight">
+                        {{ $order->name }}
+                        @if($order->source === 'manual')
+                            <span class="ml-1 rounded-full bg-purple-100 px-2 py-1 text-[10px] font-semibold text-purple-700">Handmatig</span>
+                        @endif
+                    </p>
                     <p class="text-sm text-gray-500 mt-1">{{ $order->province ?? 'n.v.t.' }}</p>
                 </div>
                 <div class="text-right text-sm text-gray-600">

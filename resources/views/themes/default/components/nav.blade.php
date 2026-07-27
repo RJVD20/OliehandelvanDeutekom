@@ -1,46 +1,47 @@
 <div
+    class="turbo-nav"
     x-data="{ open: false, userOpen: false, searchOpen: false }"
     x-effect="document.body.classList.toggle('overflow-hidden', open || searchOpen)"
     @keydown.escape.window="searchOpen = false; open = false"
 >
 <nav class="sticky top-0 z-[12000]">
-    <div class="hidden lg:block bg-[#e6e1dc] text-[13px] text-neutral-700 border-b border-neutral-200/60">
+    <div class="turbo-nav__utility hidden lg:block text-[13px] border-b">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
-            <div class="flex items-center justify-center gap-4 py-2">
-                <div class="flex items-center gap-2 bg-white/70 px-3 py-1 rounded-full shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m3 5 3 1 3-1 3 1 3-1 3 1 3-1v14l-3 1-3-1-3 1-3-1-3 1-3-1z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 8v11m6-9v11m6-9v11" />
+            <div class="flex items-center justify-center gap-4 py-1.5">
+                <div class="flex items-center gap-2 px-3 py-1 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-turbo-gold-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 1 0 0-4h14a2 2 0 1 0 0 4M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8" />
                     </svg>
-                    <span class="font-semibold">Gratis levering vanaf €100</span>
+                    <span class="font-semibold">Gratis geleverd vanaf 5 jerrycans</span>
                 </div>
-                <div class="flex items-center gap-2 bg-white/70 px-3 py-1 rounded-full shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m12 3 2.09 4.23 4.67.68-3.38 3.29.8 4.66L12 14.77 7.82 15.9l.8-4.66L5.25 7.9l4.66-.67z" />
+                <div class="flex items-center gap-2 px-3 py-1 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-turbo-gold-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                     </svg>
-                    <span class="font-semibold">Sinds 75 jaar specialist</span>
+                    <span class="font-semibold">Bezorging binnen 4 tot 8 werkdagen</span>
                 </div>
-                <div class="flex items-center gap-2 bg-white/70 px-3 py-1 rounded-full shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 9 9c0 7-9 9-9 9s-9-2-9-9Z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v4l2 1" />
+                <div class="flex items-center gap-2 px-3 py-1 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-turbo-gold-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z" />
                     </svg>
-                    <span class="font-semibold">Snelle bezorging, ook regionaal</span>
+                    <span class="font-semibold">Specialist in kachels en kachelvloeistof</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="bg-[#3c3c3c] text-white shadow-sm">
+    <div class="turbo-nav__header">
         <div class="max-w-7xl mx-auto px-4 sm:px-6">
             <!-- Mobile bar -->
-            <div class="lg:hidden relative h-12 flex items-center">
+            <div class="lg:hidden relative h-14 flex items-center justify-between">
                 <button
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-full text-white/90 bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30"
+                    class="turbo-icon-button inline-flex h-9 w-9 items-center justify-center rounded-xl focus:outline-none"
                     @click="open = !open"
                     aria-label="Open menu"
+                    :aria-expanded="open"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
@@ -51,13 +52,13 @@
                 </a>
                 --}}
                 <a href="/" class="absolute left-1/2 -translate-x-1/2 inline-flex items-center justify-center">
-                    <img src="/images/logovd-navbar.png" alt="Logo" class="h-8 w-auto object-contain">
+                    <img src="/images/logo-kachels-vloeistoffen.webp" alt="Kachels & Vloeistoffen" class="h-24 w-auto max-w-none translate-y-1 object-contain">
                 </a>
 
-                <div class="ml-auto flex items-center gap-1.5 text-white/90">
+                <div class="ml-auto flex items-center gap-1">
                     <button
                         type="button"
-                        class="hover:text-white inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/5"
+                        class="turbo-icon-button inline-flex h-9 w-9 items-center justify-center rounded-xl"
                         aria-label="Zoek producten"
                         @click="searchOpen = true; $nextTick(() => document.getElementById('nav-search-input')?.focus())"
                     >
@@ -67,20 +68,20 @@
                     </button>
 
                     @auth
-                        <a href="{{ route('account.dashboard') }}" class="hover:text-white inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Account">
+                        <a href="{{ route('account.dashboard') }}" class="turbo-icon-button inline-flex h-9 w-9 items-center justify-center rounded-xl" aria-label="Account">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5.5 20.5a6.5 6.5 0 0 1 13 0M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
                             </svg>
                         </a>
                     @else
-                        <a href="{{ route('login') }}" class="hover:text-white inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Inloggen">
+                        <a href="{{ route('login') }}" class="turbo-icon-button inline-flex h-9 w-9 items-center justify-center rounded-xl" aria-label="Inloggen">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M5.5 20.5a6.5 6.5 0 0 1 13 0M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
                             </svg>
                         </a>
                     @endauth
 
-                    <a href="{{ route('cart.index') }}" class="hover:text-white relative inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 border border-white/5" aria-label="Winkelwagen">
+                    <a href="{{ route('cart.index') }}" class="turbo-icon-button relative inline-flex h-9 w-9 items-center justify-center rounded-xl" aria-label="Winkelwagen">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 4h2l1 14h12l1-10H6" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16 11H7" />
@@ -92,7 +93,7 @@
                             @cart-updated.window="count = $event.detail"
                             x-show="count > 0"
                             x-text="count"
-                            class="absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] font-semibold rounded-full px-1.5 py-0.5"
+                            class="turbo-cart-badge absolute -top-1.5 -right-1.5 text-[10px] font-semibold rounded-full px-1.5 py-0.5"
                             style="display: none;"
                         ></span>
                     </a>
@@ -100,8 +101,8 @@
             </div>
 
             <!-- Desktop bar -->
-            <div class="hidden lg:flex items-center justify-between h-24 gap-4">
-                <div class="flex items-center gap-3">
+            <div class="hidden lg:flex items-center justify-between min-h-28 gap-4 py-2">
+                <div class="flex shrink-0 items-center gap-3">
                     {{-- Previous desktop logo block with white background retained for quick rollback
                     <a href="/" class="relative block">
                         <span class="absolute inset-0 -z-10 -translate-y-3">
@@ -114,21 +115,21 @@
                     --}}
                     <a href="/" class="relative block">
                         <span class="relative block">
-                            <img src="/images/logovd-navbar.png" alt="Logo" class="h-12 w-auto object-contain">
+                            <img src="/images/logo-kachels-vloeistoffen.webp" alt="Kachels & Vloeistoffen" class="h-20 w-auto max-w-[12rem] origin-left scale-[1.4375] xl:h-24 xl:max-w-[14rem] object-contain">
                         </span>
                     </a>
                 </div>
 
                 <div class="hidden lg:flex flex-1 justify-center items-center space-x-7 text-sm font-semibold">
-                    <a href="/" class="hover:text-white/80">Home</a>
-                    <a href="{{ route('products.heaters') }}" class="hover:text-white/80">Kachels</a>
-                    <a href="{{ route('products.liquids') }}" class="hover:text-white/80">Vloeistoffen</a>
-                    <a href="{{ route('products.index') }}" class="hover:text-white/80">Overige producten</a>
-                    <a href="{{ route('locaties') }}" class="hover:text-white/80">Locaties</a>
-                    <a href="{{ route('over-ons') }}" class="hover:text-white/80">Over ons</a>
+                    <a href="/" class="turbo-nav-link {{ request()->routeIs('home') ? 'turbo-nav-link--active' : '' }}">Home</a>
+                    <a href="{{ route('products.heaters') }}" class="turbo-nav-link {{ request()->routeIs('products.heaters') ? 'turbo-nav-link--active' : '' }}">Kachels</a>
+                    <a href="{{ route('products.liquids') }}" class="turbo-nav-link {{ request()->routeIs('products.liquids') ? 'turbo-nav-link--active' : '' }}">Vloeistoffen</a>
+                    <a href="{{ route('products.index') }}" class="turbo-nav-link {{ request()->routeIs('products.index') ? 'turbo-nav-link--active' : '' }}">Overige producten</a>
+                    <a href="{{ route('locaties') }}" class="turbo-nav-link {{ request()->routeIs('locaties') ? 'turbo-nav-link--active' : '' }}">Locaties</a>
+                    <a href="{{ route('over-ons') }}" class="turbo-nav-link {{ request()->routeIs('over-ons') ? 'turbo-nav-link--active' : '' }}">Over ons</a>
                 </div>
 
-                <div class="hidden lg:flex items-center gap-6 text-white/90">
+                <div class="hidden lg:flex items-center gap-6">
                     <button
                         type="button"
                         class="hover:text-white"
@@ -191,7 +192,7 @@
                         <template x-if="count > 0">
                             <span
                                 x-text="count"
-                                class="absolute -top-2 -right-2 bg-rose-600 text-white text-xs font-semibold rounded-full px-1.5 py-0.5"
+                                class="turbo-cart-badge absolute -top-2 -right-2 text-xs font-semibold rounded-full px-1.5 py-0.5"
                             ></span>
                         </template>
                     </div>
@@ -202,46 +203,67 @@
     </div>
 
     <div
-        class="lg:hidden fixed inset-0 z-[9999] bg-neutral-950"
+        class="turbo-mobile-menu lg:hidden fixed inset-0 z-[9999] bg-turbo-navy/70 backdrop-blur-sm"
         x-show="open"
         x-transition.opacity
         @click.self="open = false"
         @keydown.escape.window="open = false"
         style="display:none;"
     >
-        <div class="absolute inset-x-0 top-0 bg-neutral-900 text-white/90 pt-5 pb-8 rounded-b-3xl shadow-2xl max-h-[80vh] overflow-y-auto">
-            <div class="px-4 pb-2 flex items-center justify-between">
-                <span class="font-semibold text-white text-base">Menu</span>
-                <button @click="open = false" aria-label="Close menu" class="p-2 text-white/80 hover:bg-white/10 rounded-full">
+        <div
+            class="turbo-mobile-menu__panel absolute inset-y-0 left-0 w-[min(88vw,22rem)] overflow-y-auto text-white/90 shadow-2xl"
+            x-show="open"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="-translate-x-full"
+            x-transition:enter-end="translate-x-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="translate-x-0"
+            x-transition:leave-end="-translate-x-full"
+        >
+            <div class="px-5 py-5 flex items-center justify-between border-b border-white/10">
+                <a href="/" class="flex min-w-0 items-center gap-3" @click="open = false">
+                    <span class="inline-flex h-12 w-24 items-center justify-center overflow-hidden rounded-lg bg-white p-1">
+                        <img src="/images/logo-kachels-vloeistoffen.webp" alt="" class="h-full w-full object-contain">
+                    </span>
+                    <span>
+                        <span class="block text-[11px] font-bold uppercase tracking-[0.16em] text-turbo-gold-light">Navigatie</span>
+                        <span class="block text-sm font-semibold text-white">Kachels & Vloeistoffen</span>
+                    </span>
+                </a>
+                <button @click="open = false" aria-label="Menu sluiten" class="ml-3 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80 hover:bg-white/10">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
 
-            <div class="px-4 grid gap-3 text-sm">
-                <a href="/" class="block rounded-xl bg-white/5 px-4 py-3 font-semibold hover:bg-white/10">Home</a>
-                <a href="{{ route('products.heaters') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Kachels</a>
-                <a href="{{ route('products.liquids') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Vloeistoffen</a>
-                <a href="{{ route('products.index') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Overige producten</a>
-                <a href="{{ route('locaties') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Locaties</a>
-                <a href="{{ route('over-ons') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Over ons</a>
+            <div class="px-4 py-5 grid gap-2 text-sm">
+                <a href="/" @if(request()->routeIs('home')) aria-current="page" @endif class="turbo-mobile-link"><span>Home</span><span aria-hidden="true">›</span></a>
+                <a href="{{ route('products.heaters') }}" @if(request()->routeIs('products.heaters')) aria-current="page" @endif class="turbo-mobile-link"><span>Kachels</span><span aria-hidden="true">›</span></a>
+                <a href="{{ route('products.liquids') }}" @if(request()->routeIs('products.liquids')) aria-current="page" @endif class="turbo-mobile-link"><span>Vloeistoffen</span><span aria-hidden="true">›</span></a>
+                <a href="{{ route('products.index') }}" @if(request()->routeIs('products.index')) aria-current="page" @endif class="turbo-mobile-link"><span>Overige producten</span><span aria-hidden="true">›</span></a>
+                <a href="{{ route('locaties') }}" @if(request()->routeIs('locaties')) aria-current="page" @endif class="turbo-mobile-link"><span>Locaties</span><span aria-hidden="true">›</span></a>
+                <a href="{{ route('over-ons') }}" @if(request()->routeIs('over-ons')) aria-current="page" @endif class="turbo-mobile-link"><span>Over ons</span><span aria-hidden="true">›</span></a>
 
-                <div class="border-t border-white/10 pt-3 space-y-3">
+                <div class="mt-2 border-t border-white/10 pt-4 space-y-2">
                     @auth
                         @if(auth()->user()->is_admin)
-                            <a href="{{ route('admin.dashboard') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Admin paneel</a>
+                            <a href="{{ route('admin.dashboard') }}" class="turbo-mobile-link">Admin paneel</a>
                         @endif
-                        <a href="{{ route('account.dashboard') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Account</a>
-                        <a href="{{ route('account.orders') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Bestellingen</a>
+                        <a href="{{ route('account.dashboard') }}" class="turbo-mobile-link">Account</a>
+                        <a href="{{ route('account.orders') }}" class="turbo-mobile-link">Bestellingen</a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <button type="submit" class="w-full text-left rounded-xl bg-rose-600 px-4 py-3 font-semibold hover:bg-rose-500">Uitloggen</button>
                         </form>
                     @else
-                        <a href="{{ route('login') }}" class="block rounded-xl bg-white/5 px-4 py-3 hover:bg-white/10">Login</a>
+                        <a href="{{ route('login') }}" class="turbo-mobile-link justify-center border-turbo-gold/40 text-turbo-gold-light">Inloggen</a>
                     @endauth
                 </div>
+            </div>
+
+            <div class="mx-4 mb-5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs leading-5 text-white/65">
+                Gratis geleverd vanaf 5 jerrycans
             </div>
         </div>
     </div>
@@ -295,7 +317,7 @@
         }"
         x-init="if (query && query.length >= minChars) { fetchResults(); }"
     >
-        <div class="bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
+        <div class="bg-white border border-turbo-gold/35 rounded-2xl shadow-xl overflow-hidden">
             <div class="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100">
                 <div class="text-sm font-semibold text-gray-800">Zoeken</div>
                 <button class="p-2 text-gray-500 hover:text-gray-700" @click="searchOpen = false" aria-label="Sluit zoekvenster">
@@ -319,7 +341,7 @@
                         name="q"
                         :value="query"
                         @input="handleInput"
-                        class="w-full rounded-full border border-gray-200 bg-white py-3.5 pl-12 pr-4 text-sm md:text-base shadow-inner focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                        class="w-full rounded-full border border-turbo-blue/20 bg-white py-3.5 pl-12 pr-4 text-sm md:text-base shadow-inner focus:border-turbo-gold focus:ring-2 focus:ring-turbo-gold/20"
                         placeholder="Zoeken naar producten"
                     >
                 </form>

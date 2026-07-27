@@ -31,6 +31,7 @@ class MolliePaymentProviderTest extends TestCase
             'provider' => 'mollie',
             'amount' => '20.00',
             'currency' => 'EUR',
+            'meta' => ['payment_method' => 'ideal'],
         ]);
 
         $provider = new MolliePaymentProvider($client);
@@ -40,6 +41,10 @@ class MolliePaymentProviderTest extends TestCase
         $this->assertSame('tr_test_payment', $payment->provider_payment_id);
         $this->assertNotEmpty($payment->pay_link);
         $this->assertSame('test', $payment->meta['mollie_mode']);
+        $this->assertSame('ideal', $payment->meta['payment_method']);
+        $client->assertSent(
+            fn ($request) => $request->payload()?->all()['method'] === 'ideal'
+        );
         $client->assertSentCount(1);
     }
 }

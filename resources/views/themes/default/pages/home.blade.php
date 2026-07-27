@@ -27,8 +27,13 @@
             : asset('storage/' . $heroImageSetting);
     }
     $fallbackProductImage = isset($products) && $products->first()?->image ? asset('storage/' . $products->first()->image) : null;
+    $turboBannerDesktop = asset('images/turbo-heating-banner-desktop-2400x800.webp');
+    $turboBannerDesktopRetina = asset('images/turbo-heating-banner-desktop-4800x1600.webp');
+    $turboBannerMobile = asset('images/turbo-heating-banner-mobile-1080x1200.webp');
+    $turboBannerMobileRetina = asset('images/turbo-heating-banner-mobile-2160x2400.webp');
 
     $heroTitle = $cmsValue('home_hero_title', 'Bakker Brandstoffen in Den Helder');
+    $heroSubtitle = $cmsValue('home_hero_subtitle', '');
     $heroIntro = $cmsValue('home_hero_intro', 'Al meer dan 75 jaar een begrip in Den Helder en omstreken. Voor advies en service op gebied van gasapparatuur zoals propaan gaskachels, kooktoestellen, campingartikelen, lasapparatuur, barbecues en terrasverwarming.');
     $heroCtaLabel = $cmsValue('home_hero_cta_label', 'Naar de webshop');
     $productSectionTitle = $cmsValue('home_products_title', 'Populaire producten');
@@ -67,41 +72,56 @@
     });
 @endphp
 
-<section class="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden -mt-6 mb-16 md:mb-24">
-    <div class="relative h-[360px] sm:h-[440px] md:h-[520px]">
-        <div class="absolute inset-0 bg-[#c7d1c2]"></div>
-        @if($heroImage)
-            <img src="{{ $heroImage }}" alt="Hero" class="absolute inset-0 h-full w-full object-cover">
-        @elseif($fallbackProductImage)
-            <img src="{{ $fallbackProductImage }}" alt="Hero" class="absolute inset-0 h-full w-full object-cover">
-        @endif
-        <div class="absolute inset-0 bg-black/10"></div>
-        <div class="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-transparent"></div>
+<section class="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden -mt-6 mb-10 sm:mb-16 md:mb-24 bg-turbo-navy">
+    <div class="relative aspect-[9/10] w-full md:aspect-[3/1]">
+        <div class="absolute inset-0 bg-turbo-navy"></div>
+        <picture>
+            <source
+                media="(min-width: 768px)"
+                srcset="{{ $turboBannerDesktop }} 1x, {{ $turboBannerDesktopRetina }} 2x"
+            >
+            <img
+                src="{{ $turboBannerMobile }}"
+                srcset="{{ $turboBannerMobile }} 1x, {{ $turboBannerMobileRetina }} 2x"
+                alt="Turbo Heating GTL kachelbrandstof"
+                class="absolute inset-0 h-full w-full object-cover object-center"
+                fetchpriority="high"
+            >
+        </picture>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-turbo-navy/20"></div>
+        <div class="absolute right-[12%] top-0 h-full w-px rotate-[18deg] bg-turbo-gold/50"></div>
+        <div class="absolute right-[16%] top-0 h-full w-px rotate-[18deg] bg-turbo-gold/20"></div>
 
-        <svg class="absolute -bottom-1 left-0 w-full h-20 sm:h-24 md:h-28 text-[#a8ad98]" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
+        <svg class="absolute -bottom-1 left-0 w-full h-20 sm:h-24 md:h-28 text-turbo-navy" viewBox="0 0 1440 120" preserveAspectRatio="none" aria-hidden="true">
             <path fill="currentColor" d="M0,74 C120,92 210,62 320,72 C430,82 490,112 640,100 C780,90 860,58 980,70 C1100,82 1210,112 1440,96 L1440,120 L0,120 Z"></path>
             <path fill="rgba(255,255,255,0.10)" d="M0,86 C140,100 240,74 340,82 C470,94 530,112 680,106 C830,100 900,76 1040,86 C1160,94 1260,114 1440,106 L1440,120 L0,120 Z"></path>
         </svg>
     </div>
 
-    <div class="bg-[#a8ad98] pt-12 sm:pt-14 md:pt-16 pb-14 sm:pb-16 md:pb-18">
+    <div class="bg-turbo-navy pt-8 sm:pt-14 md:pt-16 pb-10 sm:pb-16 md:pb-18 border-b border-turbo-gold/20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid lg:grid-cols-2 gap-10 lg:gap-12 items-start">
+            <div class="grid lg:grid-cols-2 gap-7 sm:gap-10 lg:gap-12 items-start">
                 <div class="max-w-xl">
-                    <h1 class="text-3xl sm:text-4xl md:text-5xl font-semibold leading-tight text-[#2f2f2f]">
+                    <p class="turbo-section-label mb-2 sm:mb-3">Kachels &amp; vloeistoffen</p>
+                    <h1 class="text-2xl sm:text-4xl md:text-5xl font-bold leading-tight !text-white">
                         {{ $heroTitle }}
                     </h1>
-                    <p class="mt-4 text-sm sm:text-base text-[#2f2f2f]/80 leading-relaxed">
+                    @if($heroSubtitle)
+                        <p class="mt-3 sm:mt-4 max-w-xl text-[15px] sm:text-lg font-semibold leading-6 sm:leading-relaxed text-turbo-gold-light">
+                            {{ $heroSubtitle }}
+                        </p>
+                    @endif
+                    <p class="mt-3 sm:mt-4 text-[14px] sm:text-base text-white/75 leading-6 sm:leading-relaxed">
                         {{ $heroIntro }}
                     </p>
 
-                    <div class="mt-6 flex items-center gap-6">
-                        <a href="{{ route('products.index') }}" class="inline-flex items-center justify-center rounded-md bg-[#d85c3f] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(0,0,0,0.65)] hover:bg-[#c95239] focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-[#a8ad98]">
+                    <div class="mt-5 sm:mt-6 flex items-center gap-6">
+                        <a href="{{ route('products.index') }}" class="turbo-button w-full justify-center px-6 py-3 text-sm focus:outline-none sm:w-auto">
                             {{ $heroCtaLabel }}
                         </a>
 
                         <div class="hidden sm:block opacity-40">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" class="h-20 w-20 text-[#2f2f2f]" fill="none" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" class="h-20 w-20 text-turbo-gold" fill="none" aria-hidden="true">
                                 <path d="M64 8c21.54 0 39 17.46 39 39 0 14.9-8.44 27.83-20.77 34.27L88 120l-24-10-24 10 5.77-38.73C33.44 74.83 25 61.9 25 47 25 25.46 42.46 8 64 8Z" stroke="currentColor" stroke-width="4" opacity=".9" />
                                 <path d="M64 28l6.8 13.77L86 44.02l-11 10.74L77.6 70 64 62.8 50.4 70 53 54.76 42 44.02l15.2-2.25L64 28Z" fill="currentColor" opacity=".25" />
                                 <path d="M52 92h24" stroke="currentColor" stroke-width="4" stroke-linecap="round" opacity=".55" />
@@ -111,7 +131,8 @@
                 </div>
 
                 <div class="w-full">
-                    <div class="grid grid-cols-2 gap-4 sm:gap-5 max-w-xl lg:ml-auto">
+                    <p class="mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-white/55 sm:hidden">Snel naar</p>
+                    <div class="grid grid-cols-2 gap-2.5 sm:gap-5 max-w-xl lg:ml-auto">
                         @php
                             $heroCategories = isset($categories) ? $categories->take(4) : collect();
                             $fallbackHeroCards = collect([
@@ -124,10 +145,10 @@
 
                         @forelse($heroCategories as $category)
                             @php $iconIndex = $loop->index % 4; @endphp
-                            <a href="{{ route('category.show', $category->slug) }}" class="group rounded-xl bg-[#2f2f2f] border border-white/10 shadow-[0_16px_40px_-30px_rgba(0,0,0,0.75)] px-4 sm:px-6 py-6 sm:py-7 flex flex-col items-center justify-center text-center gap-3 hover:bg-[#3a3a3a] focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-[#a8ad98]">
-                                <span class="text-white/80">
+                            <a href="{{ route('category.show', $category->slug) }}" class="group rounded-xl bg-turbo-dark border border-white/10 shadow-[0_16px_40px_-30px_rgba(0,0,0,0.75)] px-3 sm:px-6 py-4 sm:py-7 flex flex-col items-center justify-center text-center gap-2 sm:gap-3 hover:border-turbo-gold hover:bg-turbo-blue focus:outline-none">
+                                <span class="text-turbo-gold-light">
                                     @if($iconIndex === 0)
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-9 w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7 sm:h-9 sm:w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M7 10h10" />
                                             <path d="M8 10a4 4 0 0 1 8 0" />
                                             <path d="M9 10v2a3 3 0 0 0 6 0v-2" />
@@ -137,7 +158,7 @@
                                             <path d="M5 20h14" />
                                         </svg>
                                     @elseif($iconIndex === 1)
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-9 w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7 sm:h-9 sm:w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M7 6c2 2 2 4 0 6" />
                                             <path d="M12 6c2 2 2 4 0 6" />
                                             <path d="M17 6c2 2 2 4 0 6" />
@@ -145,13 +166,13 @@
                                             <path d="M7 18v-3a5 5 0 0 1 10 0v3" />
                                         </svg>
                                     @elseif($iconIndex === 2)
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-9 w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7 sm:h-9 sm:w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M3 20 12 4l9 16" />
                                             <path d="M7 20 12 11l5 9" />
                                             <path d="M10 20v-4h4v4" />
                                         </svg>
                                     @else
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-9 w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7 sm:h-9 sm:w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M10 4h4" />
                                             <path d="M9 4c-2 2-3 4-3 7v7a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-7c0-3-1-5-3-7" />
                                             <path d="M9 10h6" />
@@ -164,10 +185,10 @@
                         @empty
                             @foreach($fallbackHeroCards as $card)
                                 @php $iconIndex = $loop->index % 4; @endphp
-                                <a href="{{ $card['route'] }}" class="group rounded-xl bg-[#2f2f2f] border border-white/10 shadow-[0_16px_40px_-30px_rgba(0,0,0,0.75)] px-4 sm:px-6 py-6 sm:py-7 flex flex-col items-center justify-center text-center gap-3 hover:bg-[#3a3a3a] focus:outline-none focus:ring-2 focus:ring-white/70 focus:ring-offset-2 focus:ring-offset-[#a8ad98]">
-                                    <span class="text-white/80">
+                                <a href="{{ $card['route'] }}" class="group rounded-xl bg-turbo-dark border border-white/10 shadow-[0_16px_40px_-30px_rgba(0,0,0,0.75)] px-3 sm:px-6 py-4 sm:py-7 flex flex-col items-center justify-center text-center gap-2 sm:gap-3 hover:border-turbo-gold hover:bg-turbo-blue focus:outline-none">
+                                    <span class="text-turbo-gold-light">
                                         @if($iconIndex === 0)
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-9 w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7 sm:h-9 sm:w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M7 10h10" />
                                                 <path d="M8 10a4 4 0 0 1 8 0" />
                                                 <path d="M9 10v2a3 3 0 0 0 6 0v-2" />
@@ -177,7 +198,7 @@
                                                 <path d="M5 20h14" />
                                             </svg>
                                         @elseif($iconIndex === 1)
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-9 w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7 sm:h-9 sm:w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M7 6c2 2 2 4 0 6" />
                                                 <path d="M12 6c2 2 2 4 0 6" />
                                                 <path d="M17 6c2 2 2 4 0 6" />
@@ -185,13 +206,13 @@
                                                 <path d="M7 18v-3a5 5 0 0 1 10 0v3" />
                                             </svg>
                                         @elseif($iconIndex === 2)
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-9 w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7 sm:h-9 sm:w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M3 20 12 4l9 16" />
                                                 <path d="M7 20 12 11l5 9" />
                                                 <path d="M10 20v-4h4v4" />
                                             </svg>
                                         @else
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-9 w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-7 w-7 sm:h-9 sm:w-9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M10 4h4" />
                                                 <path d="M9 4c-2 2-3 4-3 7v7a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-7c0-3-1-5-3-7" />
                                                 <path d="M9 10h6" />
@@ -211,22 +232,31 @@
 </section>
 
 <!-- PRODUCT GRID -->
-<section id="producten" class="mb-20 md:mb-24">
-    <div class="mb-8 md:mb-10">
-        <p class="text-sm uppercase tracking-[0.26em] text-gray-600">Curated selectie</p>
-        <h2 class="text-2xl md:text-3xl font-semibold text-[#1f2b24]">{{ $productSectionTitle }}</h2>
-        <p class="text-sm md:text-base text-gray-600 mt-2 max-w-2xl">{{ $productSectionIntro }}</p>
+<section id="producten" class="mb-12 sm:mb-20 md:mb-24">
+    <div class="mb-5 grid gap-4 sm:mb-8 sm:gap-5 md:mb-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-10">
+        <div>
+            <p class="turbo-section-label">Uitgelichte selectie</p>
+            <div class="flex items-end justify-between gap-4">
+                <h2 class="mt-1 text-xl font-semibold leading-tight sm:text-2xl md:text-3xl">{{ $productSectionTitle }}</h2>
+                <span class="shrink-0 pb-0.5 text-[11px] font-semibold text-turbo-blue/60 sm:hidden">Veeg om te bekijken →</span>
+            </div>
+            <div class="mt-4 h-1 w-14 rounded-full bg-turbo-gold"></div>
+        </div>
+
+        <div class="rounded-xl sm:rounded-2xl border border-turbo-blue/10 border-l-4 border-l-turbo-gold bg-white px-4 py-4 shadow-[0_18px_45px_-34px_rgba(3,24,43,0.55)] sm:px-6 sm:py-5">
+            <p class="turbo-prose text-[14px] leading-6 text-gray-600 sm:text-sm sm:leading-7 md:text-base">{{ $productSectionIntro }}</p>
+        </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+    <div class="turbo-mobile-product-strip -mx-4 grid grid-flow-col auto-cols-[82%] items-stretch snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:grid-flow-row sm:auto-cols-auto sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 md:gap-8">
         @forelse ($products as $product)
-            <article class="bg-[#f4f1e8] border border-white/50 rounded-3xl shadow-[0_18px_45px_-28px_rgba(0,0,0,0.45)] overflow-hidden flex flex-col">
+            <article class="product-card min-w-0 snap-start rounded-2xl">
                 <a href="{{ route('product.show', $product->slug) }}" class="block">
-                    <div class="aspect-[4/3] bg-[#e3eadf] relative overflow-hidden">
+                    <div class="product-card__media product-card__media--white aspect-[4/3] relative">
                         @if($product->image)
-                            <img src="{{ asset('storage/' . $product->image) }}" class="h-full w-full object-cover">
+                            <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}">
                         @else
-                            <div class="absolute inset-0 flex items-center justify-center text-[#1f2b24] text-sm font-semibold px-6 text-center">
+                            <div class="absolute inset-0 flex items-center justify-center text-turbo-ink text-sm font-semibold px-6 text-center">
                                 {{ $product->name }}
                             </div>
                         @endif
@@ -234,23 +264,24 @@
                     </div>
                 </a>
 
-                <div class="p-6 space-y-4 flex-1 flex flex-col">
+                <div class="p-4 sm:p-6 space-y-3 sm:space-y-4 flex-1 flex flex-col">
                     <div class="space-y-2">
-                        <h3 class="text-xl font-semibold text-[#1f2b24] leading-snug">
-                            <a href="{{ route('product.show', $product->slug) }}" class="hover:text-green-700 transition">
+                        <h3 class="text-lg sm:text-xl font-semibold leading-snug">
+                            <a href="{{ route('product.show', $product->slug) }}" class="hover:text-turbo-gold">
                                 {{ $product->name }}
                             </a>
                         </h3>
                         <p class="text-sm md:text-base text-gray-600 line-clamp-3">{{ $product->description ?? 'Geen beschrijving beschikbaar' }}</p>
                     </div>
 
-                    <div class="flex items-center justify-between pt-2">
-                        <span class="text-xs font-semibold tracking-[0.16em] text-gray-700 uppercase">€ {{ number_format($product->price, 2, ',', '.') }}</span>
+                    <div class="mt-auto flex items-center justify-between gap-3 pt-2">
+                        <span class="product-card__price text-lg">€ {{ number_format($product->price, 2, ',', '.') }}</span>
 
-                        <form method="POST" action="{{ route('cart.add', $product->id) }}">
+                        <form method="POST" action="{{ route('cart.add', $product->id) }}" class="shrink-0">
                             @csrf
-                            <button type="submit" class="inline-flex items-center gap-2 text-sm font-semibold text-green-700 underline underline-offset-4 decoration-2 decoration-green-600/50 hover:decoration-green-700 transition">
-                                In winkelmand
+                            <button type="submit" class="turbo-button px-3 sm:px-4 py-2 text-sm">
+                                <span class="sm:hidden">Bestellen</span>
+                                <span class="hidden sm:inline">In winkelmand</span>
                                 <span aria-hidden="true" class="text-base">→</span>
                             </button>
                         </form>
@@ -266,26 +297,26 @@
 
 
 <!-- CATEGORIES -->
-<section class="mb-12 md:mb-16">
-    <h2 class="text-2xl md:text-3xl font-semibold text-[#1f2b24] mb-6 md:mb-8">{{ $categoriesTitle }}</h2>
+<section class="mb-8 sm:mb-12 md:mb-16">
+    <h2 class="text-xl sm:text-2xl md:text-3xl font-semibold mb-4 sm:mb-6 md:mb-8">{{ $categoriesTitle }}</h2>
 
-    <div class="bg-[#e9e4d9] rounded-3xl px-4 sm:px-6 md:px-8 py-8 md:py-10 overflow-hidden border border-white/40 shadow-[0_14px_40px_-32px_rgba(0,0,0,0.45)]">
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6 md:gap-8">
+    <div class="bg-turbo-gray rounded-2xl sm:rounded-3xl px-3 sm:px-6 md:px-8 py-4 sm:py-8 md:py-10 overflow-hidden border border-turbo-blue/10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-6 md:gap-8">
             @forelse ($categories as $category)
                 <a href="{{ route('category.show', $category->slug) }}"
-                   class="group relative block rounded-2xl bg-[#2f352f] text-white border border-white/10 shadow-[0_18px_40px_-30px_rgba(0,0,0,0.6)] overflow-hidden transition transform hover:-translate-y-1 hover:shadow-[0_20px_50px_-28px_rgba(0,0,0,0.55)]">
+                   class="group relative block rounded-2xl bg-turbo-dark text-white border border-white/10 shadow-[0_18px_40px_-30px_rgba(0,0,0,0.6)] overflow-hidden transition transform hover:-translate-y-1 hover:border-turbo-gold hover:shadow-[0_20px_50px_-28px_rgba(0,0,0,0.55)]">
                     <div class="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition"></div>
 
-                    <div class="relative flex flex-col items-center justify-center gap-3 px-6 sm:px-8 py-8">
-                        <span class="inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/90 group-hover:border-white/25">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-6 w-6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <div class="relative flex flex-row sm:flex-col items-center justify-start sm:justify-center gap-3 px-4 sm:px-8 py-4 sm:py-8">
+                        <span class="inline-flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full border border-turbo-gold/50 bg-turbo-navy/30 text-turbo-gold-light group-hover:border-turbo-gold-light">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5 sm:h-6 sm:w-6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 3c-1.5 2.2-.4 3.8.6 5.1.8 1.1 1.4 2 .7 3.6-.6 1.5-2.1 2.3-3.3 2.9-1.3.6-2.1 1.5-2.1 3.1 0 1.6 1.2 3 4.1 3 2.8 0 4.5-1.6 4.5-4 0-1.7-.8-2.5-1.3-3.4-.7-1.2-.6-2.3.3-3.7.9-1.5 1.4-3.4-.5-6.6" />
                             </svg>
                         </span>
 
-                        <div class="text-center space-y-1">
-                            <div class="text-lg sm:text-xl font-semibold">{{ $category->name }}</div>
-                            <p class="text-sm text-white/80">Bekijk producten</p>
+                        <div class="text-left sm:text-center space-y-0.5 sm:space-y-1">
+                            <div class="text-base sm:text-xl font-semibold">{{ $category->name }}</div>
+                            <p class="text-xs sm:text-sm text-white/80">Bekijk producten</p>
                         </div>
                     </div>
                 </a>
@@ -299,31 +330,31 @@
 
 
 <!-- FAQ -->
-<section class="mt-16 md:mt-20">
-    <div class="flex items-center justify-between mb-6 md:mb-8">
-        <h2 class="text-2xl md:text-3xl font-semibold text-[#1f2b24]">{{ $faqTitle }}</h2>
+<section class="mt-10 sm:mt-16 md:mt-20">
+    <div class="flex items-center justify-between mb-4 sm:mb-6 md:mb-8">
+        <h2 class="text-xl sm:text-2xl md:text-3xl font-semibold">{{ $faqTitle }}</h2>
         <span class="hidden sm:inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
             Snelle antwoorden
         </span>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="grid gap-3 sm:gap-4 md:grid-cols-2">
         @php
             $faqs = $faqs ?? collect();
         @endphp
 
         @foreach($faqs as $item)
-            <details class="group bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition">
-                <summary class="cursor-pointer select-none px-5 py-4 font-semibold text-[#1f2b24] flex items-center gap-3">
-                    <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold">
+            <details class="group bg-white border border-turbo-blue/15 rounded-2xl shadow-sm hover:border-turbo-gold/60 hover:shadow-md transition open:border-turbo-gold/60">
+                <summary class="cursor-pointer select-none px-4 sm:px-5 py-3.5 sm:py-4 text-sm sm:text-base font-semibold text-turbo-ink flex items-center gap-3">
+                    <span class="inline-flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-full bg-turbo-gray text-turbo-gold text-[10px] sm:text-xs font-bold">
                         Q
                     </span>
                     <span class="flex-1">{{ $item['q'] ?? '' }}</span>
-                    <span class="text-emerald-600 transition-transform duration-200 group-open:rotate-45">+</span>
+                    <span class="text-turbo-gold text-xl transition-transform duration-200 group-open:rotate-45">+</span>
                 </summary>
-                <div class="px-5 pb-5 text-gray-700 leading-relaxed">
+                <div class="px-4 sm:px-5 pb-4 sm:pb-5 text-gray-700 leading-relaxed">
                     <div class="flex items-start gap-3">
-                        <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-bold">
+                        <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-turbo-gold text-turbo-navy text-xs font-bold">
                             A
                         </span>
                         <p class="text-sm md:text-base">{{ $item['a'] ?? '' }}</p>

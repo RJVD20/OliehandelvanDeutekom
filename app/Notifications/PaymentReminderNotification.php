@@ -26,6 +26,10 @@ class PaymentReminderNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->mailer('orders')
             ->from(
+                config('mail.addresses.orders.sender_address'),
+                config('mail.addresses.orders.sender_name'),
+            )
+            ->replyTo(
                 config('mail.addresses.orders.address'),
                 config('mail.addresses.orders.name'),
             )

@@ -1,4 +1,4 @@
-<footer class="mt-16 bg-neutral-900 text-white/80 border-t border-white/10">
+<footer class="turbo-footer mt-16 text-white/80 border-t">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" x-data="{ open: { info: true, links: true, contact: true } }">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
             <div class="space-y-3">
@@ -55,26 +55,26 @@
 
         <div class="mt-10 flex flex-wrap items-center gap-6 lg:gap-10 border-t border-white/10 pt-8 text-sm text-white/80">
             <div class="flex items-start gap-3 flex-1 min-w-[240px]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#b5c4a2] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h1.5M3 12h1.5M3 17h1.5M7 5h14v14H7z" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#b5c4a2] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 1 0 0-4h14a2 2 0 1 0 0 4M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8" />
                 </svg>
-                <div class="leading-snug">Op werkdagen voor 17.00u besteld, binnen 2 werkdagen thuis</div>
+                <div class="leading-snug">Gratis geleverd vanaf 5 jerrycans</div>
             </div>
             <div class="flex items-start gap-3 flex-1 min-w-[240px]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#b5c4a2] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16l-1.5 9h-13z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 16h6" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#b5c4a2] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                 </svg>
-                <div class="leading-snug">Gratis verzending v.a. € 100,- bij max. 24 kg</div>
+                <div class="leading-snug">Bezorging binnen 4 tot 8 werkdagen</div>
             </div>
             <div class="flex items-start gap-3 flex-1 min-w-[240px]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#b5c4a2] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l3 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#b5c4a2] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z" />
                 </svg>
-                <div class="leading-snug">Al 75 jaar een begrip in Den Helder</div>
+                <div class="leading-snug">Specialist in kachels en kachelvloeistof</div>
             </div>
             <div class="flex items-start gap-3 flex-1 min-w-[240px]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#b5c4a2] mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#b5c4a2] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 7h14v10H5z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 11h14M9 15h2" />
                 </svg>

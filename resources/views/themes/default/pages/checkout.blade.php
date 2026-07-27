@@ -4,7 +4,8 @@
 
 @section('content')
 
-<h1 class="text-2xl sm:text-3xl font-bold text-green-700 mb-6 sm:mb-8">
+<p class="turbo-section-label mb-2">Veilig bestellen</p>
+<h1 class="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8">
     Afrekenen
 </h1>
 
@@ -14,16 +15,21 @@
     </div>
 @else
 
+@include('themes.default.components.delivery-notice', [
+    'detailed' => true,
+    'attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => 'mb-6']),
+])
+
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
 
     <!-- Gegevens -->
-    <div class="bg-white border rounded-lg p-5 sm:p-6">
+    <div class="turbo-card p-5 sm:p-6">
         <h2 class="text-lg sm:text-xl font-semibold mb-5">
             Jouw gegevens
         </h2>
 
 @guest
-    <div class="mb-6 p-4 border rounded-lg bg-green-50 text-sm">
+    <div class="mb-6 p-4 border border-turbo-gold/30 rounded-lg bg-turbo-gray text-sm">
         <strong>Heb je al een account?</strong><br>
         <a href="{{ route('login') }}" class="text-green-700 underline">
             Log in
@@ -34,6 +40,7 @@
 
 
         <form
+            id="checkout-form"
             method="POST"
             action="{{ route('checkout.store') }}"
             class="space-y-4"
@@ -159,46 +166,94 @@
                 </div>
             </div>
 
-            <button
-                type="submit"
-                class="w-full mt-6 py-3.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition text-base"
-            >
-                Bestelling plaatsen
-            </button>
         </form>
     </div>
 
-    <!-- Overzicht -->
-    <div class="bg-white border rounded-lg p-5 sm:p-6 h-fit">
-        <h2 class="text-lg sm:text-xl font-semibold mb-5">
-            Bestellingsoverzicht
-        </h2>
+    <div class="space-y-6 h-fit lg:sticky lg:top-32">
+        <!-- Overzicht -->
+        <div class="turbo-card p-5 sm:p-6">
+            <h2 class="text-lg sm:text-xl font-semibold mb-5">
+                Bestellingsoverzicht
+            </h2>
 
-        <div class="space-y-3 sm:space-y-4 text-sm">
-            @php $total = 0; @endphp
+            <div class="space-y-3 sm:space-y-4 text-sm">
+                @php $total = 0; @endphp
 
-            @foreach ($cart as $item)
-                @php
-                    $subtotal = $item['price'] * $item['quantity'];
-                    $total += $subtotal;
-                @endphp
+                @foreach ($cart as $item)
+                    @php
+                        $subtotal = $item['price'] * $item['quantity'];
+                        $total += $subtotal;
+                    @endphp
 
-                <div class="flex justify-between">
-                    <span class="text-gray-700">
-                        {{ $item['quantity'] }}× {{ $item['name'] }}
-                    </span>
-                    <span>
-                        € {{ number_format($subtotal, 2, ',', '.') }}
+                    <div class="flex justify-between">
+                        <span class="text-gray-700">
+                            {{ $item['quantity'] }}× {{ $item['name'] }}
+                        </span>
+                        <span>
+                            € {{ number_format($subtotal, 2, ',', '.') }}
+                        </span>
+                    </div>
+                @endforeach
+
+                <div class="border-t pt-4 flex justify-between text-base font-semibold">
+                    <span>Totaal</span>
+                    <span class="product-card__price">
+                        € {{ number_format($total, 2, ',', '.') }}
                     </span>
                 </div>
-            @endforeach
-
-            <div class="border-t pt-4 flex justify-between text-base font-semibold">
-                <span>Totaal</span>
-                <span class="text-green-700">
-                    € {{ number_format($total, 2, ',', '.') }}
-                </span>
             </div>
+        </div>
+
+        <!-- Betaalmethode -->
+        <div class="turbo-card p-5 sm:p-6">
+            <fieldset>
+                <legend class="text-lg sm:text-xl font-semibold text-turbo-ink">Betaalmethode</legend>
+                <p class="mt-1 text-sm text-gray-500">Je gaat direct naar de gekozen beveiligde betaalomgeving.</p>
+
+                <div class="mt-4 grid gap-3">
+                    @foreach($paymentMethods as $method => $details)
+                        <label class="group relative cursor-pointer">
+                            <input
+                                form="checkout-form"
+                                type="radio"
+                                name="payment_method"
+                                value="{{ $method }}"
+                                class="peer sr-only"
+                                required
+                                @checked(old('payment_method', 'ideal') === $method)
+                            >
+                            <span class="flex h-full items-start gap-3 rounded-xl border border-turbo-blue/20 bg-white p-4 peer-checked:border-turbo-gold peer-checked:bg-turbo-gold/10 peer-checked:ring-2 peer-checked:ring-turbo-gold/20 group-hover:border-turbo-gold/70">
+                                <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-turbo-navy text-turbo-gold-light">
+                                    @if($method === 'ideal')
+                                        <span class="text-xs font-extrabold">iDEAL</span>
+                                    @else
+                                        <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                                            <rect x="3" y="5" width="18" height="14" rx="2" />
+                                            <path d="M3 10h18M7 15h4" />
+                                        </svg>
+                                    @endif
+                                </span>
+                                <span>
+                                    <span class="block font-semibold text-turbo-ink">{{ $details['label'] }}</span>
+                                    <span class="mt-1 block text-xs leading-relaxed text-gray-500">{{ $details['description'] }}</span>
+                                </span>
+                            </span>
+                        </label>
+                    @endforeach
+                </div>
+
+                @error('payment_method')
+                    <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
+                @enderror
+            </fieldset>
+
+            <button
+                form="checkout-form"
+                type="submit"
+                class="turbo-button w-full mt-5 py-3.5 text-base"
+            >
+                Bestelling plaatsen
+            </button>
         </div>
     </div>
 

@@ -3,6 +3,17 @@
 return [
     'provider' => env('PAYMENTS_PROVIDER', 'mock'),
 
+    'methods' => [
+        'ideal' => [
+            'label' => 'iDEAL | Wero',
+            'description' => 'Betaal direct en veilig via je eigen bank.',
+        ],
+        'creditcard' => [
+            'label' => 'Creditcard',
+            'description' => 'Betaal veilig met Visa, Mastercard of een andere ondersteunde kaart.',
+        ],
+    ],
+
     'reminders' => [
         'first_days' => env('PAYMENTS_REMINDER_FIRST_DAYS', 7),
         'second_days' => env('PAYMENTS_REMINDER_SECOND_DAYS', 12),

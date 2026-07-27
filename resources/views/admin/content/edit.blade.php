@@ -27,6 +27,7 @@
             <div class="px-3 py-3 border-b bg-gray-50">
                 <div class="grid grid-cols-2 gap-2">
                     <button type="button" data-section="home" data-preview="{{ route('home') }}" class="section-tab px-3 py-2 rounded-lg text-sm font-semibold bg-gray-900 text-white">Home</button>
+                    <button type="button" data-section="bezorging" data-preview="{{ route('home') }}" class="section-tab px-3 py-2 rounded-lg text-sm font-semibold bg-white border">Bezorging</button>
                     <button type="button" data-section="informatie" data-preview="{{ route('informatie') }}" class="section-tab px-3 py-2 rounded-lg text-sm font-semibold bg-white border">Informatie</button>
                     <button type="button" data-section="over-ons" data-preview="{{ route('over-ons') }}" class="section-tab px-3 py-2 rounded-lg text-sm font-semibold bg-white border">Over‑ons</button>
                     <button type="button" data-section="locaties" data-preview="{{ route('locaties') }}" class="section-tab px-3 py-2 rounded-lg text-sm font-semibold bg-white border">Locaties</button>
@@ -48,6 +49,11 @@
             <div>
                 <label class="text-sm font-medium">Hero titel</label>
                 <input type="text" name="home_hero_title" value="{{ $values['home_hero_title'] ?? '' }}" class="w-full rounded-lg border px-3 py-2">
+            </div>
+            <div>
+                <label class="text-sm font-medium">Hero tussenregel</label>
+                <textarea name="home_hero_subtitle" rows="2" class="w-full rounded-lg border px-3 py-2">{{ $values['home_hero_subtitle'] ?? '' }}</textarea>
+                <p class="mt-1 text-xs text-gray-500">Kleinere tekst direct onder de grote titel.</p>
             </div>
             <div>
                 <label class="text-sm font-medium">Hero intro</label>
@@ -110,6 +116,34 @@
                                         <textarea name="home_faq_{{ $i }}_a" rows="3" class="w-full rounded-lg border px-3 py-2">{{ $values['home_faq_'.$i.'_a'] ?? '' }}</textarea>
                                     </div>
                                 </details>
+                            @endfor
+                        </div>
+                    </div>
+                </section>
+
+                <section class="space-y-4 hidden" data-section-panel="bezorging">
+                    <div>
+                        <h2 class="text-base font-semibold">Bezorginformatie</h2>
+                        <p class="mt-1 text-xs text-gray-500">Deze teksten verschijnen bij producten, in de winkelwagen en tijdens het afrekenen.</p>
+                    </div>
+
+                    <div class="grid gap-4">
+                        <div>
+                            <label class="text-sm font-medium">Korte melding bij producten</label>
+                            <input type="text" name="delivery_compact_text" value="{{ $values['delivery_compact_text'] ?? '' }}" class="w-full rounded-lg border px-3 py-2">
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium">Titel uitgebreid verzendblok</label>
+                            <input type="text" name="delivery_title" value="{{ $values['delivery_title'] ?? '' }}" class="w-full rounded-lg border px-3 py-2">
+                        </div>
+
+                        <div class="space-y-3">
+                            @for($i = 1; $i <= 4; $i++)
+                                <div>
+                                    <label class="text-sm font-medium">Bezorgregel {{ $i }}</label>
+                                    <textarea name="delivery_rule_{{ $i }}" rows="2" class="w-full rounded-lg border px-3 py-2">{{ $values['delivery_rule_'.$i] ?? '' }}</textarea>
+                                </div>
                             @endfor
                         </div>
                     </div>

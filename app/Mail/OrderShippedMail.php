@@ -27,7 +27,11 @@ class OrderShippedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            from: [
+            from: new \Illuminate\Mail\Mailables\Address(
+                config('mail.addresses.orders.sender_address'),
+                config('mail.addresses.orders.sender_name'),
+            ),
+            replyTo: [
                 new \Illuminate\Mail\Mailables\Address(
                     config('mail.addresses.orders.address'),
                     config('mail.addresses.orders.name'),

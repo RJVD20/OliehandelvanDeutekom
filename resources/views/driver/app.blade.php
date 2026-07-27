@@ -95,8 +95,8 @@
                                     <p class="font-semibold">#{{ $order->id }} {{ $order->name }}</p>
                                     <p class="text-sm text-[color:var(--app-muted)]">{{ $order->address }}, {{ $order->postcode }} {{ $order->city }}</p>
                                 </div>
-                                <span class="text-xs px-2 py-1 rounded-full border border-[color:var(--app-border)] {{ $order->status === 'completed' ? 'text-[color:var(--app-accent)]' : 'text-white/70' }}">
-                                    {{ $order->status === 'completed' ? 'Afgerond' : 'Open' }}
+                                <span class="text-xs px-2 py-1 rounded-full border border-[color:var(--app-border)] {{ $order->status->value === 'completed' ? 'text-[color:var(--app-accent)]' : 'text-white/70' }}">
+                                    {{ $order->status->value === 'completed' ? 'Afgerond' : 'Open' }}
                                 </span>
                             </div>
                             @if($order->route_notes)

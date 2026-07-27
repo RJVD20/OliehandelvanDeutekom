@@ -7,16 +7,21 @@
 <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
     <div>
         <h1 class="text-2xl font-bold">Bestelling #{{ $order->id }}</h1>
-        <p class="text-sm text-gray-500 mt-1">Aangemaakt op {{ $order->created_at->format('d-m-Y') }}</p>
+        <p class="text-sm text-gray-500 mt-1">
+            Aangemaakt op {{ $order->created_at->format('d-m-Y') }}
+            @if($order->source === 'manual')
+                <span class="ml-2 rounded-full bg-purple-100 px-2 py-1 text-xs font-semibold text-purple-700">Handmatig</span>
+            @endif
+        </p>
     </div>
     <div class="flex items-center gap-3">
         <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide
-            @if($order->status === 'pending') bg-yellow-100 text-yellow-700
-            @elseif($order->status === 'shipped') bg-blue-100 text-blue-700
-            @elseif($order->status === 'completed') bg-green-100 text-green-700
+            @if($order->status->value === 'pending') bg-yellow-100 text-yellow-700
+            @elseif($order->status->value === 'shipped') bg-blue-100 text-blue-700
+            @elseif($order->status->value === 'completed') bg-green-100 text-green-700
             @endif
         ">
-            {{ ucfirst($order->status) }}
+            {{ ucfirst($order->status->value) }}
         </span>
         <span class="text-sm font-semibold text-green-700">€ {{ number_format($order->total, 2, ',', '.') }}</span>
     </div>
@@ -50,7 +55,10 @@
         <h2 class="font-semibold">Klant</h2>
 
         <p class="text-sm"><span class="text-gray-600">Naam</span><br><strong>{{ $order->name }}</strong></p>
-        <p class="text-sm"><span class="text-gray-600">Email</span><br><strong>{{ $order->email }}</strong></p>
+        <p class="text-sm"><span class="text-gray-600">E-mail</span><br><strong>{{ $order->email ?: 'Niet opgegeven' }}</strong></p>
+        @if($order->phone)
+            <p class="text-sm"><span class="text-gray-600">Telefoon</span><br><strong><a href="tel:{{ $order->phone }}" class="text-blue-700">{{ $order->phone }}</a></strong></p>
+        @endif
 
         <p class="mt-2 text-sm leading-relaxed">
             <strong>Adres:</strong><br>
@@ -112,6 +120,13 @@
     </div>
 
 </div>
+
+@if($order->route_notes)
+    <div class="mt-6 rounded-2xl border border-purple-100 bg-purple-50/60 p-5">
+        <h2 class="font-semibold text-purple-900">Interne notitie</h2>
+        <p class="mt-2 whitespace-pre-line text-sm text-purple-900">{{ $order->route_notes }}</p>
+    </div>
+@endif
 
 <!-- Routeplanning en acties -->
 <div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">

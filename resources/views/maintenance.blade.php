@@ -7,19 +7,18 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="min-h-screen bg-gray-100 text-gray-900">
+<body class="turbo-auth min-h-screen text-gray-900">
     <div class="fixed top-4 right-4" style="position:fixed;top:16px;right:16px;z-index:50;">
         <a
             href="{{ url('/login') }}"
-            class="inline-block px-4 py-2 bg-gray-900 text-white rounded"
-            style="display:inline-block;padding:10px 14px;background:#111827;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:600;font-size:14px;"
+            class="inline-block px-4 py-2 bg-turbo-gold text-turbo-navy rounded"
         >
             Admin inloggen
         </a>
     </div>
 
     <div class="min-h-screen flex items-center justify-center p-6">
-        <div class="w-full max-w-xl bg-white rounded shadow p-8">
+        <div class="turbo-auth-card w-full max-w-xl p-8">
             <h1 class="text-2xl font-bold mb-2">We zijn even bezig met onderhoud</h1>
             <p class="text-gray-600 mb-6">
                 De website is tijdelijk niet beschikbaar. Probeer het later opnieuw.

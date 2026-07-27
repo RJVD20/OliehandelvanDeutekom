@@ -145,6 +145,8 @@ return [
         'orders' => [
             'address' => env('ORDERS_MAIL_FROM_ADDRESS', env('ORDERS_MAIL_USERNAME')),
             'name' => env('ORDERS_MAIL_FROM_NAME', env('MAIL_FROM_NAME')),
+            'sender_address' => env('ORDERS_MAIL_SENDER_ADDRESS', env('INFO_MAIL_FROM_ADDRESS', env('INFO_MAIL_USERNAME'))),
+            'sender_name' => env('ORDERS_MAIL_SENDER_NAME', env('INFO_MAIL_FROM_NAME', env('MAIL_FROM_NAME'))),
         ],
     ],
 

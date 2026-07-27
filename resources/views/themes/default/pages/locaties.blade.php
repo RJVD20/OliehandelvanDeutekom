@@ -46,6 +46,7 @@
 
 <div class="max-w-6xl mx-auto px-4 py-10">
     <header class="mb-8">
+        <p class="turbo-section-label mb-2">Service in de regio</p>
         <h1 class="text-3xl md:text-4xl font-bold mb-2">
             {{ $pageTitle }}
         </h1>
@@ -58,7 +59,7 @@
 
     <!-- KAART (1 kolom breed, 2 rijen hoog) -->
     <aside class="sm:row-span-2">
-        <div class="bg-white rounded-2xl shadow-md border overflow-hidden h-full">
+        <div class="turbo-card overflow-hidden h-full">
             <div class="px-4 pt-4 pb-2 border-b">
                 <h2 class="text-sm font-semibold">
                     Kaart met ophaallocaties
@@ -74,8 +75,15 @@
 
     <!-- LOCATIE CARDS -->
     @foreach ($locaties as $loc)
-        <article class="bg-white rounded-2xl shadow-sm border p-5 flex flex-col gap-3">
-            <div>
+        <article class="turbo-card p-5 flex flex-col gap-3">
+            <div class="flex items-start gap-3">
+                <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-turbo-navy text-turbo-gold-light">
+                    <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path d="M12 21s7-5.2 7-12a7 7 0 1 0-14 0c0 6.8 7 12 7 12Z" />
+                        <circle cx="12" cy="9" r="2.3" />
+                    </svg>
+                </span>
+                <div>
                 <h2 class="font-semibold text-lg">
                     {{ $loc->name }}
                 </h2>
@@ -83,6 +91,7 @@
                     {{ $loc->street }}<br>
                     {{ $loc->postcode_city }}
                 </p>
+                </div>
             </div>
 
             <div>
@@ -107,7 +116,7 @@
                 <p class="text-sm">
                     <span class="font-medium">Tel.</span>
                     <a href="tel:{{ preg_replace('/\D+/', '', $loc->phone) }}"
-                       class="text-emerald-700 hover:underline">
+                       class="text-turbo-blue hover:text-turbo-gold hover:underline">
                         {{ $loc->phone }}
                     </a>
                 </p>
@@ -115,7 +124,7 @@
 
             <button
                 onclick="focusLocation('loc-{{ $loc->slug }}')"
-                class="mt-auto text-sm font-medium text-emerald-700 hover:underline"
+                class="turbo-button mt-auto px-4 py-2 text-sm"
             >
                 Bekijk op kaart
             </button>

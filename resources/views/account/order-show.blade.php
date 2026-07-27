@@ -56,7 +56,7 @@
         </h2>
 
         <div class="text-sm space-y-2 text-gray-700">
-            <div><strong>Status:</strong> {{ ucfirst($order->status) }}</div>
+            <div><strong>Status:</strong> {{ ucfirst($order->status->value) }}</div>
             <div><strong>Naam:</strong> {{ $order->name }}</div>
             <div><strong>E-mail:</strong> {{ $order->email }}</div>
             <div><strong>Adres:</strong><br>

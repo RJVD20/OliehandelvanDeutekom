@@ -19,6 +19,7 @@ class ContentController extends Controller
         return [
             // Home
             'home_hero_title' => 'Bakker Brandstoffen in Den Helder',
+            'home_hero_subtitle' => '',
             'home_hero_intro' => 'Al meer dan 75 jaar een begrip in Den Helder en omstreken. Voor advies en service op gebied van gasapparatuur zoals propaan gaskachels, kooktoestellen, campingartikelen, lasapparatuur, barbecues en terrasverwarming.',
             'home_hero_cta_label' => 'Naar de webshop',
             'home_products_title' => 'Populaire producten',
@@ -35,6 +36,14 @@ class ContentController extends Controller
             'home_faq_4_a' => 'Afhalen is mogelijk bij onze ophaallocaties. Bekijk de locatiespagina voor actuele informatie.',
             'home_faq_5_q' => 'Hoe werkt retourneren?',
             'home_faq_5_a' => 'Niet tevreden? Neem contact met ons op, dan kijken we samen naar een passende oplossing volgens de geldende voorwaarden.',
+
+            // Bezorging
+            'delivery_compact_text' => 'Bezorging binnen 4–8 werkdagen',
+            'delivery_title' => 'Bezorging via onze eigen bezorgdienst',
+            'delivery_rule_1' => 'Verwachte levering binnen 4–8 werkdagen.',
+            'delivery_rule_2' => 'Vanaf 3 jerrycans van 20 liter bezorgen we gratis.',
+            'delivery_rule_3' => 'Onder 3 jerrycans geldt €5 bezorgvergoeding per bestelling.',
+            'delivery_rule_4' => 'Express Premium: voor 12.00 uur besteld, de volgende dag geleverd voor €7,50 extra per jerrycan.',
 
             // Informatie
             'informatie_title' => 'De ideale verwarmingsoplossing: De pelletkachel',
@@ -82,6 +91,7 @@ class ContentController extends Controller
     private array $fields = [
         // Home
         'home_hero_title',
+        'home_hero_subtitle',
         'home_hero_intro',
         'home_hero_cta_label',
         'home_products_title',
@@ -98,6 +108,14 @@ class ContentController extends Controller
         'home_faq_4_a',
         'home_faq_5_q',
         'home_faq_5_a',
+
+        // Bezorging
+        'delivery_compact_text',
+        'delivery_title',
+        'delivery_rule_1',
+        'delivery_rule_2',
+        'delivery_rule_3',
+        'delivery_rule_4',
 
         // Informatie
         'informatie_title',

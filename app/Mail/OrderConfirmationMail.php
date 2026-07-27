@@ -24,6 +24,10 @@ class OrderConfirmationMail extends Mailable
     {
         return $this
             ->from(
+                config('mail.addresses.orders.sender_address'),
+                config('mail.addresses.orders.sender_name'),
+            )
+            ->replyTo(
                 config('mail.addresses.orders.address'),
                 config('mail.addresses.orders.name'),
             )

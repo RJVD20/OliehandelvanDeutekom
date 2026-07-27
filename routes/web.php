@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\Admin\NewsletterController;
+use App\Http\Controllers\Admin\ManualOrderController;
 use App\Http\Controllers\NewsletterUnsubscribeController;
 
 /*
@@ -47,6 +48,7 @@ use App\Services\Payments\PaymentService;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\LocationController;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 /*
@@ -338,6 +340,16 @@ Route::post('/winkelmand/toevoegen/{id}', function ($id) {
     }
 
     session()->put('cart', $cart);
+
+    $total = collect(session('cart', []))->sum('quantity');
+
+    if (request()->expectsJson()) {
+        return response()->json([
+            'message' => 'Product toegevoegd aan winkelmand',
+            'count'   => $total,
+        ]);
+    }
+
     session()->flash('toast', 'Product toegevoegd aan winkelmand');
 
     return back();
@@ -376,8 +388,9 @@ Route::permanentRedirect('/cart', '/winkelmand');
 Route::get('/checkout', function () {
     $cart = session('cart', []);
     $provinces = nl_provinces();
+    $paymentMethods = config('payments.methods', []);
 
-    return view('themes.default.pages.checkout', compact('cart', 'provinces'));
+    return view('themes.default.pages.checkout', compact('cart', 'provinces', 'paymentMethods'));
 })->name('checkout.index');
 
 Route::post('/checkout', function (Request $request) {
@@ -389,6 +402,7 @@ Route::post('/checkout', function (Request $request) {
         'postcode' => ['required', 'regex:/^[1-9][0-9]{3}\s?[A-Z]{2}$/i'],
         'city'     => 'required|string|max:255',
         'province' => ['required', 'in:' . implode(',', nl_provinces())],
+        'payment_method' => ['required', Rule::in(array_keys(config('payments.methods', [])))],
     ]);
 
     $postcode = strtoupper(str_replace(' ', '', $request->postcode));
@@ -416,6 +430,9 @@ Route::post('/checkout', function (Request $request) {
         'due_date'           => now()->addDays(14),
         'reminder_count'     => 0,
         'last_reminder_at'   => null,
+        'meta'                => [
+            'payment_method' => $request->payment_method,
+        ],
     ]);
 
     app(PaymentService::class)->ensurePayLink($payment);
@@ -429,7 +446,14 @@ Route::post('/checkout', function (Request $request) {
         ]);
     }
 
-    Mail::to($order->email)->send(new OrderConfirmationMail($order));
+    try {
+        Mail::to($order->email)->send(new OrderConfirmationMail($order));
+    } catch (\Throwable $exception) {
+        Log::error('Order confirmation email could not be sent.', [
+            'order_id' => $order->id,
+            'exception' => $exception,
+        ]);
+    }
     session()->forget('cart');
 
     if ($payment->pay_link) {
@@ -470,7 +494,14 @@ Route::middleware('auth')->group(function () {
 
         $new = $order->duplicate();
 
-        Mail::to($new->email)->send(new OrderConfirmationMail($new));
+        try {
+            Mail::to($new->email)->send(new OrderConfirmationMail($new));
+        } catch (\Throwable $exception) {
+            Log::error('Reorder confirmation email could not be sent.', [
+                'order_id' => $new->id,
+                'exception' => $exception,
+            ]);
+        }
 
         return redirect()->route('account.orders')->with('toast', 'Bestelling opnieuw geplaatst');
     })->name('account.orders.reorder');
@@ -534,6 +565,11 @@ Route::middleware(['auth', 'admin'])
         })->name('maintenance.toggle');
 
         // Orders
+        Route::get('/orders/create', [ManualOrderController::class, 'create'])
+            ->name('orders.create');
+        Route::post('/orders', [ManualOrderController::class, 'store'])
+            ->name('orders.store');
+
         Route::get('/orders', function (Request $request) {
             $provinces = nl_provinces();
 
@@ -604,9 +640,11 @@ Route::middleware(['auth', 'admin'])
         Route::post('/orders/{order}/ship', function (Order $order) {
             $order->update(['status' => OrderStatus::SHIPPED]);
 
-            Mail::to($order->email)->send(new OrderShippedMail($order));
+            if ($order->email) {
+                Mail::to($order->email)->send(new OrderShippedMail($order));
+            }
 
-            return back()->with('toast', 'Verzendmail verstuurd');
+            return back()->with('toast', $order->email ? 'Verzendmail verstuurd' : 'Bestelling gemarkeerd als verzonden');
         })->name('orders.ship');
 
         // Routes (planning overzicht)

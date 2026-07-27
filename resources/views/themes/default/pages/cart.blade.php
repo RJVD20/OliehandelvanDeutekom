@@ -4,10 +4,16 @@
 
 @section('content')
 
-<h1 class="text-3xl font-bold text-green-700 mb-6">Winkelmand</h1>
+<p class="turbo-section-label mb-2">Jouw bestelling</p>
+<h1 class="text-3xl font-bold mb-6">Winkelmand</h1>
 
 @if (count($cart) > 0)
     <div class="space-y-4">
+
+        @include('themes.default.components.delivery-notice', [
+            'detailed' => true,
+            'attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => 'mb-6']),
+        ])
 
         @php $total = 0; @endphp
 
@@ -17,7 +23,7 @@
                 $total += $subtotal;
             @endphp
 
-            <div class="flex items-center justify-between bg-white p-4 border rounded-lg">
+            <div class="turbo-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4">
 
                 <!-- Product info + quantity -->
                 <div>
@@ -72,7 +78,7 @@
 
                 <!-- Price + remove -->
                 <div class="flex items-center gap-6">
-                    <span class="font-bold text-green-700">
+                    <span class="product-card__price">
                         € {{ number_format($subtotal, 2, ',', '.') }}
                     </span>
 
@@ -91,28 +97,20 @@
             <span class="text-lg font-semibold">
                 Totaal
             </span>
-            <span class="text-xl font-bold text-green-700">
+            <span class="product-card__price text-xl">
                 € {{ number_format($total, 2, ',', '.') }}
             </span>
         </div>
 
         <!-- Checkout -->
         <div class="text-right mt-6">
-            <button class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                <a
-    href="{{ route('checkout.index') }}"
-    class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
->
-    Afrekenen
-</a>
-
-            </button>
+            <a href="{{ route('checkout.index') }}" class="turbo-button px-6 py-3">
+                Afrekenen
+            </a>
         </div>
     </div>
 @else
-    <p class="text-gray-500">
-        Je winkelmand is leeg.
-    </p>
+    <div class="turbo-card p-8 text-center text-gray-500">Je winkelmand is leeg.</div>
 @endif
 
 @endsection
