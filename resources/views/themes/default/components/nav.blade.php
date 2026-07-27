@@ -352,65 +352,9 @@
             <div class="px-4 py-5 grid gap-2 text-sm">
                 <a href="/" @if(request()->routeIs('home')) aria-current="page" @endif class="turbo-mobile-link"><span>Home</span><span aria-hidden="true">›</span></a>
 
-                {{-- Kachels mobiel --}}
-                @if($heaterBrands->isNotEmpty())
-                    <div x-data="{ expanded: {{ request()->routeIs('products.heaters') ? 'true' : 'false' }} }">
-                        <div class="flex items-center gap-1">
-                            <a href="{{ route('products.heaters') }}" @if(request()->routeIs('products.heaters')) aria-current="page" @endif
-                               class="turbo-mobile-link flex-1 rounded-r-none border-r-0">
-                                <span>Kachels</span>
-                            </a>
-                            <button @click="expanded = !expanded" type="button"
-                                class="turbo-mobile-link w-12 shrink-0 justify-center rounded-l-none"
-                                :aria-expanded="expanded">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div x-show="expanded" x-transition class="mt-1 ml-3 pl-3 border-l border-white/15 space-y-0.5">
-                            @foreach($heaterBrands as $brand)
-                                <a href="{{ route('products.heaters') }}?brands[]={{ urlencode($brand) }}" @click="open = false"
-                                   class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 hover:bg-white/8 hover:text-white transition-colors">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-turbo-gold/60 shrink-0"></span>
-                                    {{ $brand }}
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                @else
-                    <a href="{{ route('products.heaters') }}" @if(request()->routeIs('products.heaters')) aria-current="page" @endif class="turbo-mobile-link"><span>Kachels</span><span aria-hidden="true">›</span></a>
-                @endif
-
-                {{-- Vloeistoffen mobiel --}}
-                @if($liquidBrands->isNotEmpty())
-                    <div x-data="{ expanded: {{ request()->routeIs('products.liquids') ? 'true' : 'false' }} }">
-                        <div class="flex items-center gap-1">
-                            <a href="{{ route('products.liquids') }}" @if(request()->routeIs('products.liquids')) aria-current="page" @endif
-                               class="turbo-mobile-link flex-1 rounded-r-none border-r-0">
-                                <span>Vloeistoffen</span>
-                            </a>
-                            <button @click="expanded = !expanded" type="button"
-                                class="turbo-mobile-link w-12 shrink-0 justify-center rounded-l-none"
-                                :aria-expanded="expanded">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-                        </div>
-                        <div x-show="expanded" x-transition class="mt-1 ml-3 pl-3 border-l border-white/15 space-y-0.5">
-                            @foreach($liquidBrands as $brand)
-                                <a href="{{ route('products.liquids') }}?brands[]={{ urlencode($brand) }}" @click="open = false"
-                                   class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 hover:bg-white/8 hover:text-white transition-colors">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-turbo-gold/60 shrink-0"></span>
-                                    {{ $brand }}
-                                </a>
-                            @endforeach
-                        </div>
-                    </div>
-                @else
-                    <a href="{{ route('products.liquids') }}" @if(request()->routeIs('products.liquids')) aria-current="page" @endif class="turbo-mobile-link"><span>Vloeistoffen</span><span aria-hidden="true">›</span></a>
-                @endif
+                {{-- Op mobiel zijn productgroepen gewone links; merk-dropdowns blijven desktop-only. --}}
+                <a href="{{ route('products.heaters') }}" @if(request()->routeIs('products.heaters')) aria-current="page" @endif class="turbo-mobile-link"><span>Kachels</span><span aria-hidden="true">›</span></a>
+                <a href="{{ route('products.liquids') }}" @if(request()->routeIs('products.liquids')) aria-current="page" @endif class="turbo-mobile-link"><span>Vloeistoffen</span><span aria-hidden="true">›</span></a>
 
                 <a href="{{ route('products.index') }}" @if(request()->routeIs('products.index')) aria-current="page" @endif class="turbo-mobile-link"><span>Overige producten</span><span aria-hidden="true">›</span></a>
                 <a href="{{ route('locaties') }}" @if(request()->routeIs('locaties')) aria-current="page" @endif class="turbo-mobile-link"><span>Locaties</span><span aria-hidden="true">›</span></a>
