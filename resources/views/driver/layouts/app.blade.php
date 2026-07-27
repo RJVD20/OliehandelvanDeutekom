@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Routeflow">
-    <title>@yield('title', 'Mijn route') | Kachelvloeistof.nl</title>
+    <title>@yield('title', 'Mijn route') | Kachelvloeistof</title>
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=dm-sans:400,500,600,700&family=manrope:600,700,800&display=swap" rel="stylesheet" />
