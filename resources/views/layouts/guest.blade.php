@@ -17,7 +17,7 @@
     <body class="turbo-auth font-sans text-gray-900 antialiased">
         <div class="min-h-screen flex flex-col sm:justify-center items-center px-4 py-8">
             <div>
-                <a href="/">
+                <a href="/" class="inline-flex items-center justify-center rounded-2xl border border-white/80 bg-white px-5 py-3 shadow-lg shadow-black/10 sm:px-7 sm:py-4">
                     <img src="/images/logo-kachels-vloeistoffen.webp" alt="Kachels & Vloeistoffen" class="h-auto w-64 sm:w-80 object-contain">
                 </a>
             </div>
