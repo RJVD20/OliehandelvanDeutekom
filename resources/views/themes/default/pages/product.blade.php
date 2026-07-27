@@ -68,26 +68,37 @@
         ? []
         : array_slice($descriptionParagraphs, $specificationIndex + 1);
 
-    $summaryParagraphs = count($contentParagraphs) > 2
-        ? array_slice($contentParagraphs, 0, 2)
-        : $contentParagraphs;
+    $hasStructuredSummary = filled($product->short_description);
+    $summaryParagraphs = $hasStructuredSummary
+        ? array_values(array_filter(preg_split('/\R\s*\R/u', trim($product->short_description))))
+        : (count($contentParagraphs) > 2 ? array_slice($contentParagraphs, 0, 2) : $contentParagraphs);
 
-    $detailParagraphs = count($contentParagraphs) > 2
-        ? array_slice($contentParagraphs, 2)
-        : [];
+    $detailParagraphs = $hasStructuredSummary
+        ? $contentParagraphs
+        : (count($contentParagraphs) > 2 ? array_slice($contentParagraphs, 2) : []);
 
-    $specifications = collect($specificationLines)
-        ->map(function ($line) {
-            if (! str_contains($line, ':')) {
-                return null;
-            }
-
-            [$label, $value] = array_map('trim', explode(':', $line, 2));
-
-            return $label !== '' && $value !== '' ? [$label, $value] : null;
-        })
-        ->filter()
+    $specifications = collect($product->specifications ?: [])
+        ->map(fn (array $specification) => [
+            trim((string) ($specification['name'] ?? '')),
+            trim((string) ($specification['value'] ?? '')),
+        ])
+        ->filter(fn (array $specification) => $specification[0] !== '' && $specification[1] !== '')
         ->values();
+
+    if ($specifications->isEmpty()) {
+        $specifications = collect($specificationLines)
+            ->map(function ($line) {
+                if (! str_contains($line, ':')) {
+                    return null;
+                }
+
+                [$label, $value] = array_map('trim', explode(':', $line, 2));
+
+                return $label !== '' && $value !== '' ? [$label, $value] : null;
+            })
+            ->filter()
+            ->values();
+    }
 @endphp
 
 <div class="max-w-6xl mx-auto px-1 pb-20 sm:px-0 sm:pb-0">
@@ -139,6 +150,32 @@
             </div>
 
             @include('themes.default.components.delivery-notice', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => 'pt-2'])])
+
+            @if($productRule && (!empty($productRule['delivery']) || !empty($productRule['pickup'])))
+                <div class="rounded-xl border border-turbo-gold/35 bg-turbo-gray/70 p-4">
+                    <div class="mb-3">
+                        <h2 class="text-sm font-bold text-turbo-ink">Voordeel bij meerdere stuks</h2>
+                        <p class="mt-0.5 text-xs text-turbo-blue">De juiste stukprijs wordt automatisch in je winkelmand toegepast.</p>
+                    </div>
+
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        @foreach(['delivery' => 'Thuisbezorgen', 'pickup' => 'Afhalen'] as $method => $label)
+                            @continue(empty($productRule[$method]))
+                            <div class="overflow-hidden rounded-lg border border-turbo-blue/15 bg-white">
+                                <h3 class="border-b border-turbo-gold/35 bg-turbo-gold/15 px-3 py-2 text-xs font-bold text-turbo-ink">{{ $label }}</h3>
+                                <div class="divide-y divide-gray-100">
+                                    @foreach($productRule[$method] as $tier)
+                                        <div class="flex items-center justify-between gap-3 px-3 py-2 text-xs">
+                                            <span class="text-gray-600">Vanaf {{ $tier['quantity'] }} stuks</span>
+                                            <strong class="whitespace-nowrap text-turbo-ink">€ {{ number_format((float) $tier['price'], 2, ',', '.') }} p/st.</strong>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
             <div class="mt-6 pt-4 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div class="product-card__price text-2xl md:text-3xl">

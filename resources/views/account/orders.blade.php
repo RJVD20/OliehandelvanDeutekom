@@ -8,7 +8,7 @@
     Mijn bestellingen
 </h1>
 
-@forelse(auth()->user()->orders()->latest()->get() as $order)
+@forelse(auth()->user()->orders()->placed()->latest()->get() as $order)
     <a
         href="{{ route('account.orders.show', $order) }}"
         class="block border rounded-lg p-5 mb-4 bg-white hover:shadow transition"

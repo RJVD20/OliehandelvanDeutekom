@@ -15,10 +15,16 @@
     </div>
 @else
 
-@include('themes.default.components.delivery-notice', [
-    'detailed' => true,
-    'attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => 'mb-6']),
-])
+@if($fulfillmentMethod === 'delivery')
+    @include('themes.default.components.delivery-notice', [
+        'detailed' => true,
+        'attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => 'mb-6']),
+    ])
+@else
+    <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+        <strong>Afhalen gekozen.</strong> Kies hieronder bij welk depot je de bestelling wilt ophalen.
+    </div>
+@endif
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10">
 
@@ -77,6 +83,55 @@
             @submit="if (huisnummer && straat) $el.querySelector('[name=address]').value = straat + ' ' + huisnummer"
         >
             @csrf
+
+            @if($fulfillmentMethod === 'pickup')
+                <fieldset class="mb-6">
+                    <legend class="text-base font-semibold text-turbo-ink">Kies je afhaaldepot</legend>
+                    <p class="mt-1 text-sm text-gray-500">Je bestelling wordt klaargezet bij de gekozen locatie.</p>
+
+                    @if($pickupLocations->isEmpty())
+                        <div class="mt-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                            Er zijn momenteel geen afhaaldepots beschikbaar. Kies in de winkelmand voor thuisbezorgen.
+                        </div>
+                    @else
+                        <div class="mt-4 grid gap-3">
+                            @foreach($pickupLocations as $location)
+                                <label class="group relative cursor-pointer">
+                                    <input
+                                        type="radio"
+                                        name="pickup_location_id"
+                                        value="{{ $location->id }}"
+                                        class="peer sr-only"
+                                        required
+                                        @checked((string) old('pickup_location_id') === (string) $location->id)
+                                    >
+                                    <span class="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 transition peer-checked:border-emerald-600 peer-checked:bg-emerald-50 peer-checked:ring-2 peer-checked:ring-emerald-100 group-hover:border-emerald-400">
+                                        <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
+                                            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                <path d="M12 21s6-5.1 6-11a6 6 0 1 0-12 0c0 5.9 6 11 6 11Z"/>
+                                                <circle cx="12" cy="10" r="2"/>
+                                            </svg>
+                                        </span>
+                                        <span class="min-w-0">
+                                            <span class="block font-semibold text-turbo-ink">{{ $location->name }}</span>
+                                            <span class="mt-0.5 block text-sm text-gray-600">
+                                                {{ $location->street }}@if($location->street && $location->postcode_city), @endif{{ $location->postcode_city }}
+                                            </span>
+                                            @if($location->opening)
+                                                <span class="mt-1 block text-xs text-gray-500">Openingstijden: {{ $location->opening }}</span>
+                                            @endif
+                                        </span>
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @error('pickup_location_id')
+                        <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
+                </fieldset>
+            @endif
 
             {{-- Verborgen address veld: wordt gevuld bij submit --}}
             <input type="hidden" name="address" value="{{ old('address', optional(auth()->user())->address) }}">
@@ -176,6 +231,11 @@
                 Bestellingsoverzicht
             </h2>
 
+            <div class="mb-4 rounded-xl px-4 py-3 text-sm font-semibold {{ $fulfillmentMethod === 'delivery' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800' }}">
+                {{ $fulfillmentMethod === 'delivery' ? 'Thuisbezorgen' : 'Afhalen bij een depot' }}
+                <a href="{{ route('cart.index') }}" class="float-right text-xs underline">Wijzigen</a>
+            </div>
+
             <div class="space-y-3 sm:space-y-4 text-sm">
                 @php $total = 0; @endphp
 
@@ -188,6 +248,7 @@
                     <div class="flex justify-between">
                         <span class="text-gray-700">
                             {{ $item['quantity'] }}× {{ $item['name'] }}
+                            <small class="block text-gray-400">€ {{ number_format($item['price'], 2, ',', '.') }} per stuk</small>
                         </span>
                         <span>
                             € {{ number_format($subtotal, 2, ',', '.') }}

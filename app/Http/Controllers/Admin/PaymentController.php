@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
-use App\Jobs\SendPaymentReminderJob;
+use App\Mail\ManualPaymentRequestMail;
 use App\Models\Payment;
 use App\Models\PaymentEvent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class PaymentController extends Controller
 {
@@ -20,7 +22,9 @@ class PaymentController extends Controller
             'soon'       => ['nullable', 'boolean'],
         ]);
 
-        $query = Payment::query()->with('order');
+        $query = Payment::query()
+            ->with('order')
+            ->whereHas('order', fn ($query) => $query->placed());
 
         if ($filters['status'] ?? null) {
             $query->where('status', $filters['status']);
@@ -46,27 +50,10 @@ class PaymentController extends Controller
         return view('admin.payments.index', compact('payments', 'filters'));
     }
 
-    public function remind(Payment $payment)
-    {
-        if ($payment->status !== PaymentStatus::OPEN) {
-            return back()->with('toast', 'Betaling is niet openstaand');
-        }
-
-        SendPaymentReminderJob::dispatch($payment, 'email');
-
-        PaymentEvent::create([
-            'payment_id' => $payment->id,
-            'type'       => 'admin_reminder',
-            'source'     => 'admin',
-            'actor_id'   => auth()->id(),
-            'data'       => ['channel' => 'email'],
-        ]);
-
-        return back()->with('toast', 'Herinnering verstuurd');
-    }
-
     public function markPaid(Payment $payment)
     {
+        abort_if($payment->order?->isAwaitingPayment(), 404);
+
         if ($payment->status === PaymentStatus::PAID) {
             return back()->with('toast', 'Al betaald');
         }
@@ -85,5 +72,32 @@ class PaymentController extends Controller
         ]);
 
         return back()->with('toast', 'Gemarkeerd als betaald');
+    }
+
+    public function sendPaymentRequest(Payment $payment)
+    {
+        abort_unless($payment->canSendManualPaymentRequest(), 422);
+
+        try {
+            Mail::to($payment->order->email)->send(new ManualPaymentRequestMail($payment));
+        } catch (\Throwable $exception) {
+            Log::error('Manual payment request could not be sent.', [
+                'payment_id' => $payment->id,
+                'order_id' => $payment->order_id,
+                'exception' => $exception,
+            ]);
+
+            return back()->with('toast', 'Het betaalverzoek kon niet worden verstuurd.');
+        }
+
+        PaymentEvent::create([
+            'payment_id' => $payment->id,
+            'type' => 'manual_payment_request',
+            'source' => 'admin',
+            'actor_id' => auth()->id(),
+            'data' => ['recipient' => $payment->order->email],
+        ]);
+
+        return back()->with('toast', 'Betaalverzoek verstuurd naar '.$payment->order->email.'.');
     }
 }

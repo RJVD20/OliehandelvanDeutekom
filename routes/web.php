@@ -14,11 +14,15 @@ use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\ManualOrderController;
+use App\Http\Controllers\Admin\SmartRouteController;
+use App\Services\ShippingRates;
+use App\Services\CartPricing;
 use App\Http\Controllers\NewsletterUnsubscribeController;
 
 /*
@@ -44,6 +48,7 @@ use App\Models\Payment;
 use App\Models\User;
 use App\Models\DeliveryRoute;
 use App\Enums\PaymentStatus;
+use App\Enums\OrderStatus;
 use App\Services\Payments\PaymentService;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\LocationController;
@@ -80,6 +85,8 @@ Route::get('/locaties', function () {
     $locaties = Location::orderBy('name')->get();
     return view('themes.default.pages.locaties', compact('locaties'));
 })->name('locaties');
+
+Route::redirect('/tarieven', '/vloeistoffen', 301)->name('tarieven');
 
 /*
 |--------------------------------------------------------------------------
@@ -153,8 +160,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/product/{slug}', function ($slug) {
+Route::get('/product/{slug}', function ($slug, ShippingRates $rates) {
     $product = Product::with('category')->where('slug', $slug)->firstOrFail();
+    $productRule = $rates->ruleForProduct($product->id);
 
     $suggestedProducts = Product::query()
         ->where('active', true)
@@ -178,7 +186,7 @@ Route::get('/product/{slug}', function ($slug) {
         $suggestedProducts = $suggestedProducts->concat($moreProducts)->values();
     }
 
-    return view('themes.default.pages.product', compact('product', 'suggestedProducts'));
+    return view('themes.default.pages.product', compact('product', 'suggestedProducts', 'productRule'));
 })->name('product.show');
 
 Route::get('/categories/{slug}', function ($slug) {
@@ -191,20 +199,32 @@ Route::get('/categories/{slug}', function ($slug) {
 
 
 $productListing = function (Request $request, string $title, string $routeName, ?string $type = null) {
-    $query = Product::query()->where('active', true);
+    $baseQuery = Product::query()->where('active', true);
 
     if ($type) {
-        $query->where('type', $type);
+        $baseQuery->where('type', $type);
     } else {
-        $query->whereNotIn('type', ['kachel', 'vloeistof']);
+        $baseQuery->whereNotIn('type', ['kachel', 'vloeistof']);
     }
+
+    $query = clone $baseQuery;
 
     if ($request->filled('categories')) {
         $query->whereIn('category_id', $request->categories);
     }
 
-    if (! $type && $request->filled('types')) {
-        $query->whereIn('type', $request->types);
+    if ($request->filled('brands')) {
+        $query->whereIn('brand', $request->brands);
+    }
+
+    if ($request->filled('model_types')) {
+        $query->whereIn('model_type', $request->model_types);
+    }
+
+    if ($request->get('condition') === 'used') {
+        $query->where('used', true);
+    } elseif ($request->get('condition') === 'new') {
+        $query->where('used', false);
     }
 
     if ($request->filled('min_price')) {
@@ -226,21 +246,21 @@ $productListing = function (Request $request, string $title, string $routeName, 
 
     $products   = $query->paginate(12)->withQueryString();
     $categories = Category::query()
-        ->whereHas('products', function ($query) use ($type) {
-            $query->where('active', true);
-
-            if ($type) {
-                $query->where('type', $type);
-            } else {
-                $query->whereNotIn('type', ['kachel', 'vloeistof']);
-            }
+        ->whereHas('products', function ($q) use ($type) {
+            $q->where('active', true);
+            $type ? $q->where('type', $type) : $q->whereNotIn('type', ['kachel', 'vloeistof']);
         })
         ->orderBy('name')
         ->get();
 
+    $brands     = (clone $baseQuery)->whereNotNull('brand')->distinct()->orderBy('brand')->pluck('brand');
+    $modelTypes = (clone $baseQuery)->whereNotNull('model_type')->distinct()->orderBy('model_type')->pluck('model_type');
+
     return view('themes.default.pages.products.index', compact(
         'products',
         'categories',
+        'brands',
+        'modelTypes',
         'title',
         'routeName',
         'type'
@@ -319,10 +339,22 @@ Route::get('/search/suggest', function (Request $request) {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/winkelmand', function () {
-    $cart = session('cart', []);
-    return view('themes.default.pages.cart', compact('cart'));
+Route::get('/winkelmand', function (CartPricing $pricing) {
+    $fulfillmentMethod = session('fulfillment_method', 'delivery');
+    $cart = $pricing->calculate(session('cart', []), $fulfillmentMethod);
+
+    return view('themes.default.pages.cart', compact('cart', 'fulfillmentMethod'));
 })->name('cart.index');
+
+Route::post('/winkelmand/levering', function (Request $request) {
+    $data = $request->validate([
+        'fulfillment_method' => ['required', Rule::in(['delivery', 'pickup'])],
+    ]);
+
+    session(['fulfillment_method' => $data['fulfillment_method']]);
+
+    return back();
+})->name('cart.fulfillment');
 
 Route::post('/winkelmand/toevoegen/{id}', function ($id) {
 
@@ -385,15 +417,18 @@ Route::permanentRedirect('/cart', '/winkelmand');
 |--------------------------------------------------------------------------
 */
 
-Route::get('/checkout', function () {
-    $cart = session('cart', []);
+Route::get('/checkout', function (CartPricing $pricing) {
+    $fulfillmentMethod = session('fulfillment_method', 'delivery');
+    $cart = $pricing->calculate(session('cart', []), $fulfillmentMethod);
     $provinces = nl_provinces();
     $paymentMethods = config('payments.methods', []);
+    $pickupLocations = Location::query()->orderBy('name')->get();
 
-    return view('themes.default.pages.checkout', compact('cart', 'provinces', 'paymentMethods'));
+    return view('themes.default.pages.checkout', compact('cart', 'provinces', 'paymentMethods', 'fulfillmentMethod', 'pickupLocations'));
 })->name('checkout.index');
 
-Route::post('/checkout', function (Request $request) {
+Route::post('/checkout', function (Request $request, CartPricing $pricing) {
+    $fulfillmentMethod = session('fulfillment_method', 'delivery');
 
     $request->validate([
         'name'     => 'required|string|max:255',
@@ -403,13 +438,25 @@ Route::post('/checkout', function (Request $request) {
         'city'     => 'required|string|max:255',
         'province' => ['required', 'in:' . implode(',', nl_provinces())],
         'payment_method' => ['required', Rule::in(array_keys(config('payments.methods', [])))],
+        'pickup_location_id' => [
+            $fulfillmentMethod === 'pickup' ? 'required' : 'nullable',
+            'integer',
+            Rule::exists('locations', 'id'),
+        ],
+    ], [
+        'pickup_location_id.required' => 'Kies het depot waar je de bestelling wilt afhalen.',
+        'pickup_location_id.exists' => 'Het gekozen depot bestaat niet meer. Kies een ander depot.',
     ]);
 
     $postcode = strtoupper(str_replace(' ', '', $request->postcode));
     $postcode = substr($postcode, 0, 4) . ' ' . substr($postcode, 4);
 
-    $cart = session('cart', []);
+    $cart = $pricing->calculate(session('cart', []), $fulfillmentMethod);
     abort_if(empty($cart), 400);
+
+    $pickupLocation = $fulfillmentMethod === 'pickup'
+        ? Location::findOrFail($request->integer('pickup_location_id'))
+        : null;
 
     $order = Order::createFromCart($cart, [
         'user_id'  => auth()->id(),
@@ -419,7 +466,14 @@ Route::post('/checkout', function (Request $request) {
         'postcode' => $postcode,
         'city'     => $request->city,
         'province' => $request->province,
-    ]);
+        'fulfillment_method' => $fulfillmentMethod,
+        'pickup_location_id' => $pickupLocation?->id,
+        'pickup_location_name' => $pickupLocation?->name,
+        'pickup_location_address' => $pickupLocation
+            ? trim($pickupLocation->street.', '.$pickupLocation->postcode_city, ' ,')
+            : null,
+        'pickup_location_opening' => $pickupLocation?->opening,
+    ], OrderStatus::AWAITING_PAYMENT);
 
     $payment = Payment::create([
         'order_id'           => $order->id,
@@ -428,8 +482,6 @@ Route::post('/checkout', function (Request $request) {
         'amount'             => $order->total,
         'currency'           => 'EUR',
         'due_date'           => now()->addDays(14),
-        'reminder_count'     => 0,
-        'last_reminder_at'   => null,
         'meta'                => [
             'payment_method' => $request->payment_method,
         ],
@@ -446,23 +498,14 @@ Route::post('/checkout', function (Request $request) {
         ]);
     }
 
-    try {
-        Mail::to($order->email)->send(new OrderConfirmationMail($order));
-    } catch (\Throwable $exception) {
-        Log::error('Order confirmation email could not be sent.', [
-            'order_id' => $order->id,
-            'exception' => $exception,
-        ]);
-    }
-    session()->forget('cart');
-
     if ($payment->pay_link) {
         return redirect()->away($payment->pay_link, 303);
     }
 
-    return auth()->check()
-        ? redirect()->route('account.orders')->with('toast', 'Bestelling geplaatst 🎉')
-        : redirect()->route('home')->with('toast', 'Bestelling geplaatst 🎉 Check je e-mail.');
+    $order->delete();
+
+    return redirect()->route('checkout.index')
+        ->with('toast', 'De betaling kon niet worden gestart. Probeer het opnieuw.');
 })->name('checkout.store');
 
 /*
@@ -484,13 +527,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/account/bestellingen', fn () => view('account.orders'))->name('account.orders');
 
     Route::get('/account/bestellingen/{order}', function (Order $order) {
-        abort_unless($order->user_id === auth()->id(), 403);
+        abort_unless($order->user_id === auth()->id() && ! $order->isAwaitingPayment(), 404);
         return view('account.order-show', compact('order'));
     })->name('account.orders.show');
 
     // Re-order: place the same order again
     Route::post('/account/bestellingen/{order}/reorder', function (Order $order) {
-        abort_unless($order->user_id === auth()->id(), 403);
+        abort_unless($order->user_id === auth()->id() && ! $order->isAwaitingPayment(), 404);
 
         $new = $order->duplicate();
 
@@ -508,7 +551,7 @@ Route::middleware('auth')->group(function () {
 
     // Download invoice PDF
     Route::get('/account/bestellingen/{order}/invoice', function (Order $order) {
-        abort_unless($order->user_id === auth()->id(), 403);
+        abort_unless($order->user_id === auth()->id() && ! $order->isAwaitingPayment(), 404);
 
         $pdf = Pdf::loadView('pdfs.invoice', compact('order'))->setPaper('a4');
 
@@ -541,6 +584,11 @@ Route::middleware(['auth', 'admin'])
             ->name('content.edit');
         Route::post('/content', [ContentController::class, 'update'])
             ->name('content.update');
+
+        Route::get('/verzendregels', fn () => redirect()->route('admin.products.index'))
+            ->name('shipping-rules.edit');
+        Route::put('/verzendregels', fn () => redirect()->route('admin.products.index'))
+            ->name('shipping-rules.update');
 
         // Locations
         Route::get('/locaties', [LocationController::class, 'index'])
@@ -581,6 +629,7 @@ Route::middleware(['auth', 'admin'])
             ]);
 
             $orders = Order::query()
+                ->placed()
                 ->when($filters['province'] ?? null, fn ($q, $province) => $q->where('province', $province))
                 ->when($filters['route_date'] ?? null, fn ($q, $routeDate) => $q->whereDate('route_date', $routeDate))
                 ->when($filters['order_date'] ?? null, fn ($q, $orderDate) => $q->whereDate('created_at', $orderDate))
@@ -599,6 +648,8 @@ Route::middleware(['auth', 'admin'])
         })->name('orders.index');
 
         Route::get('/orders/{order}', function (Order $order) {
+            abort_if($order->isAwaitingPayment(), 404);
+
             $provinces = nl_provinces();
             $routeDate = $order->route_date?->toDateString() ?? now()->toDateString();
 
@@ -611,6 +662,8 @@ Route::middleware(['auth', 'admin'])
         })->name('orders.show');
 
         Route::patch('/orders/{order}/plan', function (Request $request, Order $order) {
+            abort_if($order->isAwaitingPayment(), 404);
+
             $provinces = nl_provinces();
 
             $data = $request->validate([
@@ -638,6 +691,8 @@ Route::middleware(['auth', 'admin'])
         })->name('orders.plan');
 
         Route::post('/orders/{order}/ship', function (Order $order) {
+            abort_if($order->isAwaitingPayment(), 404);
+
             $order->update(['status' => OrderStatus::SHIPPED]);
 
             if ($order->email) {
@@ -648,6 +703,13 @@ Route::middleware(['auth', 'admin'])
         })->name('orders.ship');
 
         // Routes (planning overzicht)
+        Route::get('/routes/slim-plannen', [SmartRouteController::class, 'index'])
+            ->name('routes.smart');
+        Route::post('/routes/slim-plannen/voorbeeld', [SmartRouteController::class, 'preview'])
+            ->name('routes.smart.preview');
+        Route::post('/routes/slim-plannen/bevestigen', [SmartRouteController::class, 'store'])
+            ->name('routes.smart.store');
+
         Route::get('/routes', function (Request $request) {
             $provinces = nl_provinces();
 
@@ -733,6 +795,7 @@ Route::middleware(['auth', 'admin'])
             ]);
 
             $ordersQuery = Order::query()
+                ->placed()
                 ->when($data['province_filter'] ?? null, fn ($q, $province) => $q->where('province', $province))
                 ->when($data['route_date_filter'] ?? null, fn ($q, $routeDate) => $q->whereDate('route_date', $routeDate))
                 ->when($data['order_date_filter'] ?? null, fn ($q, $orderDate) => $q->whereDate('created_at', $orderDate))
@@ -941,6 +1004,10 @@ Route::middleware(['auth', 'admin'])
         Route::resource('products', ProductController::class)
             ->except(['show']);
 
+        // Category CRUD
+        Route::resource('categories', CategoryController::class)
+            ->except(['show']);
+
         // Users CRUD (admin)
         Route::patch('/users/{user}/toggle-admin', [UserController::class, 'toggleAdmin'])
             ->name('users.toggle-admin');
@@ -950,7 +1017,7 @@ Route::middleware(['auth', 'admin'])
 
         // Payments (achteraf betalen)
         Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
-        Route::post('/payments/{payment}/remind', [PaymentController::class, 'remind'])->name('payments.remind');
+        Route::post('/payments/{payment}/send-request', [PaymentController::class, 'sendPaymentRequest'])->name('payments.send-request');
         Route::patch('/payments/{payment}/mark-paid', [PaymentController::class, 'markPaid'])->name('payments.mark-paid');
 
         // Newsletters

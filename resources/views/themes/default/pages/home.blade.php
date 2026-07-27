@@ -38,6 +38,15 @@
     $heroCtaLabel = $cmsValue('home_hero_cta_label', 'Naar de webshop');
     $productSectionTitle = $cmsValue('home_products_title', 'Populaire producten');
     $productSectionIntro = $cmsValue('home_products_intro', 'Rustige, zorgvuldig gekozen items met focus op kwaliteit en betrouwbaarheid.');
+    $productIntroParagraphs = array_values(array_filter(array_map(
+        'trim',
+        preg_split('/\R\s*\R/u', trim($productSectionIntro))
+    )));
+    $productIntroCards = [
+        ['title' => 'Kwaliteit & prijs', 'icon' => 'M12 3 4 7v5c0 4.8 3.2 7.8 8 9 4.8-1.2 8-4.2 8-9V7l-8-4Zm-3 9 2 2 4-4'],
+        ['title' => 'Nieuwe & gebruikte kachels', 'icon' => 'M12 3c2.2 2.8 4 4.8 4 7.5A4 4 0 0 1 8 16c0-2 1-3.7 2.6-5.7.1 1.9.8 3 1.4 3.7.7-1.6.6-3.5 0-6Z'],
+        ['title' => 'Reparatie & onderhoud', 'icon' => 'm14.7 6.3 3-3 3 3-3 3M13 8l3 3-8.5 8.5H4v-3.5L13 8Z'],
+    ];
     $categoriesTitle = $cmsValue('home_categories_title', 'Shop per categorie');
     $faqTitle = $cmsValue('home_faq_title', 'Veelgestelde vragen');
 
@@ -233,18 +242,31 @@
 
 <!-- PRODUCT GRID -->
 <section id="producten" class="mb-12 sm:mb-20 md:mb-24">
-    <div class="mb-5 grid gap-4 sm:mb-8 sm:gap-5 md:mb-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-10">
-        <div>
+    <div class="mb-6 sm:mb-8 md:mb-10">
+        <div class="flex items-end justify-between gap-4">
+            <div>
             <p class="turbo-section-label">Uitgelichte selectie</p>
-            <div class="flex items-end justify-between gap-4">
                 <h2 class="mt-1 text-xl font-semibold leading-tight sm:text-2xl md:text-3xl">{{ $productSectionTitle }}</h2>
-                <span class="shrink-0 pb-0.5 text-[11px] font-semibold text-turbo-blue/60 sm:hidden">Veeg om te bekijken →</span>
+                <div class="mt-4 h-1 w-14 rounded-full bg-turbo-gold"></div>
             </div>
-            <div class="mt-4 h-1 w-14 rounded-full bg-turbo-gold"></div>
+            <span class="shrink-0 pb-0.5 text-[11px] font-semibold text-turbo-blue/60 sm:hidden">Veeg om te bekijken →</span>
         </div>
 
-        <div class="rounded-xl sm:rounded-2xl border border-turbo-blue/10 border-l-4 border-l-turbo-gold bg-white px-4 py-4 shadow-[0_18px_45px_-34px_rgba(3,24,43,0.55)] sm:px-6 sm:py-5">
-            <p class="turbo-prose text-[14px] leading-6 text-gray-600 sm:text-sm sm:leading-7 md:text-base">{{ $productSectionIntro }}</p>
+        <div class="mt-5 grid gap-3 md:grid-cols-3 md:gap-4 lg:mt-7">
+            @foreach($productIntroParagraphs as $index => $paragraph)
+                @php $card = $productIntroCards[$index] ?? ['title' => 'Onze service', 'icon' => 'M5 12h14M12 5v14']; @endphp
+                <article class="group rounded-2xl border border-turbo-blue/10 bg-white p-4 shadow-[0_18px_45px_-36px_rgba(3,24,43,0.6)] sm:p-5">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-turbo-gold/15 text-turbo-ink">
+                            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="{{ $card['icon'] }}"/>
+                            </svg>
+                        </span>
+                        <h3 class="text-sm font-bold text-turbo-ink sm:text-base">{{ $card['title'] }}</h3>
+                    </div>
+                    <p class="mt-3 text-sm leading-6 text-gray-600">{{ $paragraph }}</p>
+                </article>
+            @endforeach
         </div>
     </div>
 

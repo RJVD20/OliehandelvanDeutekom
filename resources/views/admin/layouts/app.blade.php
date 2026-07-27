@@ -72,11 +72,49 @@
                 ✍️ CMS teksten
             </a>
 
-            <a href="{{ route('admin.products.index') }}"
-               class="turbo-admin-nav flex items-center gap-3 px-3 py-2 rounded
-               {{ request()->routeIs('admin.products.*') ? 'is-active' : '' }}">
-                🛒 Producten
-            </a>
+            {{-- Webshop dropdown --}}
+            @php $webshopOpen = request()->routeIs('admin.products.*', 'admin.categories.*'); @endphp
+            <div
+                x-data="{ open: {{ $webshopOpen ? 'true' : 'false' }} }"
+                @mouseenter="open = true"
+                @mouseleave="open = false"
+            >
+                <button
+                    type="button"
+                    @click="open = !open"
+                    class="turbo-admin-nav w-full flex items-center gap-3 px-3 py-2 rounded {{ $webshopOpen ? 'is-active' : '' }}"
+                >
+                    <span>🛒 Webshop</span>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="ml-auto h-3.5 w-3.5 transition-transform duration-150"
+                        :class="open ? 'rotate-90' : ''"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+
+                <div
+                    x-show="open"
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="opacity-0 -translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-75"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 -translate-y-1"
+                    class="mt-0.5 ml-3 pl-3 border-l border-white/10 space-y-0.5"
+                >
+                    <a href="{{ route('admin.products.index') }}"
+                       class="turbo-admin-nav flex items-center gap-2 px-3 py-1.5 rounded text-sm
+                       {{ request()->routeIs('admin.products.*') ? 'is-active' : '' }}">
+                        Producten
+                    </a>
+                    <a href="{{ route('admin.categories.index') }}"
+                       class="turbo-admin-nav flex items-center gap-2 px-3 py-1.5 rounded text-sm
+                       {{ request()->routeIs('admin.categories.*') ? 'is-active' : '' }}">
+                        Categoriebeheer
+                    </a>
+                </div>
+            </div>
 
             <a href="{{ route('admin.users.index') }}"
                class="turbo-admin-nav flex items-center gap-3 px-3 py-2 rounded

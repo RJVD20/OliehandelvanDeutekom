@@ -516,6 +516,15 @@ html {
     --tw-ring-color: rgba(217, 164, 46, 0.22);
 }
 
+.turbo-admin .tier-pricing-editor :where(input, button):focus,
+.turbo-admin .tier-pricing-editor :where(input, button):focus-visible {
+    border-color: rgb(107 114 128);
+    box-shadow: none;
+    outline: none;
+    --tw-ring-color: transparent;
+    --tw-ring-shadow: 0 0 #0000;
+}
+
 .turbo-admin :where(input[type="checkbox"], input[type="radio"]) {
     accent-color: var(--turbo-gold);
     color: var(--turbo-gold);

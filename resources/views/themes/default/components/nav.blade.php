@@ -1,3 +1,10 @@
+@php
+    $heaterBrands = \App\Models\Product::where('active', true)->where('type', 'kachel')
+        ->whereNotNull('brand')->where('brand', '!=', '')->distinct()->orderBy('brand')->pluck('brand');
+    $liquidBrands = \App\Models\Product::where('active', true)->where('type', 'vloeistof')
+        ->whereNotNull('brand')->where('brand', '!=', '')->distinct()->orderBy('brand')->pluck('brand');
+@endphp
+
 <div
     class="turbo-nav"
     x-data="{ open: false, userOpen: false, searchOpen: false }"
@@ -122,8 +129,113 @@
 
                 <div class="hidden lg:flex flex-1 justify-center items-center space-x-7 text-sm font-semibold">
                     <a href="/" class="turbo-nav-link {{ request()->routeIs('home') ? 'turbo-nav-link--active' : '' }}">Home</a>
-                    <a href="{{ route('products.heaters') }}" class="turbo-nav-link {{ request()->routeIs('products.heaters') ? 'turbo-nav-link--active' : '' }}">Kachels</a>
-                    <a href="{{ route('products.liquids') }}" class="turbo-nav-link {{ request()->routeIs('products.liquids') ? 'turbo-nav-link--active' : '' }}">Vloeistoffen</a>
+
+                    {{-- Kachels --}}
+                    <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false" @focusin="open = true" @focusout="open = false">
+                        <a href="{{ route('products.heaters') }}"
+                           class="turbo-nav-link {{ request()->routeIs('products.heaters') ? 'turbo-nav-link--active' : '' }} inline-flex items-center gap-1">
+                            Kachels
+                            @if($heaterBrands->isNotEmpty())
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 transition-transform duration-150" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            @endif
+                        </a>
+                        @if($heaterBrands->isNotEmpty())
+                            <div
+                                x-show="open"
+                                x-transition:enter="transition ease-out duration-150"
+                                x-transition:enter-start="opacity-0 -translate-y-1"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-100"
+                                x-transition:leave-start="opacity-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 -translate-y-1"
+                                class="absolute left-1/2 top-full z-50 w-72 -translate-x-1/2 pt-4"
+                                style="display:none;"
+                            >
+                                <div class="relative overflow-hidden rounded-2xl border border-turbo-gold/30 bg-white shadow-[0_20px_45px_-18px_rgba(3,24,43,0.55)]">
+                                    <div class="p-2.5">
+                                        <a href="{{ route('products.heaters') }}"
+                                           class="flex items-center justify-between rounded-xl bg-turbo-gold/15 px-3.5 py-3 text-sm font-bold text-turbo-ink transition hover:bg-turbo-gold/25">
+                                            <span class="flex items-center gap-3">
+                                                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-turbo-gold text-turbo-navy">
+                                                    <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                        <path d="M12 3c2.2 2.8 4 4.8 4 7.5A4 4 0 0 1 8 11c0-2 1-3.7 2.6-5.7.1 1.9.8 3 1.4 3.7.7-1.6.6-3.5 0-6Z"/>
+                                                        <path d="M5 21h14M7 17h10"/>
+                                                    </svg>
+                                                </span>
+                                                Alle kachels
+                                            </span>
+                                            <span aria-hidden="true">→</span>
+                                        </a>
+                                        <div class="mt-2 grid gap-1">
+                                            @foreach($heaterBrands as $brand)
+                                                <a href="{{ route('products.heaters') }}?brands[]={{ urlencode($brand) }}"
+                                                   class="group/brand flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-turbo-gray hover:text-turbo-ink">
+                                                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-turbo-blue/10 bg-turbo-gray text-xs font-extrabold uppercase text-turbo-blue transition group-hover/brand:border-turbo-gold/40 group-hover/brand:bg-white">
+                                                        {{ mb_substr($brand, 0, 1) }}
+                                                    </span>
+                                                    <span class="min-w-0 flex-1 truncate">{{ $brand }}</span>
+                                                    <svg viewBox="0 0 20 20" class="h-4 w-4 text-gray-300 transition group-hover/brand:translate-x-0.5 group-hover/brand:text-turbo-gold" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                                        <path d="m7 4 6 6-6 6"/>
+                                                    </svg>
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    {{-- Vloeistoffen --}}
+                    <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                        <a href="{{ route('products.liquids') }}"
+                           class="turbo-nav-link {{ request()->routeIs('products.liquids') ? 'turbo-nav-link--active' : '' }} inline-flex items-center gap-1">
+                            Vloeistoffen
+                            @if($liquidBrands->isNotEmpty())
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 transition-transform duration-150" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            @endif
+                        </a>
+                        @if($liquidBrands->isNotEmpty())
+                            <div
+                                x-show="open"
+                                x-transition:enter="transition ease-out duration-150"
+                                x-transition:enter-start="opacity-0 -translate-y-1"
+                                x-transition:enter-end="opacity-100 translate-y-0"
+                                x-transition:leave="transition ease-in duration-100"
+                                x-transition:leave-start="opacity-100 translate-y-0"
+                                x-transition:leave-end="opacity-0 -translate-y-1"
+                                class="absolute left-1/2 -translate-x-1/2 top-full pt-3 w-52 z-50"
+                                style="display:none;"
+                            >
+                                <div class="rounded-xl bg-white shadow-xl ring-1 ring-black/5 overflow-hidden">
+                                    <div class="bg-gray-50 border-b border-gray-100 px-4 py-2">
+                                        <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Vloeistoffen per merk</span>
+                                    </div>
+                                    <div class="py-1.5">
+                                        <a href="{{ route('products.liquids') }}"
+                                           class="flex items-center justify-between px-4 py-2.5 text-sm font-semibold text-turbo-gold hover:bg-turbo-gold/5 transition-colors">
+                                            Alle vloeistoffen
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                        </a>
+                                        <div class="border-t border-gray-100 mt-1 pt-1">
+                                            @foreach($liquidBrands as $brand)
+                                                <a href="{{ route('products.liquids') }}?brands[]={{ urlencode($brand) }}"
+                                                   class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-turbo-gold/5 hover:text-turbo-gold transition-colors">
+                                                    <span class="h-1.5 w-1.5 rounded-full bg-turbo-gold/50 shrink-0"></span>
+                                                    {{ $brand }}
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
                     <a href="{{ route('products.index') }}" class="turbo-nav-link {{ request()->routeIs('products.index') ? 'turbo-nav-link--active' : '' }}">Overige producten</a>
                     <a href="{{ route('locaties') }}" class="turbo-nav-link {{ request()->routeIs('locaties') ? 'turbo-nav-link--active' : '' }}">Locaties</a>
                     <a href="{{ route('over-ons') }}" class="turbo-nav-link {{ request()->routeIs('over-ons') ? 'turbo-nav-link--active' : '' }}">Over ons</a>
@@ -239,8 +351,67 @@
 
             <div class="px-4 py-5 grid gap-2 text-sm">
                 <a href="/" @if(request()->routeIs('home')) aria-current="page" @endif class="turbo-mobile-link"><span>Home</span><span aria-hidden="true">›</span></a>
-                <a href="{{ route('products.heaters') }}" @if(request()->routeIs('products.heaters')) aria-current="page" @endif class="turbo-mobile-link"><span>Kachels</span><span aria-hidden="true">›</span></a>
-                <a href="{{ route('products.liquids') }}" @if(request()->routeIs('products.liquids')) aria-current="page" @endif class="turbo-mobile-link"><span>Vloeistoffen</span><span aria-hidden="true">›</span></a>
+
+                {{-- Kachels mobiel --}}
+                @if($heaterBrands->isNotEmpty())
+                    <div x-data="{ expanded: {{ request()->routeIs('products.heaters') ? 'true' : 'false' }} }">
+                        <div class="flex items-center gap-1">
+                            <a href="{{ route('products.heaters') }}" @if(request()->routeIs('products.heaters')) aria-current="page" @endif
+                               class="turbo-mobile-link flex-1 rounded-r-none border-r-0">
+                                <span>Kachels</span>
+                            </a>
+                            <button @click="expanded = !expanded" type="button"
+                                class="turbo-mobile-link w-12 shrink-0 justify-center rounded-l-none"
+                                :aria-expanded="expanded">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div x-show="expanded" x-transition class="mt-1 ml-3 pl-3 border-l border-white/15 space-y-0.5">
+                            @foreach($heaterBrands as $brand)
+                                <a href="{{ route('products.heaters') }}?brands[]={{ urlencode($brand) }}" @click="open = false"
+                                   class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 hover:bg-white/8 hover:text-white transition-colors">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-turbo-gold/60 shrink-0"></span>
+                                    {{ $brand }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <a href="{{ route('products.heaters') }}" @if(request()->routeIs('products.heaters')) aria-current="page" @endif class="turbo-mobile-link"><span>Kachels</span><span aria-hidden="true">›</span></a>
+                @endif
+
+                {{-- Vloeistoffen mobiel --}}
+                @if($liquidBrands->isNotEmpty())
+                    <div x-data="{ expanded: {{ request()->routeIs('products.liquids') ? 'true' : 'false' }} }">
+                        <div class="flex items-center gap-1">
+                            <a href="{{ route('products.liquids') }}" @if(request()->routeIs('products.liquids')) aria-current="page" @endif
+                               class="turbo-mobile-link flex-1 rounded-r-none border-r-0">
+                                <span>Vloeistoffen</span>
+                            </a>
+                            <button @click="expanded = !expanded" type="button"
+                                class="turbo-mobile-link w-12 shrink-0 justify-center rounded-l-none"
+                                :aria-expanded="expanded">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform duration-200" :class="expanded ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div x-show="expanded" x-transition class="mt-1 ml-3 pl-3 border-l border-white/15 space-y-0.5">
+                            @foreach($liquidBrands as $brand)
+                                <a href="{{ route('products.liquids') }}?brands[]={{ urlencode($brand) }}" @click="open = false"
+                                   class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 hover:bg-white/8 hover:text-white transition-colors">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-turbo-gold/60 shrink-0"></span>
+                                    {{ $brand }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <a href="{{ route('products.liquids') }}" @if(request()->routeIs('products.liquids')) aria-current="page" @endif class="turbo-mobile-link"><span>Vloeistoffen</span><span aria-hidden="true">›</span></a>
+                @endif
+
                 <a href="{{ route('products.index') }}" @if(request()->routeIs('products.index')) aria-current="page" @endif class="turbo-mobile-link"><span>Overige producten</span><span aria-hidden="true">›</span></a>
                 <a href="{{ route('locaties') }}" @if(request()->routeIs('locaties')) aria-current="page" @endif class="turbo-mobile-link"><span>Locaties</span><span aria-hidden="true">›</span></a>
                 <a href="{{ route('over-ons') }}" @if(request()->routeIs('over-ons')) aria-current="page" @endif class="turbo-mobile-link"><span>Over ons</span><span aria-hidden="true">›</span></a>

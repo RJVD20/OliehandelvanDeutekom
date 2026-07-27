@@ -3,9 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enums\PaymentStatus;
+use App\Enums\OrderStatus;
+use App\Mail\OrderConfirmationMail;
+use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentEvent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Mollie\Api\MollieApiClient;
 
 class PaymentWebhookController extends Controller
@@ -38,20 +43,25 @@ class PaymentWebhookController extends Controller
 
     public function returnFromProvider(Payment $payment)
     {
+        $status = $payment->status;
         if ($payment->provider === 'mollie' && $payment->provider_payment_id) {
-            $this->syncStatus($payment);
+            $status = $this->syncStatus($payment);
         }
 
-        $message = $payment->fresh()->status === PaymentStatus::PAID
-            ? 'Betaling geslaagd. Bedankt voor je bestelling!'
-            : 'Je betaling wordt verwerkt. Je ontvangt een bevestiging zodra deze is afgerond.';
+        if ($status === PaymentStatus::PAID) {
+            session()->forget(['cart', 'fulfillment_method']);
+        }
 
-        return auth()->check()
+        $message = $status === PaymentStatus::PAID
+            ? 'Betaling geslaagd. Bedankt voor je bestelling!'
+            : 'De betaling is niet afgerond. Je winkelmand is bewaard.';
+
+        return auth()->check() && $status === PaymentStatus::PAID
             ? redirect()->route('account.orders')->with('toast', $message)
-            : redirect()->route('home')->with('toast', $message);
+            : redirect()->route($status === PaymentStatus::PAID ? 'home' : 'checkout.index')->with('toast', $message);
     }
 
-    private function syncStatus(Payment $payment): void
+    private function syncStatus(Payment $payment): PaymentStatus
     {
         $molliePayment = $this->mollie->payments->get($payment->provider_payment_id);
 
@@ -79,6 +89,39 @@ class PaymentWebhookController extends Controller
                 'data' => ['from' => $oldStatus->value ?? (string) $oldStatus, 'to' => $newStatus->value],
             ]);
         }
+
+        $currentStatus = $newStatus ?? $payment->fresh()->status;
+
+        if ($currentStatus === PaymentStatus::PAID) {
+            $promoted = Order::query()
+                ->whereKey($payment->order_id)
+                ->where('status', OrderStatus::AWAITING_PAYMENT->value)
+                ->update(['status' => OrderStatus::PENDING->value]);
+
+            if ($promoted) {
+                $order = Order::find($payment->order_id);
+
+                try {
+                    Mail::to($order->email)->send(new OrderConfirmationMail($order));
+                } catch (\Throwable $exception) {
+                    Log::error('Paid order confirmation email could not be sent.', [
+                        'order_id' => $order->id,
+                        'exception' => $exception,
+                    ]);
+                }
+            }
+        } elseif (in_array($currentStatus, [
+            PaymentStatus::EXPIRED,
+            PaymentStatus::FAILED,
+            PaymentStatus::CANCELLED,
+        ], true)) {
+            Order::query()
+                ->whereKey($payment->order_id)
+                ->where('status', OrderStatus::AWAITING_PAYMENT->value)
+                ->delete();
+        }
+
+        return $currentStatus;
     }
 
     private function mapStatus(?string $status): ?PaymentStatus

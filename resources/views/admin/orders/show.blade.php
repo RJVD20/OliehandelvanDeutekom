@@ -38,12 +38,19 @@
         @php $payment = $order->latestPayment; @endphp
         @if($payment)
             <p class="text-sm flex items-center justify-between"><span class="text-gray-600">Status</span><strong>{{ ucfirst($payment->status->value) }}</strong></p>
+            <p class="text-sm flex items-center justify-between"><span class="text-gray-600">Betaalwijze</span><strong>{{ $payment->handlingLabel() }}</strong></p>
             <p class="text-sm"><strong>Vervaldatum:</strong> {{ optional($payment->due_date)->format('d-m-Y') }}</p>
-            <p class="text-sm"><strong>Laatste herinnering:</strong> {{ optional($payment->last_reminder_at)->format('d-m-Y H:i') ?? '–' }}</p>
-            <p class="text-sm"><strong>Aantal herinneringen:</strong> {{ $payment->reminder_count }}</p>
             <p class="text-sm font-semibold text-green-700">€ {{ number_format($payment->amount, 2, ',', '.') }}</p>
             @if($payment->pay_link)
                 <a href="{{ $payment->pay_link }}" class="inline-flex items-center rounded bg-blue-600 px-4 py-2 text-white text-sm font-semibold mt-2" target="_blank" rel="noopener">Open betaallink</a>
+            @endif
+            @if($payment->canSendManualPaymentRequest())
+                <form method="POST" action="{{ route('admin.payments.send-request', $payment) }}" class="mt-2">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center rounded bg-turbo-gold px-4 py-2 text-sm font-semibold text-turbo-navy">
+                        Betaalverzoek versturen
+                    </button>
+                </form>
             @endif
         @else
             <p class="text-sm text-gray-600">Geen betaling geregistreerd.</p>
@@ -56,6 +63,17 @@
 
         <p class="text-sm"><span class="text-gray-600">Naam</span><br><strong>{{ $order->name }}</strong></p>
         <p class="text-sm"><span class="text-gray-600">E-mail</span><br><strong>{{ $order->email ?: 'Niet opgegeven' }}</strong></p>
+        <p class="text-sm"><span class="text-gray-600">Ontvangst</span><br><strong>{{ $order->fulfillment_method === 'pickup' ? 'Afhalen bij depot' : 'Thuisbezorgen' }}</strong></p>
+        @if($order->fulfillment_method === 'pickup' && $order->pickup_location_name)
+            <p class="text-sm">
+                <span class="text-gray-600">Gekozen depot</span><br>
+                <strong>{{ $order->pickup_location_name }}</strong><br>
+                {{ $order->pickup_location_address }}
+                @if($order->pickup_location_opening)
+                    <br><span class="text-gray-500">Openingstijden: {{ $order->pickup_location_opening }}</span>
+                @endif
+            </p>
+        @endif
         @if($order->phone)
             <p class="text-sm"><span class="text-gray-600">Telefoon</span><br><strong><a href="tel:{{ $order->phone }}" class="text-blue-700">{{ $order->phone }}</a></strong></p>
         @endif

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Mail\OrderConfirmationMail;
+use App\Models\Location;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Product;
@@ -27,8 +28,9 @@ class ManualOrderController extends Controller
             ->get(['id', 'name', 'price']);
 
         return view('admin.orders.create', [
-            'products' => $products,
+            'products'  => $products,
             'provinces' => nl_provinces(),
+            'locations' => Location::orderBy('name')->get(['id', 'name', 'street', 'postcode_city', 'opening']),
         ]);
     }
 
@@ -38,14 +40,22 @@ class ManualOrderController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'required_if:send_confirmation,1', 'max:255'],
             'phone' => ['required', 'string', 'max:30'],
-            'address' => ['required', 'string', 'max:255'],
-            'postcode' => ['required', 'regex:/^[1-9][0-9]{3}\s?[A-Z]{2}$/i'],
-            'city' => ['required', 'string', 'max:255'],
-            'province' => ['required', Rule::in(nl_provinces())],
+            'address' => ['required_if:fulfillment_method,delivery', 'nullable', 'string', 'max:255'],
+            'postcode' => ['required_if:fulfillment_method,delivery', 'nullable', 'regex:/^[1-9][0-9]{3}\s?[A-Z]{2}$/i'],
+            'city' => ['required_if:fulfillment_method,delivery', 'nullable', 'string', 'max:255'],
+            'province' => ['required_if:fulfillment_method,delivery', 'nullable', Rule::in(nl_provinces())],
             'notes' => ['nullable', 'string', 'max:2000'],
-            'payment_handling' => ['required', Rule::in(['paid', 'pay_on_delivery', 'payment_link'])],
+            'payment_handling' => ['required', Rule::in([
+                'paid_cash',
+                'paid_bank',
+                'pay_on_delivery',
+                'bank_transfer',
+                'payment_link',
+            ])],
             'payment_method' => ['nullable', Rule::in(array_keys(config('payments.methods', [])))],
-            'send_confirmation' => ['nullable', 'boolean'],
+            'fulfillment_method'  => ['required', Rule::in(['delivery', 'pickup'])],
+            'pickup_location_id'  => ['nullable', 'required_if:fulfillment_method,pickup', 'exists:locations,id'],
+            'send_confirmation'   => ['nullable', 'boolean'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'distinct', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:999'],
@@ -67,8 +77,11 @@ class ManualOrderController extends Controller
             ]);
         }
 
-        $postcode = strtoupper(str_replace(' ', '', $data['postcode']));
-        $postcode = substr($postcode, 0, 4).' '.substr($postcode, 4);
+        $postcode = '';
+        if ($data['fulfillment_method'] === 'delivery') {
+            $postcode = strtoupper(str_replace(' ', '', $data['postcode']));
+            $postcode = substr($postcode, 0, 4).' '.substr($postcode, 4);
+        }
 
         [$order, $payment] = DB::transaction(function () use ($data, $products, $postcode) {
             $cart = collect($data['items'])->mapWithKeys(function (array $item) use ($products) {
@@ -81,20 +94,30 @@ class ManualOrderController extends Controller
                 ]];
             })->all();
 
+            $pickupLocation = null;
+            if ($data['fulfillment_method'] === 'pickup' && ! empty($data['pickup_location_id'])) {
+                $pickupLocation = Location::find($data['pickup_location_id']);
+            }
+
             $order = Order::createFromCart($cart, [
-                'user_id' => null,
-                'source' => 'manual',
-                'name' => $data['name'],
-                'email' => $data['email'] ?? null,
-                'phone' => $data['phone'],
-                'address' => $data['address'],
-                'postcode' => $postcode,
-                'city' => $data['city'],
-                'province' => $data['province'],
-                'route_notes' => $data['notes'] ?? null,
+                'user_id'                 => null,
+                'source'                  => 'manual',
+                'fulfillment_method'      => $data['fulfillment_method'],
+                'pickup_location_id'      => $pickupLocation?->id,
+                'pickup_location_name'    => $pickupLocation?->name,
+                'pickup_location_address' => $pickupLocation ? trim($pickupLocation->street . ', ' . $pickupLocation->postcode_city) : null,
+                'pickup_location_opening' => $pickupLocation?->opening,
+                'name'                    => $data['name'],
+                'email'                   => $data['email'] ?? null,
+                'phone'                   => $data['phone'],
+                'address'                 => $data['fulfillment_method'] === 'delivery' ? $data['address'] : ($pickupLocation?->street ?? ''),
+                'postcode'                => $data['fulfillment_method'] === 'delivery' ? $postcode : ($pickupLocation?->postcode_city ?? ''),
+                'city'                    => $data['fulfillment_method'] === 'delivery' ? $data['city'] : '',
+                'province'                => $data['fulfillment_method'] === 'delivery' ? $data['province'] : '',
+                'route_notes'             => $data['notes'] ?? null,
             ]);
 
-            $isPaid = $data['payment_handling'] === 'paid';
+            $isPaid = in_array($data['payment_handling'], ['paid_cash', 'paid_bank'], true);
             $payment = Payment::create([
                 'order_id' => $order->id,
                 'provider' => $data['payment_handling'] === 'payment_link'
@@ -105,7 +128,6 @@ class ManualOrderController extends Controller
                 'currency' => 'EUR',
                 'due_date' => now()->addDays(14),
                 'paid_at' => $isPaid ? now() : null,
-                'reminder_count' => 0,
                 'meta' => [
                     'payment_method' => $data['payment_method'] ?? null,
                     'handling' => $data['payment_handling'],

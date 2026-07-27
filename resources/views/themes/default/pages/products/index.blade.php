@@ -7,7 +7,9 @@
 @php
     $activeFilterCount =
         count(request('categories', [])) +
-        count(request('types', [])) +
+        count(request('brands', [])) +
+        count(request('model_types', [])) +
+        (request('condition') ? 1 : 0) +
         (request('min_price', 0) != 0 || request('max_price', 500) != 500 ? 1 : 0);
 @endphp
 
@@ -92,28 +94,74 @@
                 </ul>
             </div>
 
-            @unless($type)
-                <!-- TYPE -->
+            @if($brands->isNotEmpty())
+                <!-- MERK -->
                 <div class="py-4 border-b border-[var(--turbo-border)]">
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Type</h3>
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Merk</h3>
                     <ul class="space-y-2.5 text-sm">
-                        @foreach (['pellet','accessoire'] as $filterType)
+                        @foreach ($brands as $brand)
                             <li>
                                 <label class="flex items-center gap-2.5 cursor-pointer group">
-                                    <input
-                                        type="checkbox"
-                                        name="types[]"
-                                        value="{{ $filterType }}"
-                                        @checked(in_array($filterType, request('types', [])))
-                                        class="form-checkbox h-4 w-4 rounded text-turbo-gold border-turbo-blue/30 focus:ring-turbo-gold/20"
-                                    >
-                                    <span class="group-hover:text-turbo-gold transition-colors">{{ ucfirst($filterType) }}</span>
+                                    <input type="checkbox" name="brands[]" value="{{ $brand }}"
+                                        @checked(in_array($brand, request('brands', [])))
+                                        class="form-checkbox h-4 w-4 rounded text-turbo-gold border-turbo-blue/30 focus:ring-turbo-gold/20">
+                                    <span class="group-hover:text-turbo-gold transition-colors">{{ $brand }}</span>
                                 </label>
                             </li>
                         @endforeach
                     </ul>
                 </div>
-            @endunless
+            @endif
+
+            @if($modelTypes->isNotEmpty())
+                <!-- BRANDERSTYPE -->
+                <div class="py-4 border-b border-[var(--turbo-border)]">
+                    <h3 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Branderstype</h3>
+                    <ul class="space-y-2.5 text-sm">
+                        @foreach ($modelTypes as $mt)
+                            <li>
+                                <label class="flex items-center gap-2.5 cursor-pointer group">
+                                    <input type="checkbox" name="model_types[]" value="{{ $mt }}"
+                                        @checked(in_array($mt, request('model_types', [])))
+                                        class="form-checkbox h-4 w-4 rounded text-turbo-gold border-turbo-blue/30 focus:ring-turbo-gold/20">
+                                    <span class="group-hover:text-turbo-gold transition-colors capitalize">{{ $mt }}</span>
+                                </label>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <!-- STAAT -->
+            <div class="py-4 border-b border-[var(--turbo-border)]">
+                <h3 class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Staat</h3>
+                <ul class="space-y-2.5 text-sm">
+                    <li>
+                        <label class="flex items-center gap-2.5 cursor-pointer group">
+                            <input type="radio" name="condition" value=""
+                                @checked(!request('condition'))
+                                class="form-radio h-4 w-4 text-turbo-gold border-turbo-blue/30 focus:ring-turbo-gold/20">
+                            <span class="group-hover:text-turbo-gold transition-colors">Alle producten</span>
+                        </label>
+                    </li>
+                    <li>
+                        <label class="flex items-center gap-2.5 cursor-pointer group">
+                            <input type="radio" name="condition" value="new"
+                                @checked(request('condition') === 'new')
+                                class="form-radio h-4 w-4 text-turbo-gold border-turbo-blue/30 focus:ring-turbo-gold/20">
+                            <span class="group-hover:text-turbo-gold transition-colors">Nieuw</span>
+                        </label>
+                    </li>
+                    <li>
+                        <label class="flex items-center gap-2.5 cursor-pointer group">
+                            <input type="radio" name="condition" value="used"
+                                @checked(request('condition') === 'used')
+                                class="form-radio h-4 w-4 text-turbo-gold border-turbo-blue/30 focus:ring-turbo-gold/20">
+                            <span class="group-hover:text-turbo-gold transition-colors">Gebruikt</span>
+                        </label>
+                    </li>
+                </ul>
+            </div>
 
             <!-- PRIJS -->
             <div class="py-4">
@@ -231,8 +279,11 @@
 
                     <a
                         href="{{ route('product.show', $product->slug) }}"
-                    class="product-card__media product-card__media--white block h-32 sm:h-44 flex items-center justify-center"
+                        class="product-card__media product-card__media--white relative block h-32 sm:h-44 flex items-center justify-center"
                     >
+                        @if($product->used)
+                            <span class="absolute top-2 left-2 z-10 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700">Gebruikt</span>
+                        @endif
                         @if($product->image)
                             <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" loading="lazy">
                         @else
@@ -357,32 +408,60 @@
                 </div>
             </div>
 
-            @unless($type)
-                <!-- Type pills -->
+            @if($brands->isNotEmpty())
+                <!-- Merk pills -->
                 <div class="space-y-3">
-                    <div class="text-xs font-bold uppercase tracking-widest text-gray-400">Type</div>
+                    <div class="text-xs font-bold uppercase tracking-widest text-gray-400">Merk</div>
                     <div class="flex flex-wrap gap-2">
-                        @foreach (['pellet','accessoire'] as $filterType)
+                        @foreach ($brands as $brand)
                             <label
-                                x-data="{ checked: {{ in_array($filterType, request('types', [])) ? 'true' : 'false' }} }"
-                                :class="checked
-                                    ? 'bg-turbo-gold text-turbo-navy border-turbo-gold font-semibold shadow-sm'
-                                    : 'bg-white text-gray-700 border-gray-200 hover:border-turbo-gold/60'"
+                                x-data="{ checked: {{ in_array($brand, request('brands', [])) ? 'true' : 'false' }} }"
+                                :class="checked ? 'bg-turbo-gold text-turbo-navy border-turbo-gold font-semibold shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-turbo-gold/60'"
                                 class="inline-flex items-center rounded-full border px-4 py-2 cursor-pointer transition-all"
                             >
-                                <input
-                                    type="checkbox"
-                                    name="types[]"
-                                    value="{{ $filterType }}"
-                                    x-model="checked"
-                                    class="sr-only"
-                                >
-                                <span class="text-sm">{{ ucfirst($filterType) }}</span>
+                                <input type="checkbox" name="brands[]" value="{{ $brand }}" x-model="checked" class="sr-only">
+                                <span class="text-sm">{{ $brand }}</span>
                             </label>
                         @endforeach
                     </div>
                 </div>
-            @endunless
+            @endif
+
+            @if($modelTypes->isNotEmpty())
+                <!-- Branderstype pills -->
+                <div class="space-y-3">
+                    <div class="text-xs font-bold uppercase tracking-widest text-gray-400">Branderstype</div>
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($modelTypes as $mt)
+                            <label
+                                x-data="{ checked: {{ in_array($mt, request('model_types', [])) ? 'true' : 'false' }} }"
+                                :class="checked ? 'bg-turbo-gold text-turbo-navy border-turbo-gold font-semibold shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-turbo-gold/60'"
+                                class="inline-flex items-center rounded-full border px-4 py-2 cursor-pointer transition-all"
+                            >
+                                <input type="checkbox" name="model_types[]" value="{{ $mt }}" x-model="checked" class="sr-only">
+                                <span class="text-sm capitalize">{{ $mt }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            <!-- Staat -->
+            <div class="space-y-3">
+                <div class="text-xs font-bold uppercase tracking-widest text-gray-400">Staat</div>
+                <div class="flex flex-wrap gap-2">
+                    @foreach (['' => 'Alle', 'new' => 'Nieuw', 'used' => 'Gebruikt'] as $val => $label)
+                        <label
+                            x-data="{ checked: {{ request('condition', '') === $val ? 'true' : 'false' }} }"
+                            :class="checked ? 'bg-turbo-gold text-turbo-navy border-turbo-gold font-semibold shadow-sm' : 'bg-white text-gray-700 border-gray-200 hover:border-turbo-gold/60'"
+                            class="inline-flex items-center rounded-full border px-4 py-2 cursor-pointer transition-all"
+                        >
+                            <input type="radio" name="condition" value="{{ $val }}" x-model="checked" class="sr-only">
+                            <span class="text-sm">{{ $label }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
 
             <!-- Prijs -->
             <div class="space-y-3">

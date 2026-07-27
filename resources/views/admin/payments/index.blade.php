@@ -3,16 +3,19 @@
 @section('title', 'Openstaande betalingen')
 
 @section('content')
-<h1 class="text-2xl font-bold mb-6">Betalingen</h1>
+<div class="mb-6">
+    <h1 class="text-2xl font-bold">Betalingen</h1>
+    <p class="mt-1 text-sm text-gray-500">Online betalingen, betalen bij levering en handmatig ontvangen bedragen op één plek.</p>
+</div>
 
 <div class="bg-white rounded shadow p-4 mb-6">
-    <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+    <form id="payment-filter-form" method="GET" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
         <div class="space-y-1">
             <label class="text-sm text-gray-600">Status</label>
             <select name="status" class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base">
                 <option value="">Alle</option>
-                @foreach(['open','paid','expired','failed','cancelled'] as $status)
-                    <option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ ucfirst($status) }}</option>
+                @foreach(['open' => 'Openstaand', 'paid' => 'Betaald', 'expired' => 'Verlopen', 'failed' => 'Mislukt', 'cancelled' => 'Geannuleerd'] as $status => $label)
+                    <option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>{{ $label }}</option>
                 @endforeach
             </select>
         </div>
@@ -28,9 +31,8 @@
             <input type="checkbox" name="soon" value="1" @checked(request('soon')) class="h-5 w-5 rounded border-gray-300">
             <span>Bijna vervallen (<=3d)</span>
         </label>
-        <div class="lg:col-span-4 flex gap-3 justify-end">
+        <div class="lg:col-span-4 flex justify-end">
             <a href="{{ route('admin.payments.index') }}" class="px-4 py-3 border rounded-lg text-center font-semibold text-gray-800">Reset</a>
-            <button class="px-4 py-3 bg-green-600 text-white rounded-lg font-semibold">Filter</button>
         </div>
     </form>
 </div>
@@ -42,9 +44,8 @@
                 <th class="p-3 text-left">Order</th>
                 <th class="p-3 text-left">Klant</th>
                 <th class="p-3 text-left">Status</th>
+                <th class="p-3 text-left">Betaalwijze</th>
                 <th class="p-3 text-left">Vervalt</th>
-                <th class="p-3 text-left">Laatste herinnering</th>
-                <th class="p-3 text-left">Teller</th>
                 <th class="p-3 text-right">Bedrag</th>
                 <th class="p-3 text-right">Acties</th>
             </tr>
@@ -58,18 +59,37 @@
                         <div class="text-xs text-gray-500">{{ $payment->order->email }}</div>
                     </td>
                     <td class="p-3">
-                        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold bg-gray-100 text-gray-700">{{ ucfirst($payment->status->value) }}</span>
+                        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold
+                            @if($payment->status->value === 'paid') bg-green-100 text-green-700
+                            @elseif($payment->status->value === 'open') bg-yellow-100 text-yellow-700
+                            @else bg-gray-100 text-gray-700
+                            @endif
+                        ">{{ $payment->statusLabel() }}</span>
                     </td>
-                    <td class="p-3">{{ optional($payment->due_date)->format('d-m-Y') }}</td>
-                    <td class="p-3">{{ optional($payment->last_reminder_at)->format('d-m-Y H:i') ?? '–' }}</td>
-                    <td class="p-3">{{ $payment->reminder_count }}</td>
+                    <td class="p-3">
+                        <span class="font-medium text-gray-800">{{ $payment->handlingLabel() }}</span>
+                        @if($payment->pay_link)
+                            <a href="{{ $payment->pay_link }}" target="_blank" rel="noopener" class="mt-1 block text-xs font-semibold text-blue-700">Open betaallink ↗</a>
+                        @endif
+                    </td>
+                    <td class="p-3">
+                        @if($payment->handling() === 'pay_on_delivery')
+                            Bij levering
+                        @elseif($payment->status->value === 'paid')
+                            –
+                        @else
+                            {{ optional($payment->due_date)->format('d-m-Y') }}
+                        @endif
+                    </td>
                     <td class="p-3 text-right">€ {{ number_format($payment->amount, 2, ',', '.') }}</td>
                     <td class="p-3 text-right space-x-2">
                         @if($payment->status->value === 'open')
-                            <form method="POST" action="{{ route('admin.payments.remind', $payment) }}" class="inline">
-                                @csrf
-                                <button class="px-3 py-2 rounded bg-blue-600 text-white text-xs font-semibold">Herinnering</button>
-                            </form>
+                            @if($payment->canSendManualPaymentRequest())
+                                <form method="POST" action="{{ route('admin.payments.send-request', $payment) }}" class="inline">
+                                    @csrf
+                                    <button class="px-3 py-2 rounded bg-blue-600 text-white text-xs font-semibold">Betaalverzoek versturen</button>
+                                </form>
+                            @endif
                             <form method="POST" action="{{ route('admin.payments.mark-paid', $payment) }}" class="inline">
                                 @csrf
                                 @method('PATCH')
@@ -93,25 +113,38 @@
                     <p class="text-sm font-semibold">Order #{{ $payment->order_id }}</p>
                     <p class="text-xs text-gray-500">{{ $payment->order->name }} — {{ $payment->order->email }}</p>
                 </div>
-                <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{{ ucfirst($payment->status->value) }}</span>
+                <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $payment->status->value === 'paid' ? 'bg-green-100 text-green-700' : ($payment->status->value === 'open' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700') }}">{{ $payment->statusLabel() }}</span>
             </div>
             <div class="mt-2 text-sm text-gray-700 space-y-1">
-                <div>Vervalt: {{ optional($payment->due_date)->format('d-m-Y') }}</div>
-                <div>Laatste herinnering: {{ optional($payment->last_reminder_at)->format('d-m-Y H:i') ?? '–' }}</div>
-                <div>Herinneringen: {{ $payment->reminder_count }}</div>
+                <div><strong>Betaalwijze:</strong> {{ $payment->handlingLabel() }}</div>
+                <div>
+                    Vervalt:
+                    @if($payment->handling() === 'pay_on_delivery')
+                        bij levering
+                    @elseif($payment->status->value === 'paid')
+                        –
+                    @else
+                        {{ optional($payment->due_date)->format('d-m-Y') }}
+                    @endif
+                </div>
                 <div class="font-semibold text-green-700">€ {{ number_format($payment->amount, 2, ',', '.') }}</div>
             </div>
             <div class="mt-3 flex flex-col sm:flex-row gap-2">
                 @if($payment->status->value === 'open')
-                    <form method="POST" action="{{ route('admin.payments.remind', $payment) }}">
-                        @csrf
-                        <button class="w-full rounded-lg bg-blue-600 px-4 py-2 text-white text-sm font-semibold">Herinnering</button>
-                    </form>
+                    @if($payment->canSendManualPaymentRequest())
+                        <form method="POST" action="{{ route('admin.payments.send-request', $payment) }}">
+                            @csrf
+                            <button class="w-full rounded-lg bg-blue-600 px-4 py-2 text-white text-sm font-semibold">Betaalverzoek versturen</button>
+                        </form>
+                    @endif
                     <form method="POST" action="{{ route('admin.payments.mark-paid', $payment) }}">
                         @csrf
                         @method('PATCH')
                         <button class="w-full rounded-lg bg-green-600 px-4 py-2 text-white text-sm font-semibold">Markeer betaald</button>
                     </form>
+                    @if($payment->pay_link)
+                        <a href="{{ $payment->pay_link }}" target="_blank" rel="noopener" class="w-full rounded-lg border border-blue-200 px-4 py-2 text-center text-sm font-semibold text-blue-700">Open betaallink</a>
+                    @endif
                 @else
                     <span class="text-xs text-gray-500">Geen acties</span>
                 @endif
@@ -122,3 +155,16 @@
 
 <div class="mt-4">{{ $payments->links() }}</div>
 @endsection
+
+@push('scripts')
+<script>
+(() => {
+    const form = document.getElementById('payment-filter-form');
+    if (!form) return;
+
+    form.querySelectorAll('select, input[type="date"], input[type="checkbox"]').forEach(field => {
+        field.addEventListener('change', () => form.requestSubmit());
+    });
+})();
+</script>
+@endpush

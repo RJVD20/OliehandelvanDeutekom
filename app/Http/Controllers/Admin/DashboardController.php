@@ -15,8 +15,8 @@ class DashboardController extends Controller
             'totalProducts'    => Product::count(),
             'activeProducts'   => Product::where('active', true)->count(),
             'inactiveProducts' => Product::where('active', false)->count(),
-            'totalOrders'      => Order::count(),
-            'recentOrders'     => Order::latest()->take(5)->get(),
+            'totalOrders'      => Order::placed()->count(),
+            'recentOrders'     => Order::placed()->latest()->take(5)->get(),
             'maintenanceEnabled' => Setting::getBool('maintenance_enabled', false),
         ]);
     }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -13,6 +14,11 @@ class Order extends Model
         'user_id',
         'status',
         'source',
+        'fulfillment_method',
+        'pickup_location_id',
+        'pickup_location_name',
+        'pickup_location_address',
+        'pickup_location_opening',
         'total',
         'name',
         'email',
@@ -68,16 +74,25 @@ class Order extends Model
         return $this->belongsTo(DeliveryRoute::class, 'delivery_route_id');
     }
 
+    public function pickupLocation()
+    {
+        return $this->belongsTo(Location::class, 'pickup_location_id');
+    }
+
     /**
      * Create an order and its immutable line-item snapshots from the session cart.
      */
-    public static function createFromCart(array $cart, array $customer): self
+    public static function createFromCart(
+        array $cart,
+        array $customer,
+        OrderStatus $status = OrderStatus::PENDING,
+    ): self
     {
         if ($cart === []) {
             throw new InvalidArgumentException('Kan geen bestelling maken van een lege winkelmand.');
         }
 
-        return DB::transaction(function () use ($cart, $customer) {
+        return DB::transaction(function () use ($cart, $customer, $status) {
             $items = collect($cart)->map(function (array $item, int|string $productId) {
                 $quantity = max(1, (int) ($item['quantity'] ?? 0));
                 $price = round((float) ($item['price'] ?? 0), 2);
@@ -96,7 +111,7 @@ class Order extends Model
 
             $order = static::create([
                 ...$customer,
-                'status' => OrderStatus::PENDING,
+                'status' => $status,
                 'total' => round($items->sum(
                     fn (array $item) => $item['price'] * $item['quantity']
                 ), 2),
@@ -106,6 +121,16 @@ class Order extends Model
 
             return $order->load('items');
         });
+    }
+
+    public function scopePlaced(Builder $query): Builder
+    {
+        return $query->where('status', '!=', OrderStatus::AWAITING_PAYMENT->value);
+    }
+
+    public function isAwaitingPayment(): bool
+    {
+        return $this->status === OrderStatus::AWAITING_PAYMENT;
     }
 
     /**

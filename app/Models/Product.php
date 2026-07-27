@@ -15,7 +15,13 @@ class Product extends Model
         'price',
         'category_id',
         'type',
+        'brand',
+        'model_type',
+        'used',
+        'rate_group',
         'description',
+        'short_description',
+        'specifications',
         'image',
         'active',
         'featured',
@@ -23,6 +29,8 @@ class Product extends Model
 
     protected $casts = [
         'active' => 'boolean',
+        'used'   => 'boolean',
+        'specifications' => 'array',
     ];
 
     public function category()

@@ -30,6 +30,7 @@
     class="space-y-6"
     x-data='{
         items: @json(old("items", [["product_id" => "", "quantity" => 1]])),
+        fulfillment: "{{ old("fulfillment_method", "delivery") }}",
         addItem() { this.items.push({ product_id: "", quantity: 1 }) },
         removeItem(index) { if (this.items.length > 1) this.items.splice(index, 1) }
     }'
@@ -52,21 +53,25 @@
                     <label for="email" class="mb-1 block text-sm font-medium text-gray-700">E-mailadres</label>
                     <input id="email" name="email" type="email" value="{{ old('email') }}" class="w-full rounded-lg border-gray-300">
                 </div>
-                <div class="sm:col-span-2">
+                <div class="sm:col-span-2" x-show="fulfillment === 'delivery'" x-transition>
                     <label for="address" class="mb-1 block text-sm font-medium text-gray-700">Adres *</label>
-                    <input id="address" name="address" value="{{ old('address') }}" required class="w-full rounded-lg border-gray-300">
+                    <input id="address" name="address" value="{{ old('address') }}"
+                        :required="fulfillment === 'delivery'" class="w-full rounded-lg border-gray-300">
                 </div>
-                <div>
+                <div x-show="fulfillment === 'delivery'" x-transition>
                     <label for="postcode" class="mb-1 block text-sm font-medium text-gray-700">Postcode *</label>
-                    <input id="postcode" name="postcode" value="{{ old('postcode') }}" required placeholder="1234 AB" class="w-full rounded-lg border-gray-300">
+                    <input id="postcode" name="postcode" value="{{ old('postcode') }}"
+                        :required="fulfillment === 'delivery'" placeholder="1234 AB" class="w-full rounded-lg border-gray-300">
                 </div>
-                <div>
+                <div x-show="fulfillment === 'delivery'" x-transition>
                     <label for="city" class="mb-1 block text-sm font-medium text-gray-700">Plaats *</label>
-                    <input id="city" name="city" value="{{ old('city') }}" required class="w-full rounded-lg border-gray-300">
+                    <input id="city" name="city" value="{{ old('city') }}"
+                        :required="fulfillment === 'delivery'" class="w-full rounded-lg border-gray-300">
                 </div>
-                <div class="sm:col-span-2">
+                <div class="sm:col-span-2" x-show="fulfillment === 'delivery'" x-transition>
                     <label for="province" class="mb-1 block text-sm font-medium text-gray-700">Provincie *</label>
-                    <select id="province" name="province" required class="w-full rounded-lg border-gray-300">
+                    <select id="province" name="province" :required="fulfillment === 'delivery'"
+                        class="w-full rounded-lg border-gray-300">
                         <option value="">Kies een provincie</option>
                         @foreach($provinces as $province)
                             <option value="{{ $province }}" @selected(old('province') === $province)>{{ $province }}</option>
@@ -79,12 +84,68 @@
         <section class="rounded-xl bg-white p-5 shadow">
             <h2 class="mb-4 text-lg font-semibold">Afhandeling</h2>
             <div class="space-y-4">
+
+                {{-- Bezorgen / Afhalen --}}
+                <div>
+                    <label class="mb-2 block text-sm font-medium text-gray-700">Leveringswijze *</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label
+                            :class="fulfillment === 'delivery' ? 'border-green-500 bg-green-50 ring-1 ring-green-500' : 'border-gray-200 bg-white'"
+                            class="flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors"
+                        >
+                            <input type="radio" name="fulfillment_method" value="delivery"
+                                x-model="fulfillment" class="text-green-600">
+                            <div>
+                                <span class="block text-sm font-semibold text-gray-800">🚚 Bezorgen</span>
+                                <span class="text-xs text-gray-500">Levering op adres</span>
+                            </div>
+                        </label>
+                        <label
+                            :class="fulfillment === 'pickup' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 bg-white'"
+                            class="flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors"
+                        >
+                            <input type="radio" name="fulfillment_method" value="pickup"
+                                x-model="fulfillment" class="text-blue-600">
+                            <div>
+                                <span class="block text-sm font-semibold text-gray-800">🏪 Afhalen</span>
+                                <span class="text-xs text-gray-500">Bij een depot</span>
+                            </div>
+                        </label>
+                    </div>
+                    @error('fulfillment_method') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                {{-- Depot kiezen (alleen bij afhalen) --}}
+                <div x-show="fulfillment === 'pickup'" x-transition>
+                    <label for="pickup_location_id" class="mb-1 block text-sm font-medium text-gray-700">Afhaallocatie (depot) *</label>
+                    @if($locations->isEmpty())
+                        <p class="rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-sm text-yellow-800">
+                            Er zijn nog geen locaties/depots toegevoegd.
+                            <a href="{{ route('admin.locations.create') }}" class="underline font-semibold">Voeg er een toe →</a>
+                        </p>
+                    @else
+                        <select id="pickup_location_id" name="pickup_location_id"
+                            :required="fulfillment === 'pickup'"
+                            class="w-full rounded-lg border-gray-300">
+                            <option value="">— Kies een depot —</option>
+                            @foreach($locations as $location)
+                                <option value="{{ $location->id }}" @selected(old('pickup_location_id') == $location->id)>
+                                    {{ $location->name }}
+                                    @if($location->postcode_city) — {{ $location->postcode_city }} @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
+                    @error('pickup_location_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                </div>
                 <div>
                     <label for="payment_handling" class="mb-1 block text-sm font-medium text-gray-700">Betaling *</label>
                     <select id="payment_handling" name="payment_handling" required class="w-full rounded-lg border-gray-300">
                         <option value="pay_on_delivery" @selected(old('payment_handling', 'pay_on_delivery') === 'pay_on_delivery')>Betalen bij levering</option>
-                        <option value="paid" @selected(old('payment_handling') === 'paid')>Al betaald</option>
                         <option value="payment_link" @selected(old('payment_handling') === 'payment_link')>Betaallink aanmaken</option>
+                        <option value="bank_transfer" @selected(old('payment_handling') === 'bank_transfer')>Betaalt via bankoverschrijving</option>
+                        <option value="paid_cash" @selected(old('payment_handling') === 'paid_cash')>Contant betaald</option>
+                        <option value="paid_bank" @selected(old('payment_handling') === 'paid_bank')>Per bank betaald</option>
                     </select>
                 </div>
                 <div>
