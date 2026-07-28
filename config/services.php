@@ -18,6 +18,11 @@ return [
         'token' => env('MAPBOX_TOKEN'),
     ],
 
+    'google_routes' => [
+        'key' => env('GOOGLE_ROUTES_API_KEY'),
+        'endpoint' => env('GOOGLE_ROUTES_ENDPOINT', 'https://routes.googleapis.com/directions/v2:computeRoutes'),
+    ],
+
     'postcode_tech' => [
         'key' => env('POSTCODE_TECH_KEY'),
     ],

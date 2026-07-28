@@ -709,51 +709,11 @@ Route::middleware(['auth', 'admin'])
             ->name('routes.smart.preview');
         Route::post('/routes/slim-plannen/bevestigen', [SmartRouteController::class, 'store'])
             ->name('routes.smart.store');
+        Route::post('/routes/slim-plannen/instellingen', [SmartRouteController::class, 'updateSettings'])
+            ->name('routes.smart.settings');
 
-        Route::get('/routes', function (Request $request) {
-            $provinces = nl_provinces();
-
-            $filters = $request->validate([
-                'route_date' => ['nullable', 'date'],
-                'province'   => ['nullable', 'in:' . implode(',', $provinces)],
-                'route_id'   => ['nullable', 'exists:delivery_routes,id'],
-            ]);
-
-            $routeDate = $filters['route_date'] ?? now()->toDateString();
-
-            $routes = DeliveryRoute::query()
-                ->whereDate('route_date', $routeDate)
-                ->when($filters['province'] ?? null, fn ($q, $province) => $q->where('province', $province))
-                ->orderBy('name')
-                ->get();
-
-            $selectedRoute = null;
-            if (! empty($filters['route_id'])) {
-                $selectedRoute = $routes->firstWhere('id', (int) $filters['route_id']);
-            }
-            if (! $selectedRoute) {
-                $selectedRoute = $routes->first();
-            }
-
-            $orders = $selectedRoute
-                ? Order::query()
-                    ->where('delivery_route_id', $selectedRoute->id)
-                    ->orderByRaw('route_sequence IS NULL')
-                    ->orderBy('route_sequence')
-                    ->orderBy('id')
-                    ->get()
-                : collect();
-
-            $admins = User::where('is_admin', true)->orderBy('name')->get();
-            $assignedAdminId = $selectedRoute?->admin_id;
-            $assignedAdminName = $assignedAdminId
-                ? optional($admins->firstWhere('id', $assignedAdminId))->name
-                : null;
-
-            $mapboxToken = config('services.mapbox.token');
-
-            return view('admin.routes.index', compact('routes', 'selectedRoute', 'orders', 'routeDate', 'provinces', 'filters', 'mapboxToken', 'admins', 'assignedAdminId', 'assignedAdminName'));
-        })->name('routes.index');
+        Route::get('/routes', [SmartRouteController::class, 'manage'])
+            ->name('routes.index');
 
         Route::post('/routes', function (Request $request) {
             $provinces = nl_provinces();
@@ -940,6 +900,37 @@ Route::middleware(['auth', 'admin'])
 
             return back()->with('toast', $message);
         })->name('routes.assign-admin');
+
+        Route::post('/routes/{deliveryRoute}/ship', function (DeliveryRoute $deliveryRoute) {
+            $orders = $deliveryRoute->orders()
+                ->placed()
+                ->with('items')
+                ->get();
+
+            if ($orders->isEmpty()) {
+                return back()->with('toast', 'Deze route bevat geen bestellingen.');
+            }
+
+            $mailed = 0;
+
+            foreach ($orders as $order) {
+                $order->update(['status' => OrderStatus::SHIPPED]);
+
+                if ($order->email) {
+                    Mail::to($order->email)->send(new OrderShippedMail($order));
+                    $mailed++;
+                }
+            }
+
+            $withoutEmail = $orders->count() - $mailed;
+            $message = "Verzendmail verstuurd naar {$mailed} bestelling(en).";
+
+            if ($withoutEmail > 0) {
+                $message .= " {$withoutEmail} bestelling(en) hadden geen e-mailadres, maar zijn wel als verzonden gemarkeerd.";
+            }
+
+            return back()->with('toast', $message);
+        })->name('routes.ship');
 
         Route::post('/routes/resequence', function (Request $request) {
             $data = $request->validate([

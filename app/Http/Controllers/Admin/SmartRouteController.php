@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DeliveryRoute;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\RouteOptimizationUsage;
 use App\Services\SmartRoutePlanner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ use Illuminate\View\View;
 
 class SmartRouteController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $orders = $this->unplannedOrders()->get();
 
@@ -31,6 +32,7 @@ class SmartRouteController extends Controller
                 'admin_user_id' => null,
             ],
             'mapboxToken' => config('services.mapbox.token'),
+            'googleUsage' => app(RouteOptimizationUsage::class)->summary(),
         ]);
     }
 
@@ -54,7 +56,30 @@ class SmartRouteController extends Controller
             'proposal' => $planner->createProposal($orders),
             'routeData' => $data,
             'mapboxToken' => config('services.mapbox.token'),
+            'googleUsage' => app(RouteOptimizationUsage::class)->summary(),
         ]);
+    }
+
+    public function manage(Request $request): View
+    {
+        return view('admin.routes.manage', [
+            ...$this->managementData($request),
+            'admins' => $this->admins(),
+            'mapboxToken' => config('services.mapbox.token'),
+        ]);
+    }
+
+    public function updateSettings(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'google_routes_monthly_limit' => ['required', 'integer', 'min:1', 'max:5000'],
+            'google_routes_alert_email' => ['required', 'email:rfc', 'max:255'],
+        ]);
+
+        \App\Models\Setting::set('google_routes_monthly_limit', $data['google_routes_monthly_limit']);
+        \App\Models\Setting::set('google_routes_alert_email', $data['google_routes_alert_email']);
+
+        return back()->with('toast', 'Google Routes-limiet opgeslagen.');
     }
 
     public function store(Request $request): RedirectResponse
@@ -134,5 +159,41 @@ class SmartRouteController extends Controller
     private function admins()
     {
         return User::query()->where('is_admin', true)->orderBy('name')->get();
+    }
+
+    private function managementData(Request $request): array
+    {
+        $routeDate = $request->input('route_date', now()->toDateString());
+
+        if (! is_string($routeDate) || ! strtotime($routeDate)) {
+            $routeDate = now()->toDateString();
+        }
+
+        $deliveryRoutes = DeliveryRoute::query()
+            ->whereDate('route_date', $routeDate)
+            ->with('admin')
+            ->withCount('orders')
+            ->orderBy('name')
+            ->get();
+
+        $selectedDeliveryRoute = $request->filled('route_id')
+            ? $deliveryRoutes->firstWhere('id', (int) $request->input('route_id'))
+            : null;
+        $selectedDeliveryRoute ??= $deliveryRoutes->first();
+
+        $existingRouteOrders = $selectedDeliveryRoute
+            ? $selectedDeliveryRoute->orders()
+                ->orderByRaw('route_sequence IS NULL')
+                ->orderBy('route_sequence')
+                ->orderBy('id')
+                ->get()
+            : collect();
+
+        return compact(
+            'routeDate',
+            'deliveryRoutes',
+            'selectedDeliveryRoute',
+            'existingRouteOrders',
+        );
     }
 }

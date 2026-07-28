@@ -27,7 +27,7 @@
                 <p class="text-xs font-bold uppercase tracking-[0.2em] text-turbo-gold">Turbo Heating</p>
                 <h1 class="mt-1 text-xl font-bold">Beheeromgeving</h1>
             </div>
-            <button class="md:hidden text-gray-300" @click="menuOpen = false">✕</button>
+            <button type="button" class="md:hidden text-gray-300" @click.stop="menuOpen = false">✕</button>
         </div>
 
         {{-- Navigatie --}}
@@ -56,11 +56,41 @@
                 ✉️ Nieuwsbrieven
             </a>
 
-            <a href="{{ route('admin.routes.index') }}"
-               class="turbo-admin-nav flex items-center gap-3 px-3 py-2 rounded
-               {{ request()->routeIs('admin.routes.*') ? 'is-active' : '' }}">
-                🗺️ Routes
-            </a>
+            @php $routesOpen = request()->routeIs('admin.routes.*'); @endphp
+            <div
+                x-data="{ open: {{ $routesOpen ? 'true' : 'false' }} }"
+                @mouseenter="open = true"
+                @mouseleave="open = false"
+            >
+                <button
+                    type="button"
+                    @click="open = !open"
+                    class="turbo-admin-nav flex w-full items-center gap-3 rounded px-3 py-2 {{ $routesOpen ? 'is-active' : '' }}"
+                >
+                    <span>🗺️ Routes</span>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="ml-auto h-3.5 w-3.5 transition-transform duration-150"
+                        :class="open ? 'rotate-90' : ''"
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+
+                <div
+                    x-show="open"
+                    x-transition
+                    class="mt-0.5 ml-3 space-y-0.5 border-l border-white/10 pl-3"
+                >
+                    <a href="{{ route('admin.routes.smart') }}"
+                       class="turbo-admin-nav flex items-center gap-2 rounded px-3 py-1.5 text-sm {{ request()->routeIs('admin.routes.smart*') ? 'is-active' : '' }}">
+                        Slim route plannen
+                    </a>
+                    <a href="{{ route('admin.routes.index') }}"
+                       class="turbo-admin-nav flex items-center gap-2 rounded px-3 py-1.5 text-sm {{ request()->routeIs('admin.routes.index') ? 'is-active' : '' }}">
+                        Bestaande routes
+                    </a>
+                </div>
+            </div>
 
             <a href="{{ route('admin.locations.index') }}"
                class="turbo-admin-nav flex items-center gap-3 px-3 py-2 rounded
@@ -146,14 +176,14 @@
         class="fixed inset-0 bg-black/40 z-30 md:hidden"
         x-show="menuOpen"
         x-transition.opacity
-        @click="menuOpen = false"
+        @click.self="menuOpen = false"
         style="display:none;"
     ></div>
 
     {{-- Content --}}
     <main class="flex-1 md:ml-64 w-full">
         <div class="turbo-admin-mobilebar flex items-center justify-between px-4 py-5 border-b md:hidden">
-            <button class="p-3 rounded-lg bg-gray-100 text-base" @click="menuOpen = true">☰</button>
+            <button type="button" class="p-3 rounded-lg bg-gray-100 text-base" @click.stop="menuOpen = true">☰</button>
             <div class="text-base font-semibold text-gray-700">Admin</div>
             <a href="{{ route('home') }}" class="text-base font-semibold text-turbo-blue">Naar site</a>
         </div>

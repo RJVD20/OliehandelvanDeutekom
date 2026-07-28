@@ -275,7 +275,7 @@
                     <article class="product-card group">
                         <a
                             href="{{ route('product.show', $suggested->slug) }}"
-                            class="product-card__media block h-40"
+                            class="product-card__media product-card__media--white block h-40"
                         >
                             @if($suggested->image)
                                 <img
