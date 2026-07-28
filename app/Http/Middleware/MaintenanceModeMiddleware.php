@@ -27,7 +27,9 @@ class MaintenanceModeMiddleware
             return $next($request);
         }
 
-        return response()->view('maintenance', [], 503);
+        return response()
+            ->view('maintenance', [], 503)
+            ->header('X-Robots-Tag', 'noindex, nofollow');
     }
 
     private function isBypassedRequest(Request $request): bool

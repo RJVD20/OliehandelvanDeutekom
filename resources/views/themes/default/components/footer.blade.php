@@ -1,11 +1,25 @@
+@php
+    use App\Models\Setting;
+
+    $companyName = Setting::get('company_name', 'Kachelvloeistof.nl') ?: 'Kachelvloeistof.nl';
+    $companyEmail = Setting::get('company_email', 'info@kachelvloeistof.nl') ?: 'info@kachelvloeistof.nl';
+    $companyPhone = Setting::get('company_phone', '');
+    $companyAddress = Setting::get('company_address', '');
+    $companyKvk = Setting::get('company_kvk', '');
+    $companyVat = Setting::get('company_vat', '');
+@endphp
+
 <footer class="turbo-footer mt-16 text-white/80 border-t">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" x-data="{ open: { info: true, links: true, contact: true } }">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4 lg:gap-10">
             <div class="space-y-3">
-                <div class="text-lg font-semibold text-white">Kachelvloeistof.nl</div>
+                <div class="text-lg font-semibold text-white">{{ $companyName }}</div>
                 <p class="text-sm text-white/70 leading-relaxed">
                     Kachelvloeistoffen, kachels en toebehoren met focus op kwaliteit en service.
                 </p>
+                <a href="{{ route('products.index') }}" class="inline-flex items-center gap-1 text-sm font-semibold text-turbo-gold hover:text-white">
+                    Bekijk assortiment <span aria-hidden="true">→</span>
+                </a>
             </div>
 
             <div class="border-t border-white/10 pt-4 md:border-0 md:pt-0">
@@ -31,6 +45,16 @@
             </div>
 
             <div class="border-t border-white/10 pt-4 md:border-0 md:pt-0">
+                <h2 class="text-sm font-semibold text-white">Klantenservice</h2>
+                <ul class="mt-3 space-y-2 text-sm text-white/70">
+                    <li><a href="{{ route('returns') }}" class="transition hover:text-white">Retourneren</a></li>
+                    <li><a href="{{ route('terms') }}" class="transition hover:text-white">Algemene voorwaarden</a></li>
+                    <li><a href="{{ route('privacy') }}" class="transition hover:text-white">Privacyverklaring</a></li>
+                    <li><a href="{{ route('cookies') }}" class="transition hover:text-white">Cookies</a></li>
+                </ul>
+            </div>
+
+            <div class="border-t border-white/10 pt-4 md:border-0 md:pt-0">
                 <button
                     type="button"
                     class="flex w-full items-center justify-between md:cursor-default text-sm font-semibold text-white"
@@ -45,10 +69,16 @@
                     x-collapse
                 >
                     <li>
-                        <a href="mailto:info@kachelvloeistof.nl" class="hover:text-white transition">
-                            info@kachelvloeistof.nl
+                        <a href="mailto:{{ $companyEmail }}" class="hover:text-white transition">
+                            {{ $companyEmail }}
                         </a>
                     </li>
+                    @if($companyPhone)
+                        <li><a href="tel:{{ preg_replace('/[^0-9+]/', '', $companyPhone) }}" class="transition hover:text-white">{{ $companyPhone }}</a></li>
+                    @endif
+                    @if($companyAddress)<li>{{ $companyAddress }}</li>@endif
+                    @if($companyKvk)<li>KvK: {{ $companyKvk }}</li>@endif
+                    @if($companyVat)<li>Btw-id: {{ $companyVat }}</li>@endif
                 </ul>
             </div>
         </div>
@@ -58,7 +88,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#b5c4a2] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 1 0 0-4h14a2 2 0 1 0 0 4M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8" />
                 </svg>
-                <div class="leading-snug">Gratis geleverd vanaf 5 jerrycans</div>
+                <div class="leading-snug">Gratis geleverd vanaf 3 jerrycans</div>
             </div>
             <div class="flex items-start gap-3 flex-1 min-w-[240px]">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#b5c4a2] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -114,8 +144,12 @@
         </div>
 
         <div class="mt-10 pt-8 border-t border-white/10 text-sm text-white/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>© {{ date('Y') }} Kachelvloeistof.nl</div>
-            <div>Alle rechten voorbehouden.</div>
+            <div>© {{ date('Y') }} {{ $companyName }}. Alle rechten voorbehouden.</div>
+            <div class="flex flex-wrap gap-x-4 gap-y-2">
+                <a href="{{ route('privacy') }}" class="hover:text-white">Privacy</a>
+                <a href="{{ route('terms') }}" class="hover:text-white">Voorwaarden</a>
+                <a href="{{ route('cookies') }}" class="hover:text-white">Cookies</a>
+            </div>
         </div>
     </div>
 </footer>

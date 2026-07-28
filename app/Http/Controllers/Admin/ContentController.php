@@ -18,6 +18,24 @@ class ContentController extends Controller
     private function defaults(): array
     {
         return [
+            // Bedrijfsgegevens
+            'company_name' => 'Kachelvloeistof.nl',
+            'company_email' => 'info@kachelvloeistof.nl',
+            'company_phone' => '',
+            'company_address' => '',
+            'company_kvk' => '',
+            'company_vat' => '',
+
+            // Juridische pagina's
+            'legal_privacy_title' => config('legal.privacy.title'),
+            'legal_privacy_content' => config('legal.privacy.content'),
+            'legal_terms_title' => config('legal.terms.title'),
+            'legal_terms_content' => config('legal.terms.content'),
+            'legal_returns_title' => config('legal.returns.title'),
+            'legal_returns_content' => config('legal.returns.content'),
+            'legal_cookies_title' => config('legal.cookies.title'),
+            'legal_cookies_content' => config('legal.cookies.content'),
+
             // Home
             'home_hero_title' => 'Bakker Brandstoffen in Den Helder',
             'home_hero_subtitle' => '',
@@ -45,7 +63,7 @@ class ContentController extends Controller
             'delivery_rule_1' => 'Verwachte levering binnen 4–8 werkdagen.',
             'delivery_rule_2' => 'Vanaf 3 jerrycans van 20 liter bezorgen we gratis.',
             'delivery_rule_3' => 'Onder 3 jerrycans geldt €5 bezorgvergoeding per bestelling.',
-            'delivery_rule_4' => 'Express Premium: voor 12.00 uur besteld, de volgende dag geleverd voor €7,50 extra per jerrycan.',
+            'delivery_rule_4' => 'Express Premium: voor 12.00 uur besteld, de volgende dag geleverd voor €10 per bestelling.',
 
             // Informatie
             'informatie_title' => 'De ideale verwarmingsoplossing: De pelletkachel',
@@ -91,6 +109,24 @@ class ContentController extends Controller
     }
 
     private array $fields = [
+        // Bedrijfsgegevens
+        'company_name',
+        'company_email',
+        'company_phone',
+        'company_address',
+        'company_kvk',
+        'company_vat',
+
+        // Juridische pagina's
+        'legal_privacy_title',
+        'legal_privacy_content',
+        'legal_terms_title',
+        'legal_terms_content',
+        'legal_returns_title',
+        'legal_returns_content',
+        'legal_cookies_title',
+        'legal_cookies_content',
+
         // Home
         'home_hero_title',
         'home_hero_subtitle',

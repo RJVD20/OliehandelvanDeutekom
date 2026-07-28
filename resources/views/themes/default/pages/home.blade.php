@@ -1,6 +1,7 @@
 @extends('themes.default.layouts.app')
 
-@section('title', 'Home')
+@section('title', 'Kachelvloeistof en petroleum kopen')
+@section('description', 'Kachelvloeistof, petroleum, kachels en toebehoren bestellen. Profiteer van staffelprijzen, gratis bezorging vanaf 3 jerrycans en persoonlijk advies.')
 
 @section('content')
 
@@ -401,6 +402,19 @@
     </div>
 </section>
 
-
+<script type="application/ld+json">
+    {!! json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'FAQPage',
+        'mainEntity' => $faqs->map(fn (array $item) => [
+            '@type' => 'Question',
+            'name' => $item['q'],
+            'acceptedAnswer' => [
+                '@type' => 'Answer',
+                'text' => $item['a'],
+            ],
+        ])->values()->all(),
+    ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}
+</script>
 
 @endsection

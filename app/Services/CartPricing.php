@@ -35,6 +35,7 @@ class CartPricing
                 $quantity,
                 $basePrice,
             );
+            $discountPerUnit = round(max(0, $basePrice - $unitPrice), 2);
 
             return [$product->id => [
                 'name' => $product->name,
@@ -45,14 +46,52 @@ class CartPricing
                 'quantity' => $quantity,
                 'rate_group' => $product->rate_group,
                 'tier_applied' => $unitPrice !== $basePrice,
+                'discount_per_unit' => $discountPerUnit,
+                'discount_total' => round($discountPerUnit * $quantity, 2),
+                'tier_progress' => $this->rates->tierProgressForProduct(
+                    $product->id,
+                    $method,
+                    $quantity,
+                    $unitPrice,
+                ),
             ]];
         })->all();
     }
 
-    public function total(array $cart): float
+    public function deliveryCosts(
+        array $cart,
+        string $fulfillmentMethod = 'delivery',
+        string $deliveryService = 'standard',
+    ): array {
+        if ($fulfillmentMethod !== 'delivery') {
+            return ['jerrycans' => 0, 'standard' => 0.0, 'express' => 0.0, 'total' => 0.0];
+        }
+
+        $jerrycans = (int) collect($cart)
+            ->filter(fn (array $item) => ! empty($item['rate_group']))
+            ->sum('quantity');
+        $standard = $jerrycans < 3 ? 5.0 : 0.0;
+        $express = $deliveryService === 'express' ? 10.0 : 0.0;
+        $total = $deliveryService === 'express' ? $express : $standard;
+
+        return [
+            'jerrycans' => $jerrycans,
+            'standard' => $standard,
+            'express' => $express,
+            'total' => $total,
+        ];
+    }
+
+    public function total(
+        array $cart,
+        string $fulfillmentMethod = 'delivery',
+        string $deliveryService = 'standard',
+    ): float
     {
-        return round(collect($cart)->sum(
+        $products = collect($cart)->sum(
             fn (array $item) => (float) $item['price'] * (int) $item['quantity']
-        ), 2);
+        );
+
+        return round($products + $this->deliveryCosts($cart, $fulfillmentMethod, $deliveryService)['total'], 2);
     }
 }

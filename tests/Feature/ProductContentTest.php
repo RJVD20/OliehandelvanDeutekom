@@ -47,6 +47,9 @@ class ProductContentTest extends TestCase
             ->assertSee('Vermogen')
             ->assertSee('4800 W')
             ->assertSee('Tankinhoud')
-            ->assertSee('7,6 liter');
+            ->assertSee('7,6 liter')
+            ->assertSee('Lees meer')
+            ->assertDontSee('Geurloos')
+            ->assertDontSee('Veilig en schoon');
     }
 }

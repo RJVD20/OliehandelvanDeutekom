@@ -17,31 +17,46 @@
 
 @if(count($cart) > 0)
     @php
-        $total = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
+        $productTotal = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
+        $total = $productTotal + $deliveryCosts['total'];
+        $baseTotal = collect($cart)->sum(fn ($item) => $item['base_price'] * $item['quantity']);
+        $totalDiscount = collect($cart)->sum('discount_total');
     @endphp
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div class="space-y-5">
-            <form method="POST" action="{{ route('cart.fulfillment') }}" class="turbo-card overflow-hidden">
+            <form method="POST" action="{{ route('cart.delivery-choice') }}" class="turbo-card overflow-hidden">
                 @csrf
                 <fieldset>
                     <div class="border-b border-gray-100 px-5 py-4">
-                        <legend class="font-bold text-turbo-ink">Ontvangst van je bestelling</legend>
-                        <p class="mt-1 text-sm text-gray-500">De bijbehorende staffelprijzen worden direct toegepast.</p>
+                        <legend class="font-bold text-turbo-ink">Hoe wil je je bestelling ontvangen?</legend>
+                        <p class="mt-1 text-sm text-gray-500">Kies bezorgen of gratis afhalen bij een depot.</p>
                     </div>
-                    <div class="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+                    <div class="grid gap-3 p-4 md:grid-cols-3 sm:p-5">
+                        @php
+                            $selectedDeliveryOption = $fulfillmentMethod === 'pickup'
+                                ? 'pickup'
+                                : $deliveryService;
+                            $standardDescription = $deliveryCosts['jerrycans'] >= 3
+                                ? 'Gratis · levering binnen 4–8 werkdagen'
+                                : '€ 5,00 · levering binnen 4–8 werkdagen';
+                            $expressDescription = '€ 10,00 per bestelling · volgende dag bij bestelling vóór 12.00 uur';
+                        @endphp
                         @foreach([
-                            'delivery' => ['Thuisbezorgen', 'Gratis volgens de bezorgstaffel', 'truck'],
-                            'pickup' => ['Afhalen', 'Bij een van onze depots', 'pin'],
-                        ] as $method => [$label, $description, $icon])
+                            'standard' => ['Standaard bezorgen', $standardDescription, 'truck'],
+                            'express' => ['Express Premium', $expressDescription, 'bolt'],
+                            'pickup' => ['Afhalen', 'Gratis bij een van onze depots', 'pin'],
+                        ] as $option => [$label, $description, $icon])
                             <label class="cursor-pointer">
-                                <input type="radio" name="fulfillment_method" value="{{ $method }}" class="peer sr-only" @checked($fulfillmentMethod === $method) onchange="this.form.submit()">
-                                <span class="flex h-full items-center gap-3 rounded-xl border border-gray-200 p-4 transition peer-checked:border-turbo-gold peer-checked:bg-turbo-gold/10 peer-checked:ring-2 peer-checked:ring-turbo-gold/20 hover:border-turbo-gold/60">
+                                <input type="radio" name="delivery_option" value="{{ $option }}" class="peer sr-only" @checked($selectedDeliveryOption === $option) onchange="this.form.submit()">
+                                <span class="flex h-full items-start gap-3 rounded-xl border border-gray-200 p-4 transition peer-checked:border-turbo-gold peer-checked:bg-turbo-gold/10 peer-checked:ring-2 peer-checked:ring-turbo-gold/20 hover:border-turbo-gold/60">
                                     <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-turbo-navy text-turbo-gold">
                                         @if($icon === 'truck')
                                             <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>
-                                        @else
+                                        @elseif($icon === 'pin')
                                             <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                                        @else
+                                            <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m13 2-8 12h7l-1 8 8-12h-7z"/></svg>
                                         @endif
                                     </span>
                                     <span>
@@ -54,13 +69,6 @@
                     </div>
                 </fieldset>
             </form>
-
-            @if($fulfillmentMethod === 'delivery')
-                @include('themes.default.components.delivery-notice', [
-                    'detailed' => true,
-                    'attributes' => new \Illuminate\View\ComponentAttributeBag(),
-                ])
-            @endif
 
             <section class="space-y-3" aria-label="Producten in winkelmand">
                 @foreach($cart as $id => $item)
@@ -83,11 +91,45 @@
                                         <a href="{{ route('product.show', $item['slug']) }}" class="font-bold leading-snug text-turbo-ink hover:text-turbo-gold">{{ $item['name'] }}</a>
                                         <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                             <span data-cart-unit-price="{{ $id }}">€ {{ number_format($item['price'], 2, ',', '.') }} per stuk</span>
+                                            <span data-cart-base-price="{{ $id }}" @class([
+                                                'line-through',
+                                                'hidden' => $item['discount_total'] <= 0,
+                                            ])>€ {{ number_format($item['base_price'], 2, ',', '.') }}</span>
                                             <span data-cart-tier="{{ $id }}" @class([
                                                 'rounded-full bg-emerald-100 px-2 py-0.5 font-bold text-emerald-700',
-                                                'hidden' => ! $item['tier_applied'],
-                                            ])>Staffelprijs</span>
+                                                'hidden' => $item['discount_total'] <= 0,
+                                            ])>Staffelkorting</span>
                                         </div>
+                                        <p data-cart-item-discount="{{ $id }}" @class([
+                                            'mt-1.5 text-xs font-semibold text-emerald-700',
+                                            'hidden' => $item['discount_total'] <= 0,
+                                        ])>Je bespaart € {{ number_format($item['discount_total'], 2, ',', '.') }}</p>
+
+                                        @if($item['tier_progress'])
+                                            @php
+                                                $currentTier = $item['tier_progress']['current'];
+                                                $nextTier = $item['tier_progress']['next'];
+                                            @endphp
+                                            <div data-cart-tier-card="{{ $id }}" class="mt-3 max-w-md rounded-xl border border-turbo-gold/40 bg-turbo-navy/[0.04] p-3 text-xs">
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <p data-cart-current-tier="{{ $id }}" class="font-semibold text-turbo-navy">
+                                                        @if($currentTier)
+                                                            Vanaf {{ $currentTier['quantity'] }} stuks: € {{ number_format($currentTier['price'], 2, ',', '.') }} per stuk
+                                                        @else
+                                                            Basisprijs: € {{ number_format($item['base_price'], 2, ',', '.') }} per stuk
+                                                        @endif
+                                                    </p>
+                                                    <span class="rounded-full bg-turbo-navy px-2 py-0.5 font-bold text-turbo-gold">Actief</span>
+                                                </div>
+                                                <p data-cart-next-tier="{{ $id }}" class="mt-1 text-turbo-blue">
+                                                    @if($nextTier)
+                                                        Nog {{ $item['tier_progress']['quantity_needed'] }} {{ $item['tier_progress']['quantity_needed'] === 1 ? 'stuk' : 'stuks' }} voor € {{ number_format($item['tier_progress']['extra_discount_total'], 2, ',', '.') }} extra voordeel.
+                                                    @else
+                                                        Beste staffel bereikt.
+                                                    @endif
+                                                </p>
+                                            </div>
+                                        @endif
                                     </div>
                                     <form method="POST" action="{{ route('cart.remove', $id) }}" class="sm:hidden">
                                         @csrf
@@ -103,7 +145,9 @@
                                             qty: {{ $item['quantity'] }},
                                             busy: false,
                                             formatPrice(value) {
-                                                return new Intl.NumberFormat('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+                                                const amount = Number(value);
+                                                return new Intl.NumberFormat('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                                    .format(Number.isFinite(amount) ? amount : 0);
                                             },
                                             async updateQuantity(nextQty) {
                                                 if (this.busy || nextQty < 1) return;
@@ -128,6 +172,9 @@
 
                                                     const data = await response.json();
                                                     const productId = '{{ (int) $id }}';
+                                                    const discountTotal = Number(data.discount_total ?? 0);
+                                                    const cartDiscountTotal = Number(data.cart_discount_total ?? 0);
+                                                    const baseTotal = Number(data.base_total ?? data.total ?? 0);
                                                     this.qty = data.quantity;
 
                                                     document.querySelectorAll(`[data-cart-subtotal='${productId}']`).forEach((element) => {
@@ -136,12 +183,57 @@
                                                     document.querySelectorAll('[data-cart-total]').forEach((element) => {
                                                         element.textContent = `€ ${this.formatPrice(data.total)}`;
                                                     });
+                                                    const deliveryCosts = data.delivery_costs ?? {};
+                                                    document.querySelectorAll('[data-cart-shipping]').forEach((element) => {
+                                                        const costs = Number(deliveryCosts.total ?? 0);
+                                                        element.textContent = costs > 0 ? `€ ${this.formatPrice(costs)}` : 'Gratis';
+                                                    });
+                                                    document.querySelectorAll('[data-cart-base-total]').forEach((element) => {
+                                                        element.textContent = `€ ${this.formatPrice(baseTotal)}`;
+                                                    });
 
                                                     const unitPrice = document.querySelector(`[data-cart-unit-price='${productId}']`);
                                                     if (unitPrice) unitPrice.textContent = `€ ${this.formatPrice(data.unit_price)} per stuk`;
 
                                                     const tierLabel = document.querySelector(`[data-cart-tier='${productId}']`);
-                                                    if (tierLabel) tierLabel.classList.toggle('hidden', !data.tier_applied);
+                                                    if (tierLabel) tierLabel.classList.toggle('hidden', discountTotal <= 0);
+
+                                                    const basePrice = document.querySelector(`[data-cart-base-price='${productId}']`);
+                                                    if (basePrice) {
+                                                        if (data.base_price !== undefined) {
+                                                            basePrice.textContent = `€ ${this.formatPrice(data.base_price)}`;
+                                                        }
+                                                        basePrice.classList.toggle('hidden', discountTotal <= 0);
+                                                    }
+
+                                                    const itemDiscount = document.querySelector(`[data-cart-item-discount='${productId}']`);
+                                                    if (itemDiscount) {
+                                                        itemDiscount.textContent = `Je bespaart € ${this.formatPrice(discountTotal)}`;
+                                                        itemDiscount.classList.toggle('hidden', discountTotal <= 0);
+                                                    }
+
+                                                    const progress = data.tier_progress;
+                                                    const currentTier = document.querySelector(`[data-cart-current-tier='${productId}']`);
+                                                    const nextTier = document.querySelector(`[data-cart-next-tier='${productId}']`);
+                                                    if (progress && currentTier && nextTier) {
+                                                        currentTier.textContent = progress.current
+                                                            ? `Vanaf ${progress.current.quantity} stuks: € ${this.formatPrice(progress.current.price)} per stuk`
+                                                            : `Basisprijs: € ${this.formatPrice(data.base_price)} per stuk`;
+
+                                                        if (progress.next) {
+                                                            const unit = progress.quantity_needed === 1 ? 'stuk' : 'stuks';
+                                                            nextTier.textContent = `Nog ${progress.quantity_needed} ${unit} voor € ${this.formatPrice(progress.extra_discount_total)} extra voordeel.`;
+                                                        } else {
+                                                            nextTier.textContent = 'Beste staffel bereikt.';
+                                                        }
+                                                    }
+
+                                                    document.querySelectorAll('[data-cart-discount]').forEach((element) => {
+                                                        element.textContent = `− € ${this.formatPrice(cartDiscountTotal)}`;
+                                                    });
+                                                    document.querySelectorAll('[data-cart-discount-row]').forEach((element) => {
+                                                        element.classList.toggle('hidden', cartDiscountTotal <= 0);
+                                                    });
 
                                                     const headingCount = document.querySelector('[data-cart-heading-count]');
                                                     if (headingCount) headingCount.textContent = `${data.count} ${data.count === 1 ? 'artikel' : 'artikelen'}`;
@@ -150,6 +242,7 @@
                                                     if (summaryCount) summaryCount.textContent = `${data.count} ${data.count === 1 ? 'artikel' : 'artikelen'}`;
 
                                                     window.dispatchEvent(new CustomEvent('cart-updated', { detail: data.count }));
+                                                    window.location.reload();
                                                 } catch (error) {
                                                     this.qty = previousQty;
                                                 } finally {
@@ -195,11 +288,20 @@
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between gap-4 text-gray-600">
                             <span>Producten</span>
-                            <span data-cart-total>€ {{ number_format($total, 2, ',', '.') }}</span>
+                            <span data-cart-base-total>€ {{ number_format($baseTotal, 2, ',', '.') }}</span>
+                        </div>
+                        <div data-cart-discount-row @class([
+                            'flex justify-between gap-4 font-semibold text-emerald-700',
+                            'hidden' => $totalDiscount <= 0,
+                        ])>
+                            <span>Staffelkorting</span>
+                            <span data-cart-discount>− € {{ number_format($totalDiscount, 2, ',', '.') }}</span>
                         </div>
                         <div class="flex justify-between gap-4 text-gray-600">
                             <span>{{ $fulfillmentMethod === 'delivery' ? 'Bezorging' : 'Afhalen' }}</span>
-                            <span class="font-semibold text-emerald-700">Gratis</span>
+                            <span data-cart-shipping class="font-semibold {{ $deliveryCosts['total'] > 0 ? 'text-turbo-ink' : 'text-emerald-700' }}">
+                                {{ $deliveryCosts['total'] > 0 ? '€ '.number_format($deliveryCosts['total'], 2, ',', '.') : 'Gratis' }}
+                            </span>
                         </div>
                     </div>
                     <div class="flex items-end justify-between gap-4 border-t border-gray-100 pt-4">
@@ -207,7 +309,15 @@
                         <span data-cart-total class="product-card__price text-2xl">€ {{ number_format($total, 2, ',', '.') }}</span>
                     </div>
                     <p class="text-xs leading-5 text-gray-500">
-                        {{ $fulfillmentMethod === 'delivery' ? 'Inclusief gratis thuisbezorging volgens de gekozen staffel.' : 'De afhaalstaffel is toegepast.' }}
+                        @if($fulfillmentMethod === 'delivery' && $deliveryService === 'express')
+                            Inclusief Express Premium à € 10,00 per bestelling.
+                        @elseif($fulfillmentMethod === 'delivery' && $deliveryCosts['standard'] > 0)
+                            Inclusief € 5,00 bezorgvergoeding voor bestellingen onder 3 jerrycans.
+                        @elseif($fulfillmentMethod === 'delivery')
+                            Inclusief gratis thuisbezorging vanaf 3 jerrycans.
+                        @else
+                            De afhaalstaffel is toegepast.
+                        @endif
                     </p>
                     <a href="{{ route('checkout.index') }}" class="turbo-button flex w-full items-center justify-center gap-2 px-5 py-3.5 text-base">
                         Veilig afrekenen

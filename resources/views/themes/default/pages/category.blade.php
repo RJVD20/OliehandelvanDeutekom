@@ -1,6 +1,7 @@
 @extends('themes.default.layouts.app')
 
-@section('title', $category->name)
+@section('title', $category->name.' kopen')
+@section('description', 'Bekijk en bestel '.$category->name.' bij Kachelvloeistof.nl. Heldere prijzen, betrouwbare levering en persoonlijk advies.')
 
 @section('content')
 

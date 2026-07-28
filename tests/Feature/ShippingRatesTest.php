@@ -34,7 +34,7 @@ class ShippingRatesTest extends TestCase
 
         $this->get(route('product.show', $gtl->slug))
             ->assertOk()
-            ->assertSee('Voordeel bij meerdere stuks')
+            ->assertSee('Staffelprijzen')
             ->assertSee('€ 62,50')
             ->assertSee('€ 53,00');
 
@@ -73,7 +73,7 @@ class ShippingRatesTest extends TestCase
 
         $this->get(route('product.show', $product->slug))
             ->assertOk()
-            ->assertSee('Voordeel bij meerdere stuks')
+            ->assertSee('Staffelprijzen')
             ->assertSee('€ 64,95');
 
         $priced = app(\App\Services\CartPricing::class)->calculate([
@@ -131,7 +131,7 @@ class ShippingRatesTest extends TestCase
         foreach ($products as $product) {
             $product->refresh();
             $this->get(route('product.show', $product->slug))
-                ->assertSee('Voordeel bij meerdere stuks')
+                ->assertSee('Staffelprijzen')
                 ->assertSee($product->name);
         }
     }

@@ -37,6 +37,7 @@
 @endphp
 
 @section('title', 'Over ons')
+@section('description', 'Maak kennis met Kachelvloeistof.nl: betrouwbare kachelbrandstoffen, kachels, eerlijk advies en persoonlijke service voor particulieren en bedrijven.')
 
 @section('content')
 

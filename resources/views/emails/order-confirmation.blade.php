@@ -38,6 +38,14 @@
             <td style="padding:12px 14px;font-size:14px;color:#10263D;text-align:right;border-bottom:1px solid #E9EDF2;">€ {{ number_format($item->price * $item->quantity, 2, ',', '.') }}</td>
         </tr>
         @endforeach
+        @if((float) $order->shipping_cost > 0)
+        <tr>
+            <td colspan="2" style="padding:10px 14px;font-size:14px;color:#475569;text-align:right;">
+                {{ $order->delivery_service === 'express' ? 'Express Premium / bezorging' : 'Bezorging' }}
+            </td>
+            <td style="padding:10px 14px;font-size:14px;color:#475569;text-align:right;">€ {{ number_format($order->shipping_cost, 2, ',', '.') }}</td>
+        </tr>
+        @endif
         <tr style="background-color:#F7F8FA;">
             <td colspan="2" style="padding:14px;font-size:14px;font-weight:700;color:#10263D;text-align:right;">Totaal</td>
             <td style="padding:14px;font-size:16px;font-weight:700;color:#D9A42E;text-align:right;">€ {{ number_format($order->total, 2, ',', '.') }}</td>
