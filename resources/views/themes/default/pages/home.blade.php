@@ -38,6 +38,7 @@
     $heroCtaLabel = $cmsValue('home_hero_cta_label', 'Naar de webshop');
     $productSectionTitle = $cmsValue('home_products_title', 'Populaire producten');
     $productSectionIntro = $cmsValue('home_products_intro', 'Rustige, zorgvuldig gekozen items met focus op kwaliteit en betrouwbaarheid.');
+    $tierPricesText = $cmsValue('home_tier_prices_text', 'Staffelprijzen bekijken? Open een productpagina voor alle prijzen per afnamehoeveelheid.');
     $productIntroParagraphs = array_values(array_filter(array_map(
         'trim',
         preg_split('/\R\s*\R/u', trim($productSectionIntro))
@@ -268,6 +269,16 @@
             @endforeach
         </div>
     </div>
+
+    <a href="{{ route('products.index') }}" class="mb-5 flex items-center gap-3 rounded-xl border border-turbo-gold/40 bg-turbo-gold/10 px-4 py-3 text-sm text-turbo-ink transition hover:border-turbo-gold hover:bg-turbo-gold/15 sm:mb-6">
+        <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-turbo-gold text-turbo-navy" aria-hidden="true">
+            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M4 7h16M7 12h10M9 17h6"/>
+            </svg>
+        </span>
+        <span class="font-semibold">{{ $tierPricesText }}</span>
+        <span class="ml-auto shrink-0 font-bold text-turbo-blue" aria-hidden="true">→</span>
+    </a>
 
     <div class="mb-2 flex justify-end sm:hidden">
         <span class="text-[11px] font-semibold text-turbo-blue/60">Veeg om te bekijken →</span>

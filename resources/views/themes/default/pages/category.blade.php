@@ -23,6 +23,12 @@
 <section>
     <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         @forelse ($products as $product)
+            @php
+                $productSummary = Str::limit(
+                    preg_replace('/\s+/', ' ', strip_tags($product->description ?? '')),
+                    90
+                );
+            @endphp
             <article class="product-card">
 
                 <a href="{{ url('/product/' . $product->slug) }}"
@@ -36,9 +42,11 @@
 
                 <div class="flex flex-1 flex-col p-3 sm:p-4">
                     <h2 class="text-sm sm:text-base font-semibold leading-snug mb-1">{{ $product->name }}</h2>
-                    <p class="hidden sm:block text-sm text-gray-500 mb-3 line-clamp-2">
-                        {{ $product->description ?? 'Geen beschrijving beschikbaar' }}
-                    </p>
+                    @if($productSummary)
+                        <p class="mb-3 hidden text-sm leading-5 text-gray-500 sm:block">
+                            {{ $productSummary }}
+                        </p>
+                    @endif
 
                     <div class="mt-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2">
                         <span class="product-card__price text-sm sm:text-base">

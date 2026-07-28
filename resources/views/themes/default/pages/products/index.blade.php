@@ -275,6 +275,12 @@
         <!-- PRODUCTEN -->
         <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             @forelse ($products as $product)
+                @php
+                    $productSummary = Str::limit(
+                        preg_replace('/\s+/', ' ', strip_tags($product->description ?? '')),
+                        90
+                    );
+                @endphp
                 <article class="product-card group">
 
                     <a
@@ -298,9 +304,11 @@
                             </a>
                         </h3>
 
-                        <p class="hidden sm:block text-sm text-gray-500 mb-4 line-clamp-2">
-                            {{ $product->description }}
-                        </p>
+                        @if($productSummary)
+                            <p class="mb-4 hidden text-sm leading-5 text-gray-500 sm:block">
+                                {{ $productSummary }}
+                            </p>
+                        @endif
 
                         <div class="mt-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 pt-2">
                             <span class="product-card__price text-sm sm:text-base">

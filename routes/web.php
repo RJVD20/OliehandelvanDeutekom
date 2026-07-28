@@ -387,13 +387,31 @@ Route::post('/winkelmand/toevoegen/{id}', function ($id) {
     return back();
 })->name('cart.add');
 
-Route::post('/winkelmand/bijwerken/{id}', function (Request $request, $id) {
-
+Route::post('/winkelmand/bijwerken/{id}', function (Request $request, $id, CartPricing $pricing) {
+    $validated = $request->validate([
+        'quantity' => ['required', 'integer', 'min:1', 'max:999'],
+    ]);
     $cart = session()->get('cart', []);
 
     if (isset($cart[$id])) {
-        $cart[$id]['quantity'] = max(1, (int) $request->quantity);
+        $cart[$id]['quantity'] = $validated['quantity'];
         session()->put('cart', $cart);
+    }
+
+    if ($request->expectsJson()) {
+        $pricedCart = $pricing->calculate($cart, session('fulfillment_method', 'delivery'));
+        $item = $pricedCart[$id] ?? null;
+
+        abort_unless($item, 404);
+
+        return response()->json([
+            'count' => collect($pricedCart)->sum('quantity'),
+            'quantity' => $item['quantity'],
+            'unit_price' => $item['price'],
+            'item_subtotal' => round($item['price'] * $item['quantity'], 2),
+            'total' => $pricing->total($pricedCart),
+            'tier_applied' => $item['tier_applied'],
+        ]);
     }
 
     return back();

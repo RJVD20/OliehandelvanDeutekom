@@ -91,6 +91,10 @@
                 <textarea name="home_products_intro" rows="2" class="w-full rounded-lg border px-3 py-2">{{ $values['home_products_intro'] ?? '' }}</textarea>
             </div>
             <div>
+                <label class="text-sm font-medium">Melding staffelprijzen</label>
+                <input type="text" name="home_tier_prices_text" value="{{ $values['home_tier_prices_text'] ?? '' }}" class="w-full rounded-lg border px-3 py-2">
+            </div>
+            <div>
                 <label class="text-sm font-medium">Titel categorieblok</label>
                 <input type="text" name="home_categories_title" value="{{ $values['home_categories_title'] ?? '' }}" class="w-full rounded-lg border px-3 py-2">
             </div>
