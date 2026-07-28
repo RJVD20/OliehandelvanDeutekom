@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>@yield('title', 'Oliehandel van Deutekom')</title>
+    <title>@yield('title', 'Kachelvloeistof.nl')</title>
     <!--[if mso]>
     <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
     <![endif]-->
@@ -24,7 +24,7 @@
                             <tr>
                                 <td>
                                     <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#D9A42E;">Kachels &amp; Vloeistoffen</p>
-                                    <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.02em;">Oliehandel van Deutekom</p>
+                                    <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.02em;">Kachelvloeistof.nl</p>
                                 </td>
                                 <td align="right" style="vertical-align:middle;">
                                     <div style="width:36px;height:36px;background-color:#D9A42E;border-radius:50%;display:inline-block;text-align:center;line-height:36px;font-size:18px;color:#03182B;font-weight:700;">🔥</div>
@@ -49,15 +49,15 @@
                         <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
                             <tr>
                                 <td>
-                                    <p style="margin:0 0 6px 0;font-size:13px;font-weight:700;color:#D9A42E;">Oliehandel van Deutekom</p>
+                                    <p style="margin:0 0 6px 0;font-size:13px;font-weight:700;color:#D9A42E;">Kachelvloeistof.nl</p>
                                     <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.6);line-height:1.7;">
                                         Specialist in kachels en kachelvloeistof<br>
-                                        <a href="mailto:info@oliehandelvandeutekom.nl" style="color:#D9A42E;text-decoration:none;">info@oliehandelvandeutekom.nl</a>
+                                        <a href="mailto:info@kachelvloeistof.nl" style="color:#D9A42E;text-decoration:none;">info@kachelvloeistof.nl</a>
                                     </p>
                                 </td>
                                 <td align="right" style="vertical-align:top;">
                                     <p style="margin:0;font-size:11px;color:rgba(255,255,255,0.35);text-align:right;">
-                                        © {{ date('Y') }} Oliehandel van Deutekom<br>
+                                        © {{ date('Y') }} Kachelvloeistof.nl<br>
                                         Alle rechten voorbehouden.
                                     </p>
                                 </td>

@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" x-data="{ open: { info: true, links: true, contact: true } }">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
             <div class="space-y-3">
-                <div class="text-lg font-semibold text-white">Oliehandel van Deutekom</div>
+                <div class="text-lg font-semibold text-white">Kachelvloeistof.nl</div>
                 <p class="text-sm text-white/70 leading-relaxed">
                     Kachelvloeistoffen, kachels en toebehoren met focus op kwaliteit en service.
                 </p>
@@ -45,8 +45,8 @@
                     x-collapse
                 >
                     <li>
-                        <a href="mailto:info@oliehandelvandeutekom.nl" class="hover:text-white transition">
-                            info@oliehandelvandeutekom.nl
+                        <a href="mailto:info@kachelvloeistof.nl" class="hover:text-white transition">
+                            info@kachelvloeistof.nl
                         </a>
                     </li>
                 </ul>
@@ -114,7 +114,7 @@
         </div>
 
         <div class="mt-10 pt-8 border-t border-white/10 text-sm text-white/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>© {{ date('Y') }} Oliehandel van Deutekom</div>
+            <div>© {{ date('Y') }} Kachelvloeistof.nl</div>
             <div>Alle rechten voorbehouden.</div>
         </div>
     </div>

@@ -24,7 +24,7 @@ class ImportLegacyCatalogCommand extends Command
         $response = Http::retry(3, 500)
             ->timeout(30)
             ->acceptJson()
-            ->get((string) ($this->option('source') ?: 'https://oliehandelvandeutekom.nl/wp-json/wc/store/v1/products?per_page=100'));
+            ->get((string) ($this->option('source') ?: 'https://kachelvloeistof.nl/wp-json/wc/store/v1/products?per_page=100'));
 
         if ($response->failed() || ! is_array($response->json())) {
             $this->error('De productcatalogus kon niet worden opgehaald.');

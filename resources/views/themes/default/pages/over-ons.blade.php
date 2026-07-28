@@ -12,7 +12,7 @@
     };
 
     $heroTitle = $cmsValue('over_hero_title', 'Betrouwbare warmte, eerlijk advies');
-    $heroIntro = $cmsValue('over_hero_intro', 'Oliehandel van Deutekom is een familiebedrijf met passie voor warmte-oplossingen. We leveren kachelvloeistoffen, kachels en toebehoren met focus op kwaliteit, duidelijke communicatie en service.');
+    $heroIntro = $cmsValue('over_hero_intro', 'Kachelvloeistof.nl is een familiebedrijf met passie voor warmte-oplossingen. We leveren kachelvloeistoffen, kachels en toebehoren met focus op kwaliteit, duidelijke communicatie en service.');
 
     $usp1Title = $cmsValue('over_usp_1_title', 'Bezorging op afspraak');
     $usp1Text = $cmsValue('over_usp_1_text', 'We stemmen de levering af zodat je weet waar je aan toe bent.');
@@ -182,7 +182,7 @@
             </div>
 
             <a
-                href="mailto:info@oliehandelvandeutekom.nl"
+                href="mailto:info@kachelvloeistof.nl"
                 class="inline-flex justify-center items-center px-5 sm:px-6 py-3 bg-green-600 text-white text-sm sm:text-base font-semibold rounded-lg hover:bg-green-700 transition focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
             >
                 {{ $ctaButton }}

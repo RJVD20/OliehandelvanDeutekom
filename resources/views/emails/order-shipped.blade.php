@@ -51,12 +51,12 @@
 
 <p style="margin:0 0 6px 0;font-size:14px;color:#6B7280;line-height:1.7;">
     Heb je vragen over je bezorging? Neem gerust contact met ons op via
-    <a href="mailto:info@oliehandelvandeutekom.nl" style="color:#D9A42E;text-decoration:none;">info@oliehandelvandeutekom.nl</a>.
+    <a href="mailto:info@kachelvloeistof.nl" style="color:#D9A42E;text-decoration:none;">info@kachelvloeistof.nl</a>.
 </p>
 
 <p style="margin:24px 0 0 0;font-size:14px;color:#6B7280;line-height:1.7;">
     Met vriendelijke groet,<br>
-    <strong style="color:#10263D;">Oliehandel van Deutekom</strong>
+    <strong style="color:#10263D;">Kachelvloeistof.nl</strong>
 </p>
 
 @endsection
