@@ -43,8 +43,9 @@
             <!-- Mobile bar -->
             <div class="lg:hidden relative h-14 flex items-center justify-between">
                 <button
+                    type="button"
                     class="turbo-icon-button inline-flex h-9 w-9 items-center justify-center rounded-xl focus:outline-none"
-                    @click="open = !open"
+                    @click.stop="open = true"
                     aria-label="Open menu"
                     :aria-expanded="open"
                 >
@@ -342,7 +343,7 @@
                         <span class="block text-sm font-semibold text-white">Kachels & Vloeistoffen</span>
                     </span>
                 </a>
-                <button @click="open = false" aria-label="Menu sluiten" class="ml-3 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80 hover:bg-white/10">
+                <button type="button" @click.stop="open = false" aria-label="Menu sluiten" class="ml-3 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80 hover:bg-white/10">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 18 6M6 6l12 12" />
                     </svg>

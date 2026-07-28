@@ -249,7 +249,6 @@
                 <h2 class="mt-1 text-xl font-semibold leading-tight sm:text-2xl md:text-3xl">{{ $productSectionTitle }}</h2>
                 <div class="mt-4 h-1 w-14 rounded-full bg-turbo-gold"></div>
             </div>
-            <span class="shrink-0 pb-0.5 text-[11px] font-semibold text-turbo-blue/60 sm:hidden">Veeg om te bekijken →</span>
         </div>
 
         <div class="mt-5 grid gap-3 md:grid-cols-3 md:gap-4 lg:mt-7">
@@ -268,6 +267,10 @@
                 </article>
             @endforeach
         </div>
+    </div>
+
+    <div class="mb-2 flex justify-end sm:hidden">
+        <span class="text-[11px] font-semibold text-turbo-blue/60">Veeg om te bekijken →</span>
     </div>
 
     <div class="turbo-mobile-product-strip -mx-4 grid grid-flow-col auto-cols-[82%] items-stretch snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:grid-flow-row sm:auto-cols-auto sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 md:gap-8">

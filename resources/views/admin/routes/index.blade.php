@@ -118,6 +118,25 @@
 @elseif($orders->isEmpty())
     <div class="bg-white border border-dashed rounded-2xl p-6 text-gray-600">Geen stops gevonden voor deze route.</div>
 @else
+<div class="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+        <h2 class="font-semibold text-gray-900">Verzending doorgeven</h2>
+        <p class="mt-1 text-sm text-gray-600">
+            Stuur de verzendmail naar alle {{ $orders->count() }} bestellingen in {{ $selectedRoute->name }}.
+        </p>
+    </div>
+    <form
+        method="POST"
+        action="{{ route('admin.routes.ship', $selectedRoute) }}"
+        onsubmit="return confirm('Weet je zeker dat je alle bestellingen in deze route als verzonden wilt markeren en de verzendmail wilt sturen?')"
+    >
+        @csrf
+        <button type="submit" class="w-full rounded-xl bg-turbo-blue px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90 sm:w-auto">
+            Verzendmail naar hele route
+        </button>
+    </form>
+</div>
+
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div class="flex items-center justify-between mb-3">
@@ -387,6 +406,73 @@
             center: [5.3, 52.1],
             zoom: 7,
         });
+        map.addControl(new mapboxgl.NavigationControl());
+
+        class StyleToggleControl {
+            onAdd(controlMap) {
+                this.map = controlMap;
+                this.satellite = false;
+                this.container = document.createElement('div');
+                this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+                this.button = document.createElement('button');
+                this.button.type = 'button';
+                this.button.title = 'Schakel tussen kaart en satelliet';
+                this.button.textContent = 'Satelliet';
+                this.button.style.width = 'auto';
+                this.button.style.padding = '0 10px';
+                this.button.style.fontSize = '12px';
+                this.button.style.fontWeight = '700';
+                this.button.addEventListener('click', () => {
+                    this.satellite = !this.satellite;
+                    this.button.textContent = this.satellite ? 'Kaart' : 'Satelliet';
+                    this.map.setStyle(this.satellite
+                        ? 'mapbox://styles/mapbox/satellite-streets-v12'
+                        : 'mapbox://styles/mapbox/streets-v12'
+                    );
+                });
+                this.container.appendChild(this.button);
+                return this.container;
+            }
+
+            onRemove() {
+                this.container.remove();
+                this.map = undefined;
+            }
+        }
+
+        map.addControl(new StyleToggleControl(), 'top-left');
+        let currentRouteGeometry = null;
+
+        const renderRouteLine = () => {
+            if (!currentRouteGeometry || !map.isStyleLoaded()) return;
+
+            if (!map.getSource('route-line')) {
+                map.addSource('route-line', {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        geometry: currentRouteGeometry,
+                    },
+                });
+                map.addLayer({
+                    id: 'route-line-layer',
+                    type: 'line',
+                    source: 'route-line',
+                    paint: {
+                        'line-color': '#16a34a',
+                        'line-width': 4,
+                        'line-opacity': 0.9,
+                    },
+                });
+            } else {
+                map.getSource('route-line').setData({
+                    type: 'Feature',
+                    geometry: currentRouteGeometry,
+                });
+            }
+        };
+
+        map.on('style.load', renderRouteLine);
 
         const geocode = async (stop) => {
             const query = `${stop.address}, ${stop.postcode} ${stop.city}, ${stop.province ?? 'Nederland'}`;
@@ -449,31 +535,8 @@
                     // Polyline via echte route geometrie
                     const geometry = data.routes?.[0]?.geometry;
                     if (geometry && geometry.coordinates?.length) {
-                        if (!map.getSource('route-line')) {
-                            map.addSource('route-line', {
-                                type: 'geojson',
-                                data: {
-                                    type: 'Feature',
-                                    geometry,
-                                },
-                            });
-
-                            map.addLayer({
-                                id: 'route-line-layer',
-                                type: 'line',
-                                source: 'route-line',
-                                paint: {
-                                    'line-color': '#16a34a',
-                                    'line-width': 4,
-                                    'line-opacity': 0.8,
-                                },
-                            });
-                        } else {
-                            map.getSource('route-line').setData({
-                                type: 'Feature',
-                                geometry,
-                            });
-                        }
+                        currentRouteGeometry = geometry;
+                        renderRouteLine();
                     }
 
                     // Reistijden per leg vullen

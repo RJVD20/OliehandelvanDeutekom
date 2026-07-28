@@ -3,9 +3,7 @@
 @section('title', 'Slim route plannen')
 
 @push('head')
-@if($proposal)
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet">
-@endif
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet">
 <style>
     .smart-route-marker {
         display: flex;
@@ -37,10 +35,13 @@
             @endif
         </p>
     </div>
-    <a href="{{ route('admin.routes.index') }}" class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700">
-        Naar routeoverzicht
-    </a>
 </div>
+
+@if(session('toast'))
+    <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+        {{ session('toast') }}
+    </div>
+@endif
 
 @if($errors->any())
     <div class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
@@ -58,7 +59,51 @@
         method="POST"
         action="{{ route('admin.routes.smart.preview') }}"
         class="space-y-6"
-        x-data="{ selected: @json(collect(old('order_ids', []))->map(fn ($id) => (string) $id)->values()), max: 25 }"
+        x-data='{
+            selected: @json(collect(old('order_ids', []))->map(fn ($id) => (string) $id)->values()),
+            orderProvinces: @json($orders->mapWithKeys(fn ($order) => [(string) $order->id => $order->province ?? ''])),
+            province: @json(old('province', $routeData['province'] ?? '')),
+            max: 25,
+            selectedProvinces() {
+                return [...new Set(
+                    this.selected
+                        .map(id => this.orderProvinces[id])
+                        .filter(Boolean)
+                )];
+            },
+            updateProvince() {
+                const provinces = this.selectedProvinces();
+                this.province = provinces.length === 1 ? provinces[0] : "";
+            },
+            provinceLabel() {
+                if (this.province) {
+                    return this.province;
+                }
+
+                return this.selectedProvinces().length > 1
+                    ? "Meerdere provincies"
+                    : "Automatisch na selectie";
+            },
+            provinceSelected(ids) {
+                return ids.every(id => this.selected.includes(id));
+            },
+            canSelectProvince(ids) {
+                return this.provinceSelected(ids)
+                    || [...new Set([...this.selected, ...ids])].length <= this.max;
+            },
+            toggleProvince(ids) {
+                if (this.provinceSelected(ids)) {
+                    this.selected = this.selected.filter(id => !ids.includes(id));
+                    return;
+                }
+
+                const next = [...new Set([...this.selected, ...ids])];
+                if (next.length <= this.max) {
+                    this.selected = next;
+                }
+            }
+        }'
+        x-init="updateProvince(); $watch('selected', () => updateProvince())"
     >
         @csrf
 
@@ -90,12 +135,13 @@
                 </label>
                 <label class="space-y-1 text-sm">
                     <span class="font-medium text-gray-700">Regio/provincie</span>
-                    <select name="province" class="w-full rounded-xl border-gray-300">
-                        <option value="">Meerdere regio’s</option>
-                        @foreach($provinces as $province)
-                            <option value="{{ $province }}" @selected(old('province') === $province)>{{ $province }}</option>
-                        @endforeach
-                    </select>
+                    <input type="hidden" name="province" :value="province">
+                    <input
+                        type="text"
+                        :value="provinceLabel()"
+                        readonly
+                        class="w-full cursor-default rounded-xl border-gray-200 bg-gray-50 text-gray-600"
+                    >
                 </label>
             </div>
         </section>
@@ -108,11 +154,6 @@
                 </div>
                 <div class="flex gap-2">
                     <button type="button" @click="selected = []" class="rounded-lg border px-3 py-2 text-xs font-semibold">Wis selectie</button>
-                    <button
-                        type="button"
-                        @click="selected = @json($orders->take(25)->pluck('id')->map(fn ($id) => (string) $id)->values())"
-                        class="rounded-lg border px-3 py-2 text-xs font-semibold"
-                    >Selecteer eerste 25</button>
                 </div>
             </div>
 
@@ -124,8 +165,30 @@
             @else
                 <div class="divide-y divide-gray-100">
                     @foreach($orders->groupBy(fn ($order) => $order->province ?: 'Provincie onbekend') as $province => $provinceOrders)
-                        <div class="bg-gray-50 px-5 py-2 text-xs font-bold uppercase tracking-wide text-gray-500">
-                            {{ $province }} · {{ $provinceOrders->count() }} {{ Str::plural('stop', $provinceOrders->count()) }}
+                        @php
+                            $provinceOrderIds = $provinceOrders
+                                ->pluck('id')
+                                ->map(fn ($id) => (string) $id)
+                                ->values();
+                        @endphp
+                        <div class="flex flex-wrap items-center justify-between gap-3 bg-gray-50 px-5 py-2">
+                            <span class="text-xs font-bold uppercase tracking-wide text-gray-500">
+                                {{ $province }} · {{ $provinceOrders->count() }} {{ Str::plural('stop', $provinceOrders->count()) }}
+                            </span>
+                            <label
+                                class="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-blue-700"
+                                :class="{ 'cursor-not-allowed opacity-40': !canSelectProvince(@js($provinceOrderIds)) }"
+                                title="Selecteer alle bestellingen uit {{ $province }}"
+                            >
+                                <input
+                                    type="checkbox"
+                                    :checked="provinceSelected(@js($provinceOrderIds))"
+                                    :disabled="!canSelectProvince(@js($provinceOrderIds))"
+                                    @change="toggleProvince(@js($provinceOrderIds))"
+                                    class="h-4 w-4 rounded border-gray-300 text-blue-600"
+                                >
+                                Hele provincie
+                            </label>
                         </div>
                         @foreach($provinceOrders as $order)
                             @php
@@ -175,6 +238,49 @@
             </button>
         </div>
     </form>
+
+    <details class="mt-6 rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <summary class="flex cursor-pointer items-center justify-between gap-4 p-5">
+            <span>
+                <strong class="block">Route-optimalisatie</strong>
+                <span class="mt-1 block text-sm text-gray-500">
+                    {{ $googleUsage['used'] }} van {{ $googleUsage['limit'] }} Google-aanvragen gebruikt in {{ $googleUsage['period'] }}
+                </span>
+            </span>
+            <span class="rounded-full px-3 py-1 text-xs font-semibold {{ $googleUsage['fallback_active'] ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800' }}">
+                {{ $googleUsage['fallback_active'] ? 'Mapbox actief' : 'Google actief' }}
+            </span>
+        </summary>
+        <form method="POST" action="{{ route('admin.routes.smart.settings') }}" class="grid gap-4 border-t border-gray-100 p-5 sm:grid-cols-[1fr_1.5fr_auto] sm:items-end">
+            @csrf
+            <label class="space-y-1 text-sm">
+                <span class="font-medium text-gray-700">Maandlimiet Google</span>
+                <input
+                    type="number"
+                    name="google_routes_monthly_limit"
+                    min="1"
+                    max="5000"
+                    value="{{ old('google_routes_monthly_limit', $googleUsage['limit']) }}"
+                    required
+                    class="w-full rounded-xl border-gray-300"
+                >
+            </label>
+            <label class="space-y-1 text-sm">
+                <span class="font-medium text-gray-700">Waarschuwingsmail</span>
+                <input
+                    type="email"
+                    name="google_routes_alert_email"
+                    value="{{ old('google_routes_alert_email', $googleUsage['alert_email']) }}"
+                    required
+                    class="w-full rounded-xl border-gray-300"
+                >
+            </label>
+            <button type="submit" class="rounded-xl bg-turbo-blue px-5 py-3 text-sm font-semibold text-white">
+                Instellingen opslaan
+            </button>
+        </form>
+    </details>
+
 @else
     @if($proposal['warnings'])
         <div class="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-900">
@@ -196,7 +302,11 @@
         <div class="rounded-xl bg-white p-4 shadow-sm"><span class="text-xs text-gray-500">Route</span><strong class="mt-1 block">{{ $routeData['name'] }}</strong></div>
         <div class="rounded-xl bg-white p-4 shadow-sm"><span class="text-xs text-gray-500">Datum</span><strong class="mt-1 block">{{ \Carbon\Carbon::parse($routeData['route_date'])->format('d-m-Y') }}</strong></div>
         <div class="rounded-xl bg-white p-4 shadow-sm"><span class="text-xs text-gray-500">Chauffeur</span><strong class="mt-1 block">{{ $driver?->name ?? 'Nog niet gekozen' }}</strong></div>
-        <div class="rounded-xl bg-white p-4 shadow-sm"><span class="text-xs text-gray-500">Schatting</span><strong class="mt-1 block">{{ $proposal['orders']->count() }} stops · {{ $estimatedMinutes ? floor($estimatedMinutes / 60).'u '.($estimatedMinutes % 60).'m' : 'onbekend' }}</strong></div>
+        <div class="rounded-xl bg-white p-4 shadow-sm">
+            <span class="text-xs text-gray-500">Schatting</span>
+            <strong class="mt-1 block">{{ $proposal['orders']->count() }} stops · {{ $estimatedMinutes ? floor($estimatedMinutes / 60).'u '.($estimatedMinutes % 60).'m' : 'onbekend' }}</strong>
+            <span class="mt-1 block text-xs text-gray-500">Geoptimaliseerd met {{ ucfirst($proposal['optimization_provider'] ?? 'postcode') }}</span>
+        </div>
     </div>
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)]">
@@ -304,6 +414,7 @@
 
     const token = @json($mapboxToken);
     const stops = @json($mapStops);
+    const routeGeometry = @json($proposal['route_geometry'] ?? null);
 
     if (!token || !stops.length || !window.mapboxgl) return;
 
@@ -316,8 +427,89 @@
     });
     map.addControl(new mapboxgl.NavigationControl());
 
+    class StyleToggleControl {
+        onAdd(controlMap) {
+            this.map = controlMap;
+            this.satellite = false;
+            this.container = document.createElement('div');
+            this.container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+            this.button = document.createElement('button');
+            this.button.type = 'button';
+            this.button.title = 'Schakel tussen kaart en satelliet';
+            this.button.textContent = 'Satelliet';
+            this.button.style.width = 'auto';
+            this.button.style.padding = '0 10px';
+            this.button.style.fontSize = '12px';
+            this.button.style.fontWeight = '700';
+            this.button.addEventListener('click', () => {
+                this.satellite = !this.satellite;
+                this.button.textContent = this.satellite ? 'Kaart' : 'Satelliet';
+                this.map.setStyle(this.satellite
+                    ? 'mapbox://styles/mapbox/satellite-streets-v12'
+                    : 'mapbox://styles/mapbox/streets-v12'
+                );
+            });
+            this.container.appendChild(this.button);
+            return this.container;
+        }
+
+        onRemove() {
+            this.container.remove();
+            this.map = undefined;
+        }
+    }
+
+    map.addControl(new StyleToggleControl(), 'top-left');
+
+    const renderRouteLine = () => {
+        if (!routeGeometry?.coordinates?.length || !map.isStyleLoaded()) return;
+
+        if (!map.getSource('planned-route')) {
+            map.addSource('planned-route', {
+                type: 'geojson',
+                data: {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: routeGeometry
+                }
+            });
+            map.addLayer({
+                id: 'planned-route-outline',
+                type: 'line',
+                source: 'planned-route',
+                layout: {
+                    'line-cap': 'round',
+                    'line-join': 'round'
+                },
+                paint: {
+                    'line-color': '#ffffff',
+                    'line-width': 8,
+                    'line-opacity': 0.9
+                }
+            });
+            map.addLayer({
+                id: 'planned-route',
+                type: 'line',
+                source: 'planned-route',
+                layout: {
+                    'line-cap': 'round',
+                    'line-join': 'round'
+                },
+                paint: {
+                    'line-color': '#0f766e',
+                    'line-width': 5,
+                    'line-opacity': 0.95
+                }
+            });
+        }
+    };
+
+    map.on('style.load', renderRouteLine);
+
     map.on('load', () => {
         const bounds = new mapboxgl.LngLatBounds();
+        renderRouteLine();
+
         stops.forEach(stop => {
             const marker = document.createElement('div');
             marker.className = 'smart-route-marker';
