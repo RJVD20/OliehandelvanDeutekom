@@ -109,10 +109,10 @@
             <div class="border-b border-gray-200 bg-white px-5 py-4"><h2 class="font-semibold">Live preview</h2><p class="text-xs text-gray-500">Voorbeeld met testpersonalisatie.</p></div>
             <div class="p-4">
                 <div class="mx-auto max-w-xl overflow-hidden rounded-xl bg-white shadow-sm">
-                    <div class="bg-turbo-navy px-6 py-5 text-white"><p class="text-[10px] font-bold uppercase tracking-[0.18em] text-turbo-gold">Kachels & vloeistoffen</p><strong class="mt-1 block">Oliehandel van Deutekom</strong></div>
+                    <div class="bg-turbo-navy px-6 py-5 text-white"><p class="text-[10px] font-bold uppercase tracking-[0.18em] text-turbo-gold">Kachels & vloeistoffen</p><strong class="mt-1 block">Kachelvloeistof.nl</strong></div>
                     <div class="border-b px-6 py-3 text-xs text-gray-500">Onderwerp: <strong class="text-gray-800" x-text="subject || 'Onderwerp nieuwsbrief'"></strong></div>
                     <div id="newsletter-preview" class="prose prose-sm min-h-56 max-w-none px-6 py-6"></div>
-                    <div class="bg-turbo-navy px-6 py-4 text-xs text-white/60">Oliehandel van Deutekom · Uitschrijven</div>
+                    <div class="bg-turbo-navy px-6 py-4 text-xs text-white/60">Kachelvloeistof.nl · Uitschrijven</div>
                 </div>
             </div>
         </section>

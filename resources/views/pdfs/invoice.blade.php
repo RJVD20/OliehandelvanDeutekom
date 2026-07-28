@@ -10,8 +10,8 @@
 <h2>Factuur #{{ $order->id }}</h2>
 
 <p>
-    <strong>Oliehandel van Deutekom</strong><br>
-    info@oliehandelvandeutekom.nl
+    <strong>Kachelvloeistof.nl</strong><br>
+    info@kachelvloeistof.nl
 </p>
 
 <hr>

@@ -61,11 +61,11 @@ class ContentController extends Controller
             'informatie_block_5_title' => 'De pelletkachel',
             'informatie_block_5_text' => 'Een pelletkachel brandt op houtpellets en regelt automatisch de toevoer. Dankzij het hoge rendement – tot wel 97% – verbruik je minder brandstof voor dezelfde hoeveelheid warmte.',
             'informatie_block_6_title' => 'Efficiënt, modern en betrouwbaar',
-            'informatie_block_6_text' => 'Pelletkachels zijn moderne, computergestuurde apparaten die automatisch temperatuur, pellettoevoer en rookgasafvoer regelen. Bij storingen staat Oliehandel van Deutekom klaar met service op maat.',
+            'informatie_block_6_text' => 'Pelletkachels zijn moderne, computergestuurde apparaten die automatisch temperatuur, pellettoevoer en rookgasafvoer regelen. Bij storingen staat Kachelvloeistof.nl klaar met service op maat.',
 
             // Over ons
             'over_hero_title' => 'Betrouwbare warmte, eerlijk advies',
-            'over_hero_intro' => 'Oliehandel van Deutekom is een familiebedrijf met passie voor warmte-oplossingen. We leveren kachelvloeistoffen, kachels en toebehoren met focus op kwaliteit, duidelijke communicatie en service.',
+            'over_hero_intro' => 'Kachelvloeistof.nl is een familiebedrijf met passie voor warmte-oplossingen. We leveren kachelvloeistoffen, kachels en toebehoren met focus op kwaliteit, duidelijke communicatie en service.',
             'over_usp_1_title' => 'Bezorging op afspraak',
             'over_usp_1_text' => 'We stemmen de levering af zodat je weet waar je aan toe bent.',
             'over_usp_2_title' => 'Klantgericht advies',

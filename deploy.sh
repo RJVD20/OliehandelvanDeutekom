@@ -8,7 +8,7 @@ echo "🚀 Deploy TEST omgeving gestart"
 
 SSH_HOST="test-oliehandel"
 
-REMOTE_BASE="/home/oliehand/domains/test.oliehandelvandeutekom.nl"
+REMOTE_BASE="/home/oliehand/domains/test.kachelvloeistof.nl"
 REMOTE_LARAVEL="$REMOTE_BASE/laravel"
 REMOTE_PUBLIC="$REMOTE_BASE/public_html"
 

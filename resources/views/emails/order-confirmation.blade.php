@@ -102,7 +102,7 @@
 
 <p style="margin:28px 0 0 0;font-size:14px;color:#6B7280;line-height:1.7;">
     Met vriendelijke groet,<br>
-    <strong style="color:#10263D;">Oliehandel van Deutekom</strong>
+    <strong style="color:#10263D;">Kachelvloeistof.nl</strong>
 </p>
 
 @endsection

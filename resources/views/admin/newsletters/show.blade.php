@@ -49,9 +49,9 @@
         <div class="border-b border-gray-100 px-5 py-4"><h2 class="font-semibold">Nieuwsbriefpreview</h2></div>
         <div class="bg-gray-100 p-4 sm:p-6">
             <div class="mx-auto max-w-2xl overflow-hidden rounded-xl bg-white shadow-sm">
-                <div class="bg-turbo-navy px-7 py-6 text-white"><p class="text-[10px] font-bold uppercase tracking-[0.18em] text-turbo-gold">Kachels & vloeistoffen</p><strong class="mt-1 block text-lg">Oliehandel van Deutekom</strong></div>
+                <div class="bg-turbo-navy px-7 py-6 text-white"><p class="text-[10px] font-bold uppercase tracking-[0.18em] text-turbo-gold">Kachels & vloeistoffen</p><strong class="mt-1 block text-lg">Kachelvloeistof.nl</strong></div>
                 <div class="prose max-w-none px-7 py-7">{!! $newsletter->content_html !!}</div>
-                <div class="bg-turbo-navy px-7 py-5 text-xs text-white/60">Oliehandel van Deutekom · Uitschrijven</div>
+                <div class="bg-turbo-navy px-7 py-5 text-xs text-white/60">Kachelvloeistof.nl · Uitschrijven</div>
             </div>
         </div>
     </section>
