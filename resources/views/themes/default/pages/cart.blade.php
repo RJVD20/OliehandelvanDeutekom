@@ -9,7 +9,7 @@
         <h1 class="text-3xl font-bold sm:text-4xl">Winkelmand</h1>
     </div>
     @if(count($cart) > 0)
-        <span class="rounded-full bg-turbo-navy px-3 py-1.5 text-xs font-bold text-white">
+        <span data-cart-heading-count class="rounded-full bg-turbo-navy px-3 py-1.5 text-xs font-bold text-white">
             {{ collect($cart)->sum('quantity') }} {{ collect($cart)->sum('quantity') === 1 ? 'artikel' : 'artikelen' }}
         </span>
     @endif
@@ -82,10 +82,11 @@
                                     <div>
                                         <a href="{{ route('product.show', $item['slug']) }}" class="font-bold leading-snug text-turbo-ink hover:text-turbo-gold">{{ $item['name'] }}</a>
                                         <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                                            <span>€ {{ number_format($item['price'], 2, ',', '.') }} per stuk</span>
-                                            @if($item['tier_applied'])
-                                                <span class="rounded-full bg-emerald-100 px-2 py-0.5 font-bold text-emerald-700">Staffelprijs</span>
-                                            @endif
+                                            <span data-cart-unit-price="{{ $id }}">€ {{ number_format($item['price'], 2, ',', '.') }} per stuk</span>
+                                            <span data-cart-tier="{{ $id }}" @class([
+                                                'rounded-full bg-emerald-100 px-2 py-0.5 font-bold text-emerald-700',
+                                                'hidden' => ! $item['tier_applied'],
+                                            ])>Staffelprijs</span>
                                         </div>
                                     </div>
                                     <form method="POST" action="{{ route('cart.remove', $id) }}" class="sm:hidden">
@@ -97,21 +98,81 @@
                                 </div>
 
                                 <div class="mt-4 flex items-center justify-between sm:justify-start sm:gap-5">
-                                    <div x-data="{ qty: {{ $item['quantity'] }}, busy: false }" class="inline-flex items-center overflow-hidden rounded-xl border border-gray-200 bg-white">
-                                        <button type="button" @click="if (qty > 1 && !busy) { busy = true; qty--; $nextTick(() => $refs.form.submit()) }" :disabled="busy || qty <= 1" class="inline-flex h-10 w-10 items-center justify-center text-lg font-bold text-turbo-ink hover:bg-gray-50 disabled:opacity-40" aria-label="Aantal verlagen">−</button>
+                                    <div
+                                        x-data="{
+                                            qty: {{ $item['quantity'] }},
+                                            busy: false,
+                                            formatPrice(value) {
+                                                return new Intl.NumberFormat('nl-NL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+                                            },
+                                            async updateQuantity(nextQty) {
+                                                if (this.busy || nextQty < 1) return;
+
+                                                const previousQty = this.qty;
+                                                this.qty = nextQty;
+                                                this.busy = true;
+
+                                                try {
+                                                    const formData = new FormData(this.$refs.form);
+                                                    formData.set('quantity', nextQty);
+                                                    const response = await fetch(this.$refs.form.action, {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Accept': 'application/json',
+                                                            'X-Requested-With': 'XMLHttpRequest',
+                                                        },
+                                                        body: formData,
+                                                    });
+
+                                                    if (!response.ok) throw new Error('Winkelmand bijwerken mislukt');
+
+                                                    const data = await response.json();
+                                                    const productId = '{{ (int) $id }}';
+                                                    this.qty = data.quantity;
+
+                                                    document.querySelectorAll(`[data-cart-subtotal='${productId}']`).forEach((element) => {
+                                                        element.textContent = `€ ${this.formatPrice(data.item_subtotal)}`;
+                                                    });
+                                                    document.querySelectorAll('[data-cart-total]').forEach((element) => {
+                                                        element.textContent = `€ ${this.formatPrice(data.total)}`;
+                                                    });
+
+                                                    const unitPrice = document.querySelector(`[data-cart-unit-price='${productId}']`);
+                                                    if (unitPrice) unitPrice.textContent = `€ ${this.formatPrice(data.unit_price)} per stuk`;
+
+                                                    const tierLabel = document.querySelector(`[data-cart-tier='${productId}']`);
+                                                    if (tierLabel) tierLabel.classList.toggle('hidden', !data.tier_applied);
+
+                                                    const headingCount = document.querySelector('[data-cart-heading-count]');
+                                                    if (headingCount) headingCount.textContent = `${data.count} ${data.count === 1 ? 'artikel' : 'artikelen'}`;
+
+                                                    const summaryCount = document.querySelector('[data-cart-summary-count]');
+                                                    if (summaryCount) summaryCount.textContent = `${data.count} ${data.count === 1 ? 'artikel' : 'artikelen'}`;
+
+                                                    window.dispatchEvent(new CustomEvent('cart-updated', { detail: data.count }));
+                                                } catch (error) {
+                                                    this.qty = previousQty;
+                                                } finally {
+                                                    this.busy = false;
+                                                }
+                                            }
+                                        }"
+                                        class="inline-flex items-center overflow-hidden rounded-xl border border-gray-200 bg-white"
+                                    >
+                                        <button type="button" @click="updateQuantity(qty - 1)" :disabled="busy || qty <= 1" class="inline-flex h-10 w-10 items-center justify-center text-lg font-bold text-turbo-ink hover:bg-gray-50 disabled:opacity-40" aria-label="Aantal verlagen">−</button>
                                         <form x-ref="form" method="POST" action="{{ route('cart.update', $id) }}">
                                             @csrf
                                             <input type="hidden" name="quantity" x-model="qty">
                                             <span x-text="qty" class="inline-flex h-10 min-w-10 items-center justify-center border-x border-gray-200 px-2 font-bold text-turbo-ink"></span>
                                         </form>
-                                        <button type="button" @click="if (!busy) { busy = true; qty++; $nextTick(() => $refs.form.submit()) }" :disabled="busy" class="inline-flex h-10 w-10 items-center justify-center text-lg font-bold text-turbo-ink hover:bg-gray-50 disabled:opacity-40" aria-label="Aantal verhogen">+</button>
+                                        <button type="button" @click="updateQuantity(qty + 1)" :disabled="busy" class="inline-flex h-10 w-10 items-center justify-center text-lg font-bold text-turbo-ink hover:bg-gray-50 disabled:opacity-40" aria-label="Aantal verhogen">+</button>
                                     </div>
-                                    <strong class="product-card__price sm:hidden">€ {{ number_format($subtotal, 2, ',', '.') }}</strong>
+                                    <strong data-cart-subtotal="{{ $id }}" class="product-card__price sm:hidden">€ {{ number_format($subtotal, 2, ',', '.') }}</strong>
                                 </div>
                             </div>
 
                             <div class="hidden min-w-[8rem] text-right sm:block">
-                                <strong class="product-card__price text-lg">€ {{ number_format($subtotal, 2, ',', '.') }}</strong>
+                                <strong data-cart-subtotal="{{ $id }}" class="product-card__price text-lg">€ {{ number_format($subtotal, 2, ',', '.') }}</strong>
                                 <p class="mt-1 text-xs text-gray-400">Subtotaal</p>
                                 <form method="POST" action="{{ route('cart.remove', $id) }}" class="mt-3">
                                     @csrf
@@ -128,13 +189,13 @@
             <div class="overflow-hidden rounded-2xl border border-turbo-blue/10 bg-white shadow-lg">
                 <div class="bg-turbo-navy px-5 py-4 text-white">
                     <h2 class="text-lg font-bold">Overzicht</h2>
-                    <p class="mt-0.5 text-xs text-white/65">{{ collect($cart)->sum('quantity') }} artikelen</p>
+                    <p data-cart-summary-count class="mt-0.5 text-xs text-white/65">{{ collect($cart)->sum('quantity') }} {{ collect($cart)->sum('quantity') === 1 ? 'artikel' : 'artikelen' }}</p>
                 </div>
                 <div class="space-y-4 p-5">
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between gap-4 text-gray-600">
                             <span>Producten</span>
-                            <span>€ {{ number_format($total, 2, ',', '.') }}</span>
+                            <span data-cart-total>€ {{ number_format($total, 2, ',', '.') }}</span>
                         </div>
                         <div class="flex justify-between gap-4 text-gray-600">
                             <span>{{ $fulfillmentMethod === 'delivery' ? 'Bezorging' : 'Afhalen' }}</span>
@@ -143,7 +204,7 @@
                     </div>
                     <div class="flex items-end justify-between gap-4 border-t border-gray-100 pt-4">
                         <span class="font-bold text-turbo-ink">Totaal</span>
-                        <span class="product-card__price text-2xl">€ {{ number_format($total, 2, ',', '.') }}</span>
+                        <span data-cart-total class="product-card__price text-2xl">€ {{ number_format($total, 2, ',', '.') }}</span>
                     </div>
                     <p class="text-xs leading-5 text-gray-500">
                         {{ $fulfillmentMethod === 'delivery' ? 'Inclusief gratis thuisbezorging volgens de gekozen staffel.' : 'De afhaalstaffel is toegepast.' }}
