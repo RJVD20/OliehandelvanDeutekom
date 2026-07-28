@@ -14,10 +14,12 @@ class DeliveryRoute extends Model
         'start_location_id',
         'end_location_id',
         'notes',
+        'loading_checked_items',
     ];
 
     protected $casts = [
         'route_date' => 'date',
+        'loading_checked_items' => 'array',
     ];
 
     public function orders()

@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\RouteOptimizationUsage;
 use App\Services\SmartRoutePlanner;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -81,6 +82,61 @@ class SmartRouteController extends Controller
             // for Mapbox here made switching routes block on an external API call.
             'routeGeometry' => null,
         ]);
+    }
+
+    public function loading(DeliveryRoute $deliveryRoute): View
+    {
+        $inventory = $this->loadingInventory($deliveryRoute);
+        $checkedItems = collect($deliveryRoute->loading_checked_items ?? [])
+            ->intersect($inventory->pluck('key'))
+            ->values();
+
+        return view('admin.routes.loading', [
+            'deliveryRoute' => $deliveryRoute,
+            'inventory' => $inventory,
+            'checkedItems' => $checkedItems,
+            'totalQuantity' => $inventory->sum('quantity'),
+            'loadedQuantity' => $inventory
+                ->whereIn('key', $checkedItems)
+                ->sum('quantity'),
+        ]);
+    }
+
+    public function toggleLoadingItem(Request $request, DeliveryRoute $deliveryRoute): JsonResponse|RedirectResponse
+    {
+        $inventory = $this->loadingInventory($deliveryRoute);
+        $data = $request->validate([
+            'item_key' => ['required', 'string', Rule::in($inventory->pluck('key')->all())],
+            'loaded' => ['required', 'boolean'],
+        ]);
+
+        $checkedItems = collect($deliveryRoute->loading_checked_items ?? [])
+            ->intersect($inventory->pluck('key'));
+
+        if ($data['loaded']) {
+            $checkedItems->push($data['item_key']);
+        } else {
+            $checkedItems = $checkedItems->reject(fn (string $key) => $key === $data['item_key']);
+        }
+
+        $checkedItems = $checkedItems->unique()->values();
+        $deliveryRoute->update(['loading_checked_items' => $checkedItems->all()]);
+
+        $loadedQuantity = $inventory
+            ->whereIn('key', $checkedItems)
+            ->sum('quantity');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'checked_items' => $checkedItems,
+                'checked_count' => $checkedItems->count(),
+                'total_count' => $inventory->count(),
+                'loaded_quantity' => $loadedQuantity,
+                'total_quantity' => $inventory->sum('quantity'),
+            ]);
+        }
+
+        return back()->with('toast', 'Laadstatus bijgewerkt.');
     }
 
     public function updateSettings(Request $request): RedirectResponse
@@ -249,6 +305,50 @@ class SmartRouteController extends Controller
             'selectedDeliveryRoute',
             'existingRouteOrders',
         );
+    }
+
+    private function loadingInventory(DeliveryRoute $deliveryRoute)
+    {
+        $deliveryRoute->load([
+            'admin',
+            'orders' => fn ($query) => $query
+                ->orderByRaw('route_sequence IS NULL')
+                ->orderBy('route_sequence')
+                ->orderBy('id'),
+            'orders.items.product',
+        ]);
+
+        return $deliveryRoute->orders
+            ->flatMap(fn (Order $order) => $order->items->map(fn ($item) => [
+                'key' => 'product:'.$item->product_id,
+                'product_id' => $item->product_id,
+                'name' => $item->product_name,
+                'image' => $item->product?->image,
+                'quantity' => (int) $item->quantity,
+                'stop' => $order->route_sequence,
+                'order_id' => $order->id,
+                'customer' => $order->name,
+            ]))
+            ->groupBy('key')
+            ->map(function ($items, string $key) {
+                $first = $items->first();
+
+                return [
+                    'key' => $key,
+                    'product_id' => $first['product_id'],
+                    'name' => $first['name'],
+                    'image' => $first['image'],
+                    'quantity' => $items->sum('quantity'),
+                    'stops' => $items->map(fn (array $item) => [
+                        'sequence' => $item['stop'],
+                        'order_id' => $item['order_id'],
+                        'customer' => $item['customer'],
+                        'quantity' => $item['quantity'],
+                    ])->values(),
+                ];
+            })
+            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
     }
 
 }

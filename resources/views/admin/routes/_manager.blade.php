@@ -80,6 +80,12 @@
             </form>
 
             <div class="flex flex-col gap-2 sm:flex-row">
+                <a
+                    href="{{ route('admin.routes.loading', $selectedDeliveryRoute) }}"
+                    class="w-full rounded-xl bg-green-600 px-5 py-3 text-center text-sm font-semibold text-white hover:bg-green-700 lg:w-auto"
+                >
+                    Wagen laden
+                </a>
                 @if($existingRouteOrders->isNotEmpty())
                 <form
                     method="POST"

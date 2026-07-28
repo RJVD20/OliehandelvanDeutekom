@@ -780,6 +780,10 @@ Route::middleware(['auth', 'admin'])
 
         Route::get('/routes', [SmartRouteController::class, 'manage'])
             ->name('routes.index');
+        Route::get('/routes/{deliveryRoute}/laden', [SmartRouteController::class, 'loading'])
+            ->name('routes.loading');
+        Route::patch('/routes/{deliveryRoute}/laden', [SmartRouteController::class, 'toggleLoadingItem'])
+            ->name('routes.loading.toggle');
         Route::delete('/routes/{deliveryRoute}', [SmartRouteController::class, 'destroy'])
             ->name('routes.destroy');
 
