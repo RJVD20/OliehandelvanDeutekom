@@ -21,6 +21,7 @@ use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\ManualOrderController;
 use App\Http\Controllers\Admin\SmartRouteController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Services\ShippingRates;
 use App\Services\CartPricing;
 use App\Http\Controllers\NewsletterUnsubscribeController;
@@ -596,6 +597,9 @@ Route::middleware(['auth', 'admin'])
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
+
+        Route::get('/audit', [AuditLogController::class, 'index'])
+            ->name('audit.index');
 
         // CMS content
         Route::get('/content', [ContentController::class, 'edit'])

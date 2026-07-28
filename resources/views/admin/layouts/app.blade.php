@@ -153,6 +153,12 @@
                {{ request()->routeIs('admin.users.*') ? 'is-active' : '' }}">
                 👥 Gebruikers
             </a>
+
+            <a href="{{ route('admin.audit.index') }}"
+               class="turbo-admin-nav flex items-center gap-3 px-3 py-2 rounded
+               {{ request()->routeIs('admin.audit.*') ? 'is-active' : '' }}">
+                🕘 Auditlog
+            </a>
         </nav>
 
         {{-- User info --}}
