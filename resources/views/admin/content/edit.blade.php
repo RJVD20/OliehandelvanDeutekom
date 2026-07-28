@@ -16,12 +16,31 @@
             : asset('storage/' . $homeHeroImageValue);
     }
 @endphp
+<div class="mb-6 flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <div>
+        <div class="mb-2 inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Website-inhoud</div>
+        <h1 class="text-2xl font-bold text-gray-900">Content beheren</h1>
+        <p class="mt-1 text-sm text-gray-500">Pas teksten aan en controleer het resultaat direct in de live preview.</p>
+    </div>
+    @if($lastContentChange)
+        <div class="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
+            <span class="block text-xs font-semibold uppercase tracking-wide text-gray-400">Laatste wijziging</span>
+            <span class="mt-1 block font-medium text-gray-800">{{ $lastContentChange->user?->name ?? 'Onbekende gebruiker' }}</span>
+            <span class="text-xs">{{ $lastContentChange->created_at->diffForHumans() }}</span>
+        </div>
+    @endif
+</div>
+
 <div class="flex flex-col lg:flex-row gap-6">
     <aside class="w-full lg:w-[420px] xl:w-[460px] shrink-0">
-        <div class="bg-white rounded-2xl shadow-sm border overflow-hidden sticky top-6">
+        <div class="bg-white rounded-2xl shadow-sm border overflow-hidden lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:flex lg:flex-col">
             <div class="px-5 py-4 border-b">
-                <h1 class="text-xl font-bold">CMS teksten</h1>
-                <p class="text-xs text-gray-500 mt-1">Bewerk links, preview rechts</p>
+                <label for="content-search" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Zoeken in content</label>
+                <div class="relative mt-2">
+                    <input id="content-search" type="search" placeholder="Zoek bijvoorbeeld ‘hero’ of ‘bezorging’…" class="w-full rounded-xl border border-gray-300 bg-gray-50 py-2.5 pl-10 pr-3 text-sm focus:border-emerald-500 focus:bg-white focus:ring-emerald-500">
+                    <svg class="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-width="2" d="m21 21-4.35-4.35m2.1-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/></svg>
+                </div>
+                <p id="search-result" class="mt-2 hidden text-xs text-gray-500"></p>
             </div>
 
             <div class="px-3 py-3 border-b bg-gray-50">
@@ -40,7 +59,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('admin.content.update') }}" id="content-form" class="p-4 space-y-6" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('admin.content.update') }}" id="content-form" class="space-y-6 overflow-y-auto p-4 pb-24" enctype="multipart/form-data">
                 @csrf
 
                 <section class="space-y-4" data-section-panel="home">
@@ -328,9 +347,12 @@
                     </div>
                 </section>
 
-                <div class="flex items-center gap-3 pt-2">
-                    <button type="submit" class="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold">Opslaan</button>
-                    <span id="save-status" class="text-sm text-gray-500"></span>
+                <div id="save-notification" class="pointer-events-none sticky bottom-3 z-10 mx-auto -mb-24 hidden w-fit max-w-[calc(100%-1rem)] items-center gap-3 rounded-xl border bg-white/95 px-4 py-3 shadow-lg backdrop-blur" role="status" aria-live="polite">
+                    <span id="save-indicator" class="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-500"></span>
+                    <div>
+                        <span id="save-status" class="block text-sm font-medium text-gray-700">Automatisch opslaan…</span>
+                        <span id="save-time" class="block text-xs text-gray-400"></span>
+                    </div>
                 </div>
             </form>
         </div>
@@ -338,11 +360,23 @@
 
     <section class="flex-1">
         <div class="bg-white rounded-2xl shadow-sm border overflow-hidden min-h-[720px]">
-            <div class="px-4 py-3 border-b flex items-center justify-between">
-                <div class="text-sm text-gray-600">Live preview</div>
-                <button type="button" id="refresh-preview" class="text-sm px-3 py-1 rounded border">Ververs</button>
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+                <div>
+                    <div class="text-sm font-semibold text-gray-800">Live preview</div>
+                    <div class="text-xs text-gray-400">Dit is de actuele website</div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="hidden rounded-lg bg-gray-100 p-1 sm:flex">
+                        <button type="button" data-preview-width="100%" class="preview-size rounded-md bg-white px-3 py-1.5 text-xs font-semibold shadow-sm">Desktop</button>
+                        <button type="button" data-preview-width="390px" class="preview-size rounded-md px-3 py-1.5 text-xs font-semibold text-gray-500">Mobiel</button>
+                    </div>
+                    <a id="open-preview" href="{{ route('home') }}" target="_blank" rel="noopener" class="rounded-lg border px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">Open pagina ↗</a>
+                    <button type="button" id="refresh-preview" class="rounded-lg border px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50">Ververs</button>
+                </div>
             </div>
-            <iframe id="preview-frame" src="{{ route('home') }}" class="w-full h-[calc(100vh-180px)] bg-white"></iframe>
+            <div class="flex justify-center overflow-auto bg-gray-100 p-3">
+                <iframe id="preview-frame" src="{{ route('home') }}" class="h-[calc(100vh-230px)] min-h-[680px] w-full bg-white shadow-sm transition-[width] duration-300"></iframe>
+            </div>
         </div>
     </section>
 </div>
@@ -352,12 +386,52 @@
 <script>
     const form = document.getElementById('content-form');
     const status = document.getElementById('save-status');
+    const saveTime = document.getElementById('save-time');
+    const saveNotification = document.getElementById('save-notification');
+    const saveIndicator = document.getElementById('save-indicator');
     const frame = document.getElementById('preview-frame');
     const refreshBtn = document.getElementById('refresh-preview');
+    const openPreview = document.getElementById('open-preview');
+    const search = document.getElementById('content-search');
+    const searchResult = document.getElementById('search-result');
     const tabs = document.querySelectorAll('.section-tab');
     const panels = document.querySelectorAll('[data-section-panel]');
+    const previewSizes = document.querySelectorAll('.preview-size');
 
     let timer;
+    let saving = false;
+    let pendingSave = false;
+    let dirty = false;
+    let notificationTimer;
+
+    function showSaveNotification(state, message, detail = '') {
+        clearTimeout(notificationTimer);
+        saveNotification.classList.remove('hidden');
+        saveNotification.classList.add('flex');
+        status.textContent = message;
+        saveTime.textContent = detail;
+
+        const styles = {
+            pending: ['text-amber-700', 'bg-amber-500'],
+            saving: ['text-blue-700', 'bg-blue-500'],
+            success: ['text-emerald-700', 'bg-emerald-500'],
+            error: ['text-red-700', 'bg-red-500'],
+        };
+
+        Object.values(styles).flat().forEach(className => {
+            status.classList.remove(className);
+            saveIndicator.classList.remove(className);
+        });
+        status.classList.add(styles[state][0]);
+        saveIndicator.classList.add(styles[state][1]);
+
+        if (state === 'success') {
+            notificationTimer = setTimeout(() => {
+                saveNotification.classList.add('hidden');
+                saveNotification.classList.remove('flex');
+            }, 2200);
+        }
+    }
 
     function setActiveSection(section, previewUrl) {
         tabs.forEach(btn => {
@@ -374,29 +448,151 @@
 
         if (previewUrl) {
             frame.src = previewUrl;
+            openPreview.href = previewUrl;
         }
     }
 
-    function autosave() {
-        clearTimeout(timer);
-        status.textContent = 'Opslaan...';
-        timer = setTimeout(async () => {
-            const formData = new FormData(form);
-            const response = await fetch(form.action, {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: formData,
-            });
-
-            status.textContent = response.ok ? 'Opgeslagen' : 'Opslaan mislukt';
-            if (response.ok) {
-                frame.src = frame.src;
-            }
-        }, 600);
+    function markDirty() {
+        dirty = true;
+        showSaveNotification('pending', 'Wijziging gedetecteerd', 'Wordt automatisch opgeslagen');
     }
 
-    form.addEventListener('input', autosave);
+    function scheduleSave() {
+        clearTimeout(timer);
+        markDirty();
+        timer = setTimeout(saveContent, 800);
+    }
+
+    async function saveContent() {
+        clearTimeout(timer);
+
+        if (saving) {
+            pendingSave = true;
+            return;
+        }
+
+        saving = true;
+        pendingSave = false;
+        dirty = false;
+        let failed = false;
+        showSaveNotification('saving', 'Automatisch opslaan…');
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: new FormData(form),
+            });
+
+            if (!response.ok) {
+                throw new Error('Opslaan mislukt');
+            }
+
+            showSaveNotification(
+                dirty ? 'pending' : 'success',
+                dirty ? 'Nieuwe wijziging gedetecteerd' : 'Wijziging automatisch opgeslagen',
+                dirty
+                    ? 'Wordt hierna opgeslagen'
+                    : `Opgeslagen om ${new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}`,
+            );
+            frame.src = frame.src;
+        } catch (error) {
+            failed = true;
+            dirty = true;
+            showSaveNotification('error', 'Automatisch opslaan mislukt', 'Wijzig opnieuw om het nogmaals te proberen');
+        } finally {
+            saving = false;
+
+            if (!failed && (pendingSave || dirty)) {
+                timer = setTimeout(saveContent, 500);
+            }
+        }
+    }
+
+    function searchableFields() {
+        return [...form.querySelectorAll('input[name]:not([type="hidden"]):not([type="file"]), textarea[name]')];
+    }
+
+    function fieldLabel(field) {
+        const container = field.closest('div');
+        return container?.querySelector('label')?.textContent.trim()
+            || field.name.replaceAll('_', ' ');
+    }
+
+    search.addEventListener('input', () => {
+        const query = search.value.trim().toLocaleLowerCase('nl-NL');
+        searchResult.replaceChildren();
+
+        if (query.length < 2) {
+            searchResult.classList.add('hidden');
+            return;
+        }
+
+        const matches = searchableFields().filter(field => {
+            const panel = field.closest('[data-section-panel]');
+            const haystack = `${fieldLabel(field)} ${field.name} ${panel?.querySelector('h2')?.textContent || ''}`;
+            return haystack.toLocaleLowerCase('nl-NL').includes(query);
+        }).slice(0, 8);
+
+        searchResult.classList.remove('hidden');
+        searchResult.className = 'mt-2 grid gap-1 rounded-xl border bg-white p-2 text-xs shadow-lg';
+
+        if (!matches.length) {
+            searchResult.textContent = 'Geen velden gevonden.';
+            return;
+        }
+
+        matches.forEach(field => {
+            const panel = field.closest('[data-section-panel]');
+            const section = panel.dataset.sectionPanel;
+            const tab = [...tabs].find(item => item.dataset.section === section);
+            const resultButton = document.createElement('button');
+            resultButton.type = 'button';
+            resultButton.className = 'rounded-lg px-3 py-2 text-left hover:bg-emerald-50';
+            resultButton.innerHTML = `<span class="block font-semibold text-gray-800"></span><span class="text-gray-400"></span>`;
+            resultButton.children[0].textContent = fieldLabel(field);
+            resultButton.children[1].textContent = tab?.textContent.trim() || section;
+            resultButton.addEventListener('click', () => {
+                setActiveSection(section, tab?.dataset.preview);
+                search.value = '';
+                searchResult.classList.add('hidden');
+                field.focus();
+                field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                field.classList.add('ring-2', 'ring-emerald-400');
+                setTimeout(() => field.classList.remove('ring-2', 'ring-emerald-400'), 1500);
+            });
+            searchResult.appendChild(resultButton);
+        });
+    });
+
+    form.addEventListener('input', scheduleSave);
+    form.addEventListener('change', event => {
+        if (event.target.matches('input[type="file"], input[type="checkbox"]')) {
+            scheduleSave();
+        }
+    });
+    form.addEventListener('submit', event => {
+        event.preventDefault();
+        saveContent();
+    });
     refreshBtn.addEventListener('click', () => { frame.src = frame.src; });
     tabs.forEach(btn => btn.addEventListener('click', () => setActiveSection(btn.dataset.section, btn.dataset.preview)));
+    previewSizes.forEach(button => button.addEventListener('click', () => {
+        frame.style.width = button.dataset.previewWidth;
+        previewSizes.forEach(item => {
+            const active = item === button;
+            item.classList.toggle('bg-white', active);
+            item.classList.toggle('shadow-sm', active);
+            item.classList.toggle('text-gray-500', !active);
+        });
+    }));
+    window.addEventListener('beforeunload', event => {
+        if (!dirty && !saving) return;
+        event.preventDefault();
+        event.returnValue = '';
+    });
 </script>
 @endpush

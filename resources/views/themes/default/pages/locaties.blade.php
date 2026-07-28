@@ -140,8 +140,12 @@
 
     const mapLocations = locations.filter(l => l.lat && l.lng && l.show_on_map);
 
-    const avgLat = mapLocations.reduce((s,l)=>s+l.lat,0)/mapLocations.length;
-    const avgLng = mapLocations.reduce((s,l)=>s+l.lng,0)/mapLocations.length;
+    const avgLat = mapLocations.length
+        ? mapLocations.reduce((s,l)=>s+l.lat,0)/mapLocations.length
+        : 52.1;
+    const avgLng = mapLocations.length
+        ? mapLocations.reduce((s,l)=>s+l.lng,0)/mapLocations.length
+        : 5.3;
 
     const map = L.map('map').setView([avgLat, avgLng], 7);
 
@@ -155,8 +159,10 @@
         markersById[loc.id] = marker;
     });
 
-    const group = L.featureGroup(Object.values(markersById));
-    map.fitBounds(group.getBounds().pad(0.1));
+    if (Object.keys(markersById).length) {
+        const group = L.featureGroup(Object.values(markersById));
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
 
     window.focusLocation = function(id) {
         const marker = markersById[id];

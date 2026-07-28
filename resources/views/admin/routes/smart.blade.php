@@ -144,6 +144,33 @@
                     >
                 </label>
             </div>
+            <div class="mt-4 grid gap-4 border-t border-gray-100 pt-4 md:grid-cols-2">
+                <label class="space-y-1 text-sm">
+                    <span class="font-medium text-gray-700">Startlocatie</span>
+                    <select name="start_location_id" class="w-full rounded-xl border-gray-300">
+                        <option value="">Geen depot als startpunt</option>
+                        @foreach($locations as $location)
+                            <option value="{{ $location->id }}" @selected((string) old('start_location_id', $routeData['start_location_id'] ?? '') === (string) $location->id)>
+                                {{ $location->name }} — {{ $location->street }}, {{ $location->postcode_city }}
+                            </option>
+                        @endforeach
+                    </select>
+                </label>
+                <label class="space-y-1 text-sm">
+                    <span class="font-medium text-gray-700">Eindlocatie</span>
+                    <select name="end_location_id" class="w-full rounded-xl border-gray-300">
+                        <option value="">Geen depot als eindpunt</option>
+                        @foreach($locations as $location)
+                            <option value="{{ $location->id }}" @selected((string) old('end_location_id', $routeData['end_location_id'] ?? '') === (string) $location->id)>
+                                {{ $location->name }} — {{ $location->street }}, {{ $location->postcode_city }}
+                            </option>
+                        @endforeach
+                    </select>
+                </label>
+                <p class="text-xs text-gray-500 md:col-span-2">
+                    Depots worden gebruikt voor de routeberekening, maar niet als bezorgstop opgeslagen en zijn daardoor niet zichtbaar in de chauffeursapp.
+                </p>
+            </div>
         </section>
 
         <section class="rounded-2xl border border-gray-100 bg-white shadow-sm">
@@ -296,12 +323,16 @@
     @php
         $estimatedMinutes = ($proposal['travel_minutes'] ?? 0) + $proposal['stop_minutes'];
         $driver = $admins->firstWhere('id', (int) ($routeData['admin_user_id'] ?? 0));
+        $startLocation = $locations->firstWhere('id', (int) ($routeData['start_location_id'] ?? 0));
+        $endLocation = $locations->firstWhere('id', (int) ($routeData['end_location_id'] ?? 0));
     @endphp
 
-    <div class="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <div class="rounded-xl bg-white p-4 shadow-sm"><span class="text-xs text-gray-500">Route</span><strong class="mt-1 block">{{ $routeData['name'] }}</strong></div>
         <div class="rounded-xl bg-white p-4 shadow-sm"><span class="text-xs text-gray-500">Datum</span><strong class="mt-1 block">{{ \Carbon\Carbon::parse($routeData['route_date'])->format('d-m-Y') }}</strong></div>
         <div class="rounded-xl bg-white p-4 shadow-sm"><span class="text-xs text-gray-500">Chauffeur</span><strong class="mt-1 block">{{ $driver?->name ?? 'Nog niet gekozen' }}</strong></div>
+        <div class="rounded-xl bg-white p-4 shadow-sm"><span class="text-xs text-gray-500">Startlocatie</span><strong class="mt-1 block">{{ $startLocation?->name ?? 'Geen depot gekozen' }}</strong></div>
+        <div class="rounded-xl bg-white p-4 shadow-sm"><span class="text-xs text-gray-500">Eindlocatie</span><strong class="mt-1 block">{{ $endLocation?->name ?? 'Geen depot gekozen' }}</strong></div>
         <div class="rounded-xl bg-white p-4 shadow-sm">
             <span class="text-xs text-gray-500">Schatting</span>
             <strong class="mt-1 block">{{ $proposal['orders']->count() }} stops · {{ $estimatedMinutes ? floor($estimatedMinutes / 60).'u '.($estimatedMinutes % 60).'m' : 'onbekend' }}</strong>
@@ -322,6 +353,8 @@
                 <input type="hidden" name="name" value="{{ $routeData['name'] }}">
                 <input type="hidden" name="province" value="{{ $routeData['province'] ?? '' }}">
                 <input type="hidden" name="admin_user_id" value="{{ $routeData['admin_user_id'] ?? '' }}">
+                <input type="hidden" name="start_location_id" value="{{ $routeData['start_location_id'] ?? '' }}">
+                <input type="hidden" name="end_location_id" value="{{ $routeData['end_location_id'] ?? '' }}">
 
                 <ol id="smart-route-list" class="divide-y divide-gray-100">
                     @foreach($proposal['orders'] as $order)
@@ -353,7 +386,7 @@
         <section class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm xl:sticky xl:top-6 xl:self-start">
             <div class="border-b border-gray-100 p-5">
                 <h2 class="font-semibold">Controle op de kaart</h2>
-                <p class="text-sm text-gray-500">De nummers volgen het automatische voorstel.</p>
+                <p class="text-sm text-gray-500">De nummers en routelijn volgen direct jouw gekozen volgorde.</p>
             </div>
             <div id="smart-route-map" class="h-[28rem]">
                 @if(!$mapboxToken)
@@ -381,6 +414,22 @@
             'lat' => $coordinate['lat'] ?? null,
         ];
     })->filter(fn ($stop) => $stop['lng'] !== null)->values();
+    $depotMarkers = collect([
+        $proposal['start_location'] && $proposal['start_coordinate'] ? [
+            'kind' => 'Start',
+            'name' => $proposal['start_location']->name,
+            'address' => trim($proposal['start_location']->street.', '.$proposal['start_location']->postcode_city, ' ,'),
+            'lng' => $proposal['start_coordinate']['lng'],
+            'lat' => $proposal['start_coordinate']['lat'],
+        ] : null,
+        $proposal['end_location'] && $proposal['end_coordinate'] ? [
+            'kind' => 'Eind',
+            'name' => $proposal['end_location']->name,
+            'address' => trim($proposal['end_location']->street.', '.$proposal['end_location']->postcode_city, ' ,'),
+            'lng' => $proposal['end_coordinate']['lng'],
+            'lat' => $proposal['end_coordinate']['lat'],
+        ] : null,
+    ])->filter()->values();
 @endphp
 <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
 <script>
@@ -389,10 +438,12 @@
     if (!list) return;
 
     let dragged = null;
+    let refreshMap = () => {};
     const refresh = () => {
         [...list.children].forEach((item, index) => {
             item.querySelector('[data-sequence]').textContent = String(index + 1);
         });
+        refreshMap();
     };
 
     list.addEventListener('dragstart', event => {
@@ -410,11 +461,13 @@
         if (!dragged || !target || target === dragged) return;
         const before = event.clientY < target.getBoundingClientRect().top + target.offsetHeight / 2;
         list.insertBefore(dragged, before ? target : target.nextSibling);
+        refresh();
     });
 
     const token = @json($mapboxToken);
     const stops = @json($mapStops);
-    const routeGeometry = @json($proposal['route_geometry'] ?? null);
+    const depots = @json($depotMarkers);
+    let currentGeometry = @json($proposal['route_geometry'] ?? null);
 
     if (!token || !stops.length || !window.mapboxgl) return;
 
@@ -462,7 +515,7 @@
     map.addControl(new StyleToggleControl(), 'top-left');
 
     const renderRouteLine = () => {
-        if (!routeGeometry?.coordinates?.length || !map.isStyleLoaded()) return;
+        if (!currentGeometry?.coordinates?.length || !map.isStyleLoaded()) return;
 
         if (!map.getSource('planned-route')) {
             map.addSource('planned-route', {
@@ -470,7 +523,7 @@
                 data: {
                     type: 'Feature',
                     properties: {},
-                    geometry: routeGeometry
+                    geometry: currentGeometry
                 }
             });
             map.addLayer({
@@ -501,6 +554,12 @@
                     'line-opacity': 0.95
                 }
             });
+        } else {
+            map.getSource('planned-route').setData({
+                type: 'Feature',
+                properties: {},
+                geometry: currentGeometry
+            });
         }
     };
 
@@ -508,6 +567,10 @@
 
     map.on('load', () => {
         const bounds = new mapboxgl.LngLatBounds();
+        const markersByOrderId = new Map();
+        const stopsByOrderId = new Map(stops.map(stop => [String(stop.id), stop]));
+        let routeRequest = null;
+        let routeTimer = null;
         renderRouteLine();
 
         stops.forEach(stop => {
@@ -518,9 +581,74 @@
                 .setLngLat([stop.lng, stop.lat])
                 .setPopup(new mapboxgl.Popup().setHTML(`<strong>#${stop.id} ${stop.name}</strong><br>${stop.address}<br>${stop.city}`))
                 .addTo(map);
+            markersByOrderId.set(String(stop.id), marker);
             bounds.extend([stop.lng, stop.lat]);
         });
+        depots.forEach(depot => {
+            const marker = document.createElement('div');
+            marker.className = 'smart-route-marker';
+            marker.style.background = depot.kind === 'Start' ? '#16a34a' : '#dc2626';
+            marker.style.color = '#ffffff';
+            marker.textContent = depot.kind === 'Start' ? 'S' : 'E';
+            new mapboxgl.Marker(marker)
+                .setLngLat([depot.lng, depot.lat])
+                .setPopup(new mapboxgl.Popup().setHTML(`<strong>${depot.kind}: ${depot.name}</strong><br>${depot.address}`))
+                .addTo(map);
+            bounds.extend([depot.lng, depot.lat]);
+        });
         if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 45, maxZoom: 12 });
+
+        refreshMap = () => {
+            const orderedStops = [...list.children]
+                .map(item => stopsByOrderId.get(String(item.dataset.orderId)))
+                .filter(Boolean);
+
+            orderedStops.forEach((stop, index) => {
+                const marker = markersByOrderId.get(String(stop.id));
+                if (marker) marker.textContent = String(index + 1);
+            });
+
+            const startDepot = depots.find(depot => depot.kind === 'Start');
+            const endDepot = depots.find(depot => depot.kind === 'Eind');
+            const waypoints = [
+                ...(startDepot ? [startDepot] : []),
+                ...orderedStops,
+                ...(endDepot ? [endDepot] : []),
+            ];
+
+            if (waypoints.length < 2) return;
+
+            // Show the new order immediately while the road geometry is recalculated.
+            currentGeometry = {
+                type: 'LineString',
+                coordinates: waypoints.map(point => [point.lng, point.lat])
+            };
+            renderRouteLine();
+
+            window.clearTimeout(routeTimer);
+            routeRequest?.abort();
+
+            // Mapbox Directions accepts at most 25 coordinates in one request.
+            if (waypoints.length > 25) return;
+
+            routeTimer = window.setTimeout(() => {
+                routeRequest = new AbortController();
+                const pairs = waypoints.map(point => `${point.lng},${point.lat}`).join(';');
+                fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${pairs}?overview=full&geometries=geojson&access_token=${token}`, {
+                    signal: routeRequest.signal
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        const geometry = data.routes?.[0]?.geometry;
+                        if (!geometry) return;
+                        currentGeometry = geometry;
+                        renderRouteLine();
+                    })
+                    .catch(error => {
+                        if (error.name !== 'AbortError') console.warn('Routelijn bijwerken mislukt', error);
+                    });
+            }, 150);
+        };
     });
 })();
 </script>

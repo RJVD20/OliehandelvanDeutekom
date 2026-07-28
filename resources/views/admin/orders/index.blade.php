@@ -3,254 +3,223 @@
 @section('title', 'Bestellingen')
 
 @section('content')
-<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-    <h1 class="text-2xl font-bold">Bestellingen</h1>
-    <a href="{{ route('admin.orders.create') }}" class="rounded-lg bg-green-600 px-4 py-3 font-semibold text-white hover:bg-green-700">
+@php
+    $activeTab = $filters['tab'] ?? 'all';
+    $tabs = [
+        'all' => 'Alle',
+        'new' => 'Nieuw',
+        'paid' => 'Betaald',
+        'unpaid' => 'Onbetaald',
+        'planned' => 'Ingepland',
+        'shipped' => 'Verzonden',
+        'cancelled' => 'Geannuleerd',
+    ];
+    $statusPresentation = [
+        'pending' => ['Nieuw', 'bg-amber-100 text-amber-800'],
+        'shipped' => ['Verzonden', 'bg-blue-100 text-blue-800'],
+        'completed' => ['Afgerond', 'bg-emerald-100 text-emerald-800'],
+        'cancelled' => ['Geannuleerd', 'bg-red-100 text-red-700'],
+        'awaiting_payment' => ['Wacht op betaling', 'bg-gray-100 text-gray-700'],
+    ];
+@endphp
+
+<div class="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <div>
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-green-700">Webshopbeheer</p>
+        <h1 class="mt-1 text-2xl font-bold text-gray-900">Bestellingen</h1>
+        <p class="mt-1 text-sm text-gray-500">Bekijk en beheer alle webshop- en handmatige bestellingen.</p>
+    </div>
+    <a href="{{ route('admin.orders.create') }}" class="rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-700">
         + Handmatige bestelling
     </a>
 </div>
 
-<div class="bg-white rounded shadow p-4 mb-6">
-    <form id="order-filter-form" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 items-end" method="GET">
-        <div class="space-y-1">
-            <label class="block text-sm text-gray-600">Route datum</label>
-            <input
-                type="date"
-                name="route_date"
-                value="{{ $filters['route_date'] ?? '' }}"
-                class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
-            >
-        </div>
-        <div class="space-y-1">
-            <label class="block text-sm text-gray-600">Besteldatum</label>
-            <input
-                type="date"
-                name="order_date"
-                value="{{ $filters['order_date'] ?? '' }}"
-                class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
-            >
-        </div>
-
-        <div class="space-y-1">
-            <label class="block text-sm text-gray-600">Provincie</label>
-            <select name="province" class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base">
-                <option value="">Alle provincies</option>
-                @foreach($provinces as $province)
-                    <option
-                        value="{{ $province }}"
-                        @selected(($filters['province'] ?? '') === $province)
-                    >
-                        {{ $province }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm font-medium text-gray-800">
-            <input
-                type="checkbox"
-                name="only_planned"
-                value="1"
-                @checked(request('only_planned'))
-                class="h-5 w-5 rounded border-gray-300"
-            >
-            <span>Alleen geplande routes</span>
-        </label>
-
-        <div class="md:col-span-1 flex flex-col sm:flex-row gap-3 justify-end md:justify-start">
-            <button
-                type="button"
-                data-open-bulk
-                class="w-full md:w-auto px-4 py-3 bg-green-600 text-white rounded-lg text-center font-semibold"
-            >
-                Bulk in route
-            </button>
-            <a href="{{ route('admin.orders.index') }}" class="w-full md:w-auto px-4 py-3 border rounded-lg text-center text-gray-800 font-semibold">
-                Reset
-            </a>
-        </div>
-    </form>
-</div>
-
-<div class="hidden md:block">
-    <table class="w-full bg-white rounded shadow text-sm">
-        <thead>
-            <tr class="border-b">
-                <th class="p-3 text-left">#</th>
-                <th class="p-3">Naam</th>
-                <th class="p-3">Provincie</th>
-                <th class="p-3">Datum</th>
-                <th class="p-3">Route</th>
-                <th class="p-3">Totaal</th>
-                <th class="p-3"></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($orders as $order)
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="p-3">{{ $order->id }}</td>
-                    <td class="p-3">
-                        {{ $order->name }}
-                        @if($order->source === 'manual')
-                            <span class="ml-1 rounded-full bg-purple-100 px-2 py-1 text-[10px] font-semibold text-purple-700">Handmatig</span>
-                        @endif
-                    </td>
-                    <td class="p-3">{{ $order->province ?? 'n.v.t.' }}</td>
-                    <td class="p-3">{{ $order->created_at->format('d-m-Y') }}</td>
-                    <td class="p-3">
-                        @if($order->route_date)
-                            {{ $order->route_date->format('d-m-Y') }}
-                            @if($order->route_sequence)
-                                <span class="text-xs text-gray-500">(#{{ $order->route_sequence }})</span>
-                            @endif
-                        @else
-                            <span class="text-gray-400">Nog niet gepland</span>
-                        @endif
-                    </td>
-                    <td class="p-3">€ {{ number_format($order->total, 2, ',', '.') }}</td>
-                    <td class="p-3 text-right">
-                        <div class="flex items-center justify-end gap-3">
-                            <form method="POST" action="{{ route('admin.orders.ship', $order) }}">
-                                @csrf
-                                <button class="px-3 py-2 text-xs bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700" type="submit">
-                                    Verzending mailen
-                                </button>
-                            </form>
-                            <a href="{{ route('admin.orders.show', $order) }}" class="text-green-700">
-                                Bekijken →
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-</div>
-
-<div class="md:hidden space-y-3">
-    @foreach($orders as $order)
-        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+<section class="mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Bestellingstatistieken">
+    @foreach([
+        ['Nieuwe bestellingen', $stats['new'], 'bg-amber-50 text-amber-700', 'N'],
+        ['Wachten op betaling', $stats['awaiting_payment'], 'bg-orange-50 text-orange-700', '€'],
+        ['Klaar om te plannen', $stats['ready_to_plan'], 'bg-blue-50 text-blue-700', 'R'],
+        ['Verzonden vandaag', $stats['shipped_today'], 'bg-emerald-50 text-emerald-700', '✓'],
+    ] as [$label, $value, $colors, $icon])
+        <article class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
             <div class="flex items-start justify-between gap-3">
                 <div>
-                    <p class="text-xs text-gray-500">Bestelling #{{ $order->id }}</p>
-                    <p class="font-semibold leading-tight">
-                        {{ $order->name }}
-                        @if($order->source === 'manual')
-                            <span class="ml-1 rounded-full bg-purple-100 px-2 py-1 text-[10px] font-semibold text-purple-700">Handmatig</span>
-                        @endif
-                    </p>
-                    <p class="text-sm text-gray-500 mt-1">{{ $order->province ?? 'n.v.t.' }}</p>
+                    <p class="text-xs font-medium text-gray-500 sm:text-sm">{{ $label }}</p>
+                    <strong class="mt-2 block text-2xl text-gray-900 sm:text-3xl">{{ $value }}</strong>
                 </div>
-                <div class="text-right text-sm text-gray-600">
-                    <p>{{ $order->created_at->format('d-m-Y') }}</p>
-                    @if($order->route_date)
-                        <p class="text-xs text-gray-500">Route: {{ $order->route_date->format('d-m-Y') }} @if($order->route_sequence)<span>(#{{ $order->route_sequence }})</span>@endif</p>
-                    @else
-                        <p class="text-xs text-gray-500">Nog niet gepland</p>
+                <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold {{ $colors }}">{{ $icon }}</span>
+            </div>
+        </article>
+    @endforeach
+</section>
+
+<nav class="-mx-1 mb-4 flex gap-2 overflow-x-auto px-1 pb-2" aria-label="Bestellingstatus">
+    @foreach($tabs as $value => $label)
+        <a
+            href="{{ route('admin.orders.index', array_filter([...request()->except('page', 'tab'), 'tab' => $value !== 'all' ? $value : null])) }}"
+            class="whitespace-nowrap rounded-full border px-4 py-2 text-sm font-semibold transition {{ $activeTab === $value ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300' }}"
+        >
+            {{ $label }}
+        </a>
+    @endforeach
+</nav>
+
+<form method="GET" action="{{ route('admin.orders.index') }}" class="mb-6 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+    @if($activeTab !== 'all')
+        <input type="hidden" name="tab" value="{{ $activeTab }}">
+    @endif
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(15rem,2fr)_repeat(4,minmax(9rem,1fr))_auto]">
+        <label class="relative">
+            <span class="sr-only">Bestelling zoeken</span>
+            <svg viewBox="0 0 24 24" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>
+            </svg>
+            <input
+                type="search"
+                name="search"
+                value="{{ $filters['search'] ?? '' }}"
+                placeholder="Ordernummer, naam, e-mail of postcode"
+                class="w-full rounded-xl border-gray-200 py-2.5 pl-10 text-sm"
+            >
+        </label>
+        <input type="date" name="order_date" value="{{ $filters['order_date'] ?? '' }}" class="rounded-xl border-gray-200 text-sm" aria-label="Besteldatum">
+        <select name="province" class="rounded-xl border-gray-200 text-sm" aria-label="Provincie">
+            <option value="">Alle provincies</option>
+            @foreach($provinces as $province)
+                <option value="{{ $province }}" @selected(($filters['province'] ?? '') === $province)>{{ $province }}</option>
+            @endforeach
+        </select>
+        <select name="payment_status" class="rounded-xl border-gray-200 text-sm" aria-label="Betaalstatus">
+            <option value="">Alle betalingen</option>
+            <option value="paid" @selected(($filters['payment_status'] ?? '') === 'paid')>Betaald</option>
+            <option value="open" @selected(($filters['payment_status'] ?? '') === 'open')>Openstaand</option>
+            <option value="failed" @selected(($filters['payment_status'] ?? '') === 'failed')>Betaling mislukt</option>
+            <option value="expired" @selected(($filters['payment_status'] ?? '') === 'expired')>Verlopen</option>
+            <option value="cancelled" @selected(($filters['payment_status'] ?? '') === 'cancelled')>Geannuleerd</option>
+        </select>
+        <select name="fulfillment_method" class="rounded-xl border-gray-200 text-sm" aria-label="Ontvangstmethode">
+            <option value="">Bezorgen en afhalen</option>
+            <option value="delivery" @selected(($filters['fulfillment_method'] ?? '') === 'delivery')>Thuisbezorgen</option>
+            <option value="pickup" @selected(($filters['fulfillment_method'] ?? '') === 'pickup')>Afhalen</option>
+        </select>
+        <button class="rounded-xl bg-gray-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-700">Filteren</button>
+    </div>
+    @if(request()->hasAny(['search', 'order_date', 'province', 'payment_status', 'fulfillment_method']))
+        <div class="mt-3">
+            <a href="{{ route('admin.orders.index', $activeTab !== 'all' ? ['tab' => $activeTab] : []) }}" class="text-sm font-medium text-gray-500 hover:text-gray-800">× Filters wissen</a>
+        </div>
+    @endif
+</form>
+
+<section class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+    <div class="flex items-center justify-between gap-3 border-b border-gray-100 px-4 py-3 sm:px-5">
+        <h2 class="font-semibold text-gray-900">{{ $orders->total() }} {{ $orders->total() === 1 ? 'bestelling' : 'bestellingen' }}</h2>
+        <a href="{{ route('admin.routes.smart') }}" class="text-sm font-semibold text-green-700 hover:text-green-800">Slim route plannen →</a>
+    </div>
+
+    <div class="hidden overflow-x-auto lg:block">
+        <table class="min-w-full text-left text-sm">
+            <thead class="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                <tr>
+                    <th class="px-5 py-3">Bestelling</th>
+                    <th class="px-5 py-3">Klant</th>
+                    <th class="px-5 py-3">Ontvangst</th>
+                    <th class="px-5 py-3">Betaling</th>
+                    <th class="px-5 py-3">Status</th>
+                    <th class="px-5 py-3 text-right">Bedrag</th>
+                    <th class="px-5 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @forelse($orders as $order)
+                    @php
+                        [$statusLabel, $statusClasses] = $statusPresentation[$order->status->value] ?? [ucfirst($order->status->value), 'bg-gray-100 text-gray-700'];
+                        $payment = $order->latestPayment;
+                    @endphp
+                    <tr class="transition hover:bg-gray-50">
+                        <td class="whitespace-nowrap px-5 py-4">
+                            <a href="{{ route('admin.orders.show', $order) }}" class="font-bold text-gray-900 hover:text-green-700">#{{ $order->id }}</a>
+                            <p class="mt-0.5 text-xs text-gray-400">{{ $order->created_at->format('d-m-Y H:i') }}</p>
+                            @if($order->source === 'manual')
+                                <span class="mt-1 inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-semibold text-purple-700">Handmatig</span>
+                            @endif
+                        </td>
+                        <td class="px-5 py-4">
+                            <strong class="block max-w-[14rem] truncate text-gray-900">{{ $order->name }}</strong>
+                            <span class="block max-w-[14rem] truncate text-xs text-gray-500">{{ $order->email ?: $order->postcode }}</span>
+                        </td>
+                        <td class="px-5 py-4">
+                            <strong class="block text-gray-700">{{ $order->fulfillment_method === 'pickup' ? 'Afhalen' : 'Bezorgen' }}</strong>
+                            <span class="text-xs text-gray-500">
+                                @if($order->fulfillment_method === 'pickup')
+                                    {{ $order->pickup_location_name ?: 'Depot nog onbekend' }}
+                                @elseif($order->delivery_route_id)
+                                    Ingepland op {{ $order->route_date?->format('d-m-Y') }}
+                                @else
+                                    {{ $order->postcode }} {{ $order->city }}
+                                @endif
+                            </span>
+                        </td>
+                        <td class="px-5 py-4">
+                            @if($payment)
+                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $payment->status->value === 'paid' ? 'bg-emerald-100 text-emerald-700' : ($payment->status->value === 'open' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
+                                    {{ $payment->statusLabel() }}
+                                </span>
+                            @else
+                                <span class="text-xs text-gray-400">Niet geregistreerd</span>
+                            @endif
+                        </td>
+                        <td class="px-5 py-4">
+                            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $statusClasses }}">{{ $statusLabel }}</span>
+                        </td>
+                        <td class="whitespace-nowrap px-5 py-4 text-right">
+                            <strong class="text-gray-900">€ {{ number_format($order->total, 2, ',', '.') }}</strong>
+                            <span class="block text-xs text-gray-400">{{ (int) $order->item_quantity }} artikelen</span>
+                        </td>
+                        <td class="whitespace-nowrap px-5 py-4 text-right">
+                            <a href="{{ route('admin.orders.show', $order) }}" class="inline-flex rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:border-green-600 hover:text-green-700">
+                                Bekijken →
+                            </a>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="7" class="px-5 py-12 text-center text-gray-500">Geen bestellingen gevonden voor deze selectie.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <div class="divide-y divide-gray-100 lg:hidden">
+        @forelse($orders as $order)
+            @php
+                [$statusLabel, $statusClasses] = $statusPresentation[$order->status->value] ?? [ucfirst($order->status->value), 'bg-gray-100 text-gray-700'];
+                $payment = $order->latestPayment;
+            @endphp
+            <article class="p-4">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <p class="text-xs text-gray-400">#{{ $order->id }} · {{ $order->created_at->format('d-m-Y H:i') }}</p>
+                        <h3 class="mt-1 truncate font-semibold text-gray-900">{{ $order->name }}</h3>
+                        <p class="truncate text-sm text-gray-500">{{ $order->email ?: $order->postcode.' '.$order->city }}</p>
+                    </div>
+                    <strong class="whitespace-nowrap text-green-700">€ {{ number_format($order->total, 2, ',', '.') }}</strong>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $statusClasses }}">{{ $statusLabel }}</span>
+                    <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">{{ $order->fulfillment_method === 'pickup' ? 'Afhalen' : 'Bezorgen' }}</span>
+                    @if($payment)
+                        <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $payment->status->value === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">{{ $payment->statusLabel() }}</span>
                     @endif
                 </div>
-            </div>
-
-            <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <span class="text-lg font-semibold text-green-700">€ {{ number_format($order->total, 2, ',', '.') }}</span>
-                <div class="flex items-center gap-2">
-                    <form method="POST" action="{{ route('admin.orders.ship', $order) }}">
-                        @csrf
-                        <button class="inline-flex items-center justify-center rounded-full bg-green-600 px-4 py-2 text-white text-xs font-semibold" type="submit">
-                            Verzending mailen
-                        </button>
-                    </form>
-                    <a
-                        href="{{ route('admin.orders.show', $order) }}"
-                        class="inline-flex items-center justify-center rounded-full border border-green-600 px-4 py-2 text-green-700 text-xs font-semibold"
-                    >
-                        Openen
-                    </a>
-                </div>
-            </div>
-        </div>
-    @endforeach
-</div>
-
-<div class="mt-4">{{ $orders->links() }}</div>
-@endsection
-
-<div id="bulk-modal" class="fixed inset-0 z-50 hidden">
-    <div class="absolute inset-0 bg-black/40" data-close-bulk></div>
-    <div class="absolute inset-x-0 top-24 mx-auto w-[min(92vw,520px)] rounded-2xl bg-white shadow-xl p-5">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-base font-semibold">Bulk naar route</h2>
-            <button type="button" class="text-gray-500" data-close-bulk>✕</button>
-        </div>
-
-        <form method="POST" action="{{ route('admin.routes.bulk-create') }}" class="space-y-4">
-            @csrf
-            <input type="hidden" name="route_date_filter" value="{{ $filters['route_date'] ?? '' }}">
-            <input type="hidden" name="order_date_filter" value="{{ $filters['order_date'] ?? '' }}">
-            <input type="hidden" name="province_filter" value="{{ $filters['province'] ?? '' }}">
-            <input type="hidden" name="only_planned_filter" value="{{ request('only_planned') ? '1' : '' }}">
-            <p class="text-xs text-gray-500">Deze bulkactie gebruikt alle bestellingen die bij de huidige filters horen, niet alleen deze pagina.</p>
-
-            <div class="space-y-1">
-                <label class="block text-sm text-gray-600">Route datum rijden</label>
-                <input
-                    type="date"
-                    name="route_date"
-                    value="{{ $filters['route_date'] ?? now()->toDateString() }}"
-                    required
-                    class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base"
-                >
-            </div>
-
-            <div class="space-y-1">
-                <label class="block text-sm text-gray-600">Chauffeur</label>
-                <select name="admin_user_id" class="w-full rounded-lg border border-gray-300 px-3 py-3 text-base">
-                    <option value="">Geen toewijzing</option>
-                    @foreach($admins as $admin)
-                        <option value="{{ $admin->id }}">
-                            {{ $admin->name }} ({{ $admin->email }})
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="flex items-center justify-end gap-3">
-                <button type="button" data-close-bulk class="px-4 py-2 border rounded-lg text-gray-700 font-semibold">Annuleren</button>
-                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold">Aanmaken</button>
-            </div>
-        </form>
+                <a href="{{ route('admin.orders.show', $order) }}" class="mt-4 flex w-full items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700">
+                    Bestelling bekijken →
+                </a>
+            </article>
+        @empty
+            <div class="p-10 text-center text-sm text-gray-500">Geen bestellingen gevonden voor deze selectie.</div>
+        @endforelse
     </div>
-</div>
+</section>
 
-@push('scripts')
-<script>
-    // Auto-apply filters (date/province/only_planned) without a submit button
-    (function() {
-        const form = document.getElementById('order-filter-form');
-        if (!form) return;
-        const inputs = form.querySelectorAll('input[name="route_date"], select[name="province"], input[name="only_planned"]');
-
-        const submitForm = () => form.requestSubmit ? form.requestSubmit() : form.submit();
-
-        inputs.forEach((el) => {
-            el.addEventListener('change', submitForm);
-            el.addEventListener('input', (e) => {
-                if (e.target.tagName === 'INPUT') submitForm();
-            });
-        });
-    })();
-
-    (function() {
-        const modal = document.getElementById('bulk-modal');
-        if (!modal) return;
-        const openBtn = document.querySelector('[data-open-bulk]');
-        const closeBtns = modal.querySelectorAll('[data-close-bulk]');
-
-        const open = () => modal.classList.remove('hidden');
-        const close = () => modal.classList.add('hidden');
-
-        if (openBtn) openBtn.addEventListener('click', open);
-        closeBtns.forEach(btn => btn.addEventListener('click', close));
-    })();
-</script>
-@endpush
+<div class="mt-6">{{ $orders->links() }}</div>
+@endsection

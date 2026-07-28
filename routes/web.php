@@ -83,7 +83,7 @@ Route::get('/over-ons', function () {
 })->name('over-ons');
 
 Route::get('/locaties', function () {
-    $locaties = Location::orderBy('name')->get();
+    $locaties = Location::where('show_on_map', true)->orderBy('name')->get();
     return view('themes.default.pages.locaties', compact('locaties'));
 })->name('locaties');
 
@@ -623,6 +623,8 @@ Route::middleware(['auth', 'admin'])
             ->name('locations.edit');
         Route::put('/locaties/{location}', [LocationController::class, 'update'])
             ->name('locations.update');
+        Route::patch('/locaties/{location}/zichtbaarheid', [LocationController::class, 'toggleVisibility'])
+            ->name('locations.toggle-visibility');
         Route::delete('/locaties/{location}', [LocationController::class, 'destroy'])
             ->name('locations.destroy');
 
@@ -644,33 +646,75 @@ Route::middleware(['auth', 'admin'])
             $provinces = nl_provinces();
 
             $filters = $request->validate([
-                'province'     => ['nullable', 'in:' . implode(',', $provinces)],
-                'route_date'   => ['nullable', 'date'],
-                'order_date'   => ['nullable', 'date'],
-                'only_planned' => ['nullable', 'boolean'],
+                'search' => ['nullable', 'string', 'max:100'],
+                'tab' => ['nullable', Rule::in(['all', 'new', 'paid', 'unpaid', 'planned', 'shipped', 'cancelled'])],
+                'province' => ['nullable', Rule::in($provinces)],
+                'order_date' => ['nullable', 'date'],
+                'payment_status' => ['nullable', Rule::in(array_column(PaymentStatus::cases(), 'value'))],
+                'fulfillment_method' => ['nullable', Rule::in(['delivery', 'pickup'])],
             ]);
 
             $orders = Order::query()
                 ->placed()
+                ->with('latestPayment')
+                ->withSum('items as item_quantity', 'quantity')
+                ->when($filters['search'] ?? null, function ($query, $search) {
+                    $query->where(function ($query) use ($search) {
+                        $query
+                            ->where('id', ctype_digit($search) ? (int) $search : 0)
+                            ->orWhere('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('postcode', 'like', "%{$search}%");
+                    });
+                })
                 ->when($filters['province'] ?? null, fn ($q, $province) => $q->where('province', $province))
-                ->when($filters['route_date'] ?? null, fn ($q, $routeDate) => $q->whereDate('route_date', $routeDate))
                 ->when($filters['order_date'] ?? null, fn ($q, $orderDate) => $q->whereDate('created_at', $orderDate))
-                ->when($request->boolean('only_planned'), fn ($q) => $q->whereNotNull('route_date'))
-                ->orderByRaw('route_date IS NULL')
-                ->orderBy('route_date')
-                ->orderByRaw('route_sequence IS NULL')
-                ->orderBy('route_sequence')
+                ->when($filters['payment_status'] ?? null, fn ($q, $status) => $q->whereHas(
+                    'latestPayment',
+                    fn ($payment) => $payment->where('status', $status)
+                ))
+                ->when($filters['fulfillment_method'] ?? null, fn ($q, $method) => $q->where('fulfillment_method', $method))
+                ->when(($filters['tab'] ?? 'all') === 'new', fn ($q) => $q->where('status', OrderStatus::PENDING))
+                ->when(($filters['tab'] ?? 'all') === 'paid', fn ($q) => $q->whereHas(
+                    'latestPayment',
+                    fn ($payment) => $payment->where('status', PaymentStatus::PAID)
+                ))
+                ->when(($filters['tab'] ?? 'all') === 'unpaid', fn ($q) => $q->whereHas(
+                    'latestPayment',
+                    fn ($payment) => $payment->where('status', PaymentStatus::OPEN)
+                ))
+                ->when(($filters['tab'] ?? 'all') === 'planned', fn ($q) => $q->whereNotNull('delivery_route_id'))
+                ->when(($filters['tab'] ?? 'all') === 'shipped', fn ($q) => $q->where('status', OrderStatus::SHIPPED))
+                ->when(($filters['tab'] ?? 'all') === 'cancelled', fn ($q) => $q->where('status', OrderStatus::CANCELLED))
                 ->orderByDesc('created_at')
-                ->paginate(20)
+                ->paginate(25)
                 ->withQueryString();
 
-            $admins = User::where('is_admin', true)->orderBy('name')->get();
+            $stats = [
+                'new' => Order::query()->placed()->where('status', OrderStatus::PENDING)->count(),
+                'awaiting_payment' => Order::query()->placed()->whereHas(
+                    'latestPayment',
+                    fn ($payment) => $payment->where('status', PaymentStatus::OPEN)
+                )->count(),
+                'ready_to_plan' => Order::query()
+                    ->placed()
+                    ->where('fulfillment_method', 'delivery')
+                    ->whereNull('delivery_route_id')
+                    ->where('status', OrderStatus::PENDING)
+                    ->count(),
+                'shipped_today' => Order::query()
+                    ->placed()
+                    ->where('status', OrderStatus::SHIPPED)
+                    ->whereDate('updated_at', today())
+                    ->count(),
+            ];
 
-            return view('admin.orders.index', compact('orders', 'provinces', 'filters', 'admins'));
+            return view('admin.orders.index', compact('orders', 'provinces', 'filters', 'stats'));
         })->name('orders.index');
 
         Route::get('/orders/{order}', function (Order $order) {
             abort_if($order->isAwaitingPayment(), 404);
+            $order->load(['items', 'latestPayment.events.actor']);
 
             $provinces = nl_provinces();
             $routeDate = $order->route_date?->toDateString() ?? now()->toDateString();
@@ -736,18 +780,22 @@ Route::middleware(['auth', 'admin'])
 
         Route::get('/routes', [SmartRouteController::class, 'manage'])
             ->name('routes.index');
+        Route::delete('/routes/{deliveryRoute}', [SmartRouteController::class, 'destroy'])
+            ->name('routes.destroy');
 
         Route::post('/routes', function (Request $request) {
             $provinces = nl_provinces();
 
             $data = $request->validate([
                 'route_date'   => ['required', 'date'],
-                'name'         => ['required', 'string', 'max:255'],
+                'name'         => ['required', 'string', 'max:255', Rule::unique('delivery_routes', 'name')],
                 'province'     => ['nullable', 'in:' . implode(',', $provinces)],
                 'admin_user_id' => [
                     'nullable',
                     Rule::exists('users', 'id')->where('is_admin', true),
                 ],
+            ], [
+                'name.unique' => 'Deze routenaam bestaat al. Kies een andere routenaam.',
             ]);
 
             $route = DeliveryRoute::create([
@@ -1026,7 +1074,7 @@ Route::middleware(['auth', 'admin'])
             ->name('users.toggle-admin');
 
         Route::resource('users', UserController::class)
-            ->except(['show']);
+            ->only(['index', 'edit', 'update', 'destroy']);
 
         // Payments (achteraf betalen)
         Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
@@ -1034,6 +1082,7 @@ Route::middleware(['auth', 'admin'])
         Route::patch('/payments/{payment}/mark-paid', [PaymentController::class, 'markPaid'])->name('payments.mark-paid');
 
         // Newsletters
+        Route::get('/newsletters-doelgroep/aantal', [NewsletterController::class, 'audienceCount'])->name('newsletters.audience-count');
         Route::resource('newsletters', NewsletterController::class)->except(['destroy']);
         Route::post('/newsletters/{newsletter}/send', [NewsletterController::class, 'send'])->name('newsletters.send');
         Route::post('/newsletters/{newsletter}/schedule', [NewsletterController::class, 'schedule'])->name('newsletters.schedule');

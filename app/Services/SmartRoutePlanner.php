@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\Location;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Throwable;
@@ -13,7 +14,11 @@ class SmartRoutePlanner
         private readonly RouteOptimizationUsage $usage
     ) {}
 
-    public function createProposal(Collection $orders): array
+    public function createProposal(
+        Collection $orders,
+        ?Location $startLocation = null,
+        ?Location $endLocation = null,
+    ): array
     {
         $orders = $orders->sortBy([
             fn (Order $order) => $order->postcode ?? '',
@@ -24,6 +29,15 @@ class SmartRoutePlanner
         $token = config('services.mapbox.token');
         $coordinates = [];
         $warnings = [];
+        $startCoordinate = $this->locationCoordinate($startLocation);
+        $endCoordinate = $this->locationCoordinate($endLocation);
+
+        if ($startLocation && ! $startCoordinate) {
+            $warnings[] = "Startdepot '{$startLocation->name}' heeft geen geldige coördinaten.";
+        }
+        if ($endLocation && ! $endCoordinate) {
+            $warnings[] = "Einddepot '{$endLocation->name}' heeft geen geldige coördinaten.";
+        }
 
         foreach ($orders as $order) {
             $coordinate = $this->coordinateFor($order, $token);
@@ -53,8 +67,8 @@ class SmartRoutePlanner
         } else {
             $result = null;
 
-            if (count($coordinates) >= 3 && $this->usage->claimGoogleRequest()) {
-                $result = $this->optimizeWithGoogle($coordinates);
+            if (count($coordinates) >= 2 && $this->usage->claimGoogleRequest()) {
+                $result = $this->optimizeWithGoogle($coordinates, $startCoordinate, $endCoordinate);
                 $optimizationProvider = $result !== null ? 'google' : 'mapbox';
 
                 if ($result === null) {
@@ -63,9 +77,20 @@ class SmartRoutePlanner
             }
 
             if ($result === null) {
-                $result = count($coordinates) <= 12
-                    ? $this->optimize($coordinates, $token)
-                    : $this->optimizeWithMatrix($coordinates, $token);
+                $mapboxCoordinates = $this->withDepotCoordinates(
+                    $coordinates,
+                    $startCoordinate,
+                    $endCoordinate,
+                );
+
+                $result = count($mapboxCoordinates) <= 12
+                    ? $this->optimize($mapboxCoordinates, $token)
+                    : $this->optimizeWithMatrix(
+                        count($mapboxCoordinates) <= 25 ? $mapboxCoordinates : $coordinates,
+                        $token,
+                        $startCoordinate !== null && count($mapboxCoordinates) <= 25,
+                        $endCoordinate !== null && count($mapboxCoordinates) <= 25,
+                    );
 
                 if ($result !== null) {
                     $optimizationProvider = 'mapbox';
@@ -89,7 +114,13 @@ class SmartRoutePlanner
             ->values();
 
         $route = $token
-            ? $this->directions($orderedIds, $coordinates, $token)
+            ? $this->directions(
+                $orderedIds,
+                $coordinates,
+                $token,
+                $startCoordinate,
+                $endCoordinate,
+            )
             : null;
 
         if ($route !== null) {
@@ -104,8 +135,37 @@ class SmartRoutePlanner
             'warnings' => array_values(array_unique($warnings)),
             'travel_minutes' => $travelMinutes,
             'route_geometry' => $route['geometry'] ?? null,
+            'start_location' => $startLocation,
+            'end_location' => $endLocation,
+            'start_coordinate' => $startCoordinate,
+            'end_coordinate' => $endCoordinate,
             'stop_minutes' => $ordered->count() * 10,
             'optimization_provider' => $optimizationProvider,
+        ];
+    }
+
+    private function locationCoordinate(?Location $location): ?array
+    {
+        if (! $location || $location->lng === null || $location->lat === null) {
+            return null;
+        }
+
+        return [
+            'order_id' => null,
+            'lng' => (float) $location->lng,
+            'lat' => (float) $location->lat,
+        ];
+    }
+
+    private function withDepotCoordinates(
+        array $coordinates,
+        ?array $startCoordinate,
+        ?array $endCoordinate,
+    ): array {
+        return [
+            ...($startCoordinate ? [$startCoordinate] : []),
+            ...$coordinates,
+            ...($endCoordinate ? [$endCoordinate] : []),
         ];
     }
 
@@ -185,6 +245,7 @@ class SmartRoutePlanner
             ])
             ->sortBy('sequence')
             ->pluck('order_id')
+            ->filter(fn ($orderId) => $orderId !== null)
             ->values()
             ->all();
 
@@ -196,13 +257,23 @@ class SmartRoutePlanner
         ];
     }
 
-    private function optimizeWithGoogle(array $coordinates): ?array
+    private function optimizeWithGoogle(
+        array $coordinates,
+        ?array $startCoordinate,
+        ?array $endCoordinate,
+    ): ?array
     {
-        $first = $coordinates[0];
-        $last = $coordinates[array_key_last($coordinates)];
-        $intermediates = collect($coordinates)
-            ->slice(1, max(0, count($coordinates) - 2))
-            ->values();
+        $origin = $startCoordinate ?? $coordinates[0];
+        $destination = $endCoordinate ?? $coordinates[array_key_last($coordinates)];
+        $intermediates = collect($coordinates);
+
+        if (! $startCoordinate) {
+            $intermediates = $intermediates->slice(1);
+        }
+        if (! $endCoordinate) {
+            $intermediates = $intermediates->take(max(0, $intermediates->count() - 1));
+        }
+        $intermediates = $intermediates->values();
 
         try {
             $response = Http::timeout(20)
@@ -211,8 +282,8 @@ class SmartRoutePlanner
                     'X-Goog-FieldMask' => 'routes.optimizedIntermediateWaypointIndex,routes.duration',
                 ])
                 ->post(config('services.google_routes.endpoint'), [
-                    'origin' => $this->googleWaypoint($first),
-                    'destination' => $this->googleWaypoint($last),
+                    'origin' => $this->googleWaypoint($origin),
+                    'destination' => $this->googleWaypoint($destination),
                     'intermediates' => $intermediates
                         ->map(fn (array $coordinate) => $this->googleWaypoint($coordinate))
                         ->all(),
@@ -234,14 +305,14 @@ class SmartRoutePlanner
             return null;
         }
 
-        $orderedIds = [
-            $first['order_id'],
+        $orderedIds = array_values(array_filter([
+            $startCoordinate ? null : $origin['order_id'],
             ...collect($optimizedIndexes)
                 ->map(fn (int $index) => $intermediates->get($index)['order_id'] ?? null)
                 ->filter()
                 ->all(),
-            $last['order_id'],
-        ];
+            $endCoordinate ? null : $destination['order_id'],
+        ], fn ($orderId) => $orderId !== null));
 
         if (count($orderedIds) !== count($coordinates)) {
             return null;
@@ -270,7 +341,12 @@ class SmartRoutePlanner
         ];
     }
 
-    private function optimizeWithMatrix(array $coordinates, string $token): ?array
+    private function optimizeWithMatrix(
+        array $coordinates,
+        string $token,
+        bool $hasStartDepot = false,
+        bool $hasEndDepot = false,
+    ): ?array
     {
         $pairs = collect($coordinates)
             ->map(fn (array $coordinate) => $coordinate['lng'].','.$coordinate['lat'])
@@ -294,7 +370,9 @@ class SmartRoutePlanner
         }
 
         $order = [0];
-        $unvisited = array_values(array_diff(array_keys($coordinates), [0]));
+        $endIndex = $hasEndDepot ? array_key_last($coordinates) : null;
+        $excluded = array_values(array_filter([0, $endIndex], fn ($index) => $index !== null));
+        $unvisited = array_values(array_diff(array_keys($coordinates), $excluded));
         $current = 0;
         $travelSeconds = 0;
 
@@ -314,51 +392,96 @@ class SmartRoutePlanner
             $current = $next;
         }
 
+        if ($endIndex !== null) {
+            if (! is_numeric($durations[$current][$endIndex] ?? null)) {
+                return null;
+            }
+            $travelSeconds += (float) $durations[$current][$endIndex];
+            $order[] = $endIndex;
+        }
+
         return [
             'order_ids' => collect($order)
                 ->map(fn (int $index) => $coordinates[$index]['order_id'])
+                ->filter(fn ($orderId) => $orderId !== null)
                 ->all(),
             'travel_minutes' => (int) ceil($travelSeconds / 60),
         ];
     }
 
-    private function directions(array $orderedIds, array $coordinates, string $token): ?array
+    private function directions(
+        array $orderedIds,
+        array $coordinates,
+        string $token,
+        ?array $startCoordinate,
+        ?array $endCoordinate,
+    ): ?array
     {
         $coordinatesByOrder = collect($coordinates)->keyBy('order_id');
-        $pairs = collect($orderedIds)
+        $routeCoordinates = collect();
+
+        if ($startCoordinate) {
+            $routeCoordinates->push($startCoordinate);
+        }
+
+        $routeCoordinates = $routeCoordinates->concat(
+            collect($orderedIds)
             ->map(fn (int $orderId) => $coordinatesByOrder->get($orderId))
             ->filter()
+        );
+
+        if ($endCoordinate) {
+            $routeCoordinates->push($endCoordinate);
+        }
+
+        $pairs = $routeCoordinates
             ->map(fn (array $coordinate) => $coordinate['lng'].','.$coordinate['lat'])
             ->values();
 
-        if ($pairs->count() < 2 || $pairs->count() > 25) {
+        if ($pairs->count() < 2) {
             return null;
         }
 
-        try {
-            $response = Http::timeout(15)->get(
-                'https://api.mapbox.com/directions/v5/mapbox/driving/'.$pairs->implode(';'),
-                [
-                    'access_token' => $token,
-                    'overview' => 'full',
-                    'geometries' => 'geojson',
-                    'steps' => 'false',
-                ]
-            );
-        } catch (Throwable) {
-            return null;
-        }
+        $geometryCoordinates = [];
+        $durationSeconds = 0;
 
-        $geometry = $response->ok() ? $response->json('routes.0.geometry') : null;
-        $duration = $response->json('routes.0.duration');
+        foreach ($pairs->chunk(25) as $chunkIndex => $chunk) {
+            if ($chunkIndex > 0) {
+                $previous = $pairs->get(($chunkIndex * 25) - 1);
+                $chunk = collect([$previous, ...$chunk->all()]);
+            }
 
-        if (! is_array($geometry) || ($geometry['type'] ?? null) !== 'LineString') {
-            return null;
+            try {
+                $response = Http::timeout(15)->get(
+                    'https://api.mapbox.com/directions/v5/mapbox/driving/'.$chunk->implode(';'),
+                    [
+                        'access_token' => $token,
+                        'overview' => 'full',
+                        'geometries' => 'geojson',
+                        'steps' => 'false',
+                    ]
+                );
+            } catch (Throwable) {
+                return null;
+            }
+
+            $geometry = $response->ok() ? $response->json('routes.0.geometry') : null;
+            $duration = $response->json('routes.0.duration');
+
+            if (! is_array($geometry) || ($geometry['type'] ?? null) !== 'LineString') {
+                return null;
+            }
+
+            $geometryCoordinates = [
+                ...$geometryCoordinates,
+                ...array_slice($geometry['coordinates'], $chunkIndex > 0 ? 1 : 0),
+            ];
+            $durationSeconds += is_numeric($duration) ? (float) $duration : 0;
         }
 
         return [
-            'geometry' => $geometry,
-            'travel_minutes' => is_numeric($duration) ? (int) ceil($duration / 60) : null,
+            'geometry' => ['type' => 'LineString', 'coordinates' => $geometryCoordinates],
+            'travel_minutes' => (int) ceil($durationSeconds / 60),
         ];
     }
 }

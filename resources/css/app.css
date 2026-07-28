@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+[x-cloak] {
+    display: none !important;
+}
+
 :root {
     --turbo-navy: #03182B;
     --turbo-dark: #08243D;

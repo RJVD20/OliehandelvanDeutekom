@@ -12,6 +12,9 @@
     $subjectLabels = [
         'product' => 'Product',
         'cms' => 'CMS',
+        'location' => 'Locatie',
+        'payment' => 'Betaling',
+        'newsletter' => 'Nieuwsbrief',
     ];
     $formatValue = function ($value) {
         if (is_bool($value)) return $value ? 'Ja' : 'Nee';

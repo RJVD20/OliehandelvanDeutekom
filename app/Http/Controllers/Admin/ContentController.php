@@ -172,8 +172,13 @@ class ContentController extends Controller
         }
 
         $locations = Location::orderBy('name')->get();
+        $lastContentChange = AuditLog::query()
+            ->with('user')
+            ->where('subject_type', 'cms')
+            ->latest()
+            ->first();
 
-        return view('admin.content.edit', compact('values', 'locations'));
+        return view('admin.content.edit', compact('values', 'locations', 'lastContentChange'));
     }
 
     public function update(Request $request): RedirectResponse|JsonResponse
