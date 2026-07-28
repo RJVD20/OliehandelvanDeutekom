@@ -23,8 +23,6 @@
     enctype="multipart/form-data"
     class="max-w-3xl space-y-5"
     x-data="{
-        name: '{{ old('name') }}',
-        slug: '{{ old('slug') }}',
         slugEdited: {{ old('slug') ? 'true' : 'false' }},
         imagePreview: null,
         categoryTypes: @json($categories->pluck('type', 'id')),
@@ -33,7 +31,7 @@
         typeLabels: { kachel: 'Kachel', vloeistof: 'Vloeistof', pellet: 'Pellet', accessoire: 'Accessoire' },
         generateSlug(val) {
             if (!this.slugEdited) {
-                this.slug = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                this.$refs.slug.value = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
             }
         }
     }"
@@ -48,7 +46,6 @@
             <label class="block text-sm font-semibold text-gray-700">Naam <span class="text-red-500">*</span></label>
             <input
                 name="name"
-                x-model="name"
                 @input="generateSlug($event.target.value)"
                 value="{{ old('name') }}"
                 required
@@ -65,8 +62,9 @@
                 <span class="px-3 py-2.5 bg-gray-50 text-xs text-gray-400 border-r border-gray-200 whitespace-nowrap">/product/</span>
                 <input
                     name="slug"
-                    x-model="slug"
+                    x-ref="slug"
                     @input="slugEdited = true"
+                    value="{{ old('slug') }}"
                     class="flex-1 px-3 py-2.5 text-sm focus:outline-none"
                     placeholder="automatisch gegenereerd"
                 >

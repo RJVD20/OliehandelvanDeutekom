@@ -26,6 +26,9 @@ class ProductController extends Controller
         if ($type = $request->get('type')) {
             $query->where('type', $type);
         }
+        if ($brand = $request->get('brand')) {
+            $query->where('brand', $brand);
+        }
 
         match($request->get('sort')) {
             'name_asc'   => $query->orderBy('name'),
@@ -38,6 +41,13 @@ class ProductController extends Controller
         return view('admin.products.index', [
             'products'         => $query->paginate(20)->withQueryString(),
             'categories'       => Category::orderBy('name')->get(),
+            'brands'           => Product::query()
+                ->where('active', true)
+                ->whereNotNull('brand')
+                ->where('brand', '!=', '')
+                ->distinct()
+                ->orderBy('brand')
+                ->pluck('brand'),
             'totalProducts'    => Product::count(),
             'activeProducts'   => Product::where('active', true)->count(),
             'inactiveProducts' => Product::where('active', false)->count(),

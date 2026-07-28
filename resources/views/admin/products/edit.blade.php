@@ -27,20 +27,12 @@
     enctype="multipart/form-data"
     class="max-w-3xl space-y-5"
     x-data="{
-        name: '{{ old('name', $product->name) }}',
-        slug: '{{ old('slug', $product->slug) }}',
-        slugEdited: true,
         imagePreview: null,
         removeImage: false,
         categoryTypes: @json($categories->pluck('type', 'id')),
         selectedCategoryId: '{{ old('category_id', $product->category_id) }}',
         get categoryType() { return this.categoryTypes[this.selectedCategoryId] || null; },
-        typeLabels: { kachel: 'Kachel', vloeistof: 'Vloeistof', pellet: 'Pellet', accessoire: 'Accessoire' },
-        generateSlug(val) {
-            if (!this.slugEdited) {
-                this.slug = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-            }
-        }
+        typeLabels: { kachel: 'Kachel', vloeistof: 'Vloeistof', pellet: 'Pellet', accessoire: 'Accessoire' }
     }"
 >
     @csrf
@@ -54,7 +46,7 @@
             <label class="block text-sm font-semibold text-gray-700">Naam <span class="text-red-500">*</span></label>
             <input
                 name="name"
-                x-model="name"
+                value="{{ old('name', $product->name) }}"
                 required
                 class="w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 {{ $errors->has('name') ? 'border-red-400 bg-red-50' : 'border-gray-200' }}"
             >
@@ -68,8 +60,7 @@
                 <span class="px-3 py-2.5 bg-gray-50 text-xs text-gray-400 border-r border-gray-200 whitespace-nowrap">/product/</span>
                 <input
                     name="slug"
-                    x-model="slug"
-                    @input="slugEdited = true"
+                    value="{{ old('slug', $product->slug) }}"
                     class="flex-1 px-3 py-2.5 text-sm focus:outline-none"
                 >
             </div>
