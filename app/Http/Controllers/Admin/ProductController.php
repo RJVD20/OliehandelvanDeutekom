@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProductRequest;
 use App\Models\Category;
+use App\Models\AuditLog;
 use App\Models\Order;
 use App\Models\Product;
 use App\Services\ShippingRates;
@@ -82,6 +83,14 @@ class ProductController extends Controller
 
         $product = Product::create($data);
         app(ShippingRates::class)->saveProductRule($product->id, ...$tierData);
+        AuditLog::record(
+            'created',
+            'product',
+            $product->id,
+            $product->name,
+            [],
+            $this->auditPayload($product),
+        );
 
         return redirect()
             ->route('admin.products.index')
@@ -99,6 +108,7 @@ class ProductController extends Controller
 
     public function update(ProductRequest $request, Product $product)
     {
+        $before = $this->auditPayload($product);
         $data = $request->validated();
         $tierData = $this->extractTierData($data);
         $data['slug']     = $request->filled('slug') ? \Illuminate\Support\Str::slug($request->input('slug')) : \Illuminate\Support\Str::slug($data['name']);
@@ -124,6 +134,15 @@ class ProductController extends Controller
 
         $product->update($data);
         app(ShippingRates::class)->saveProductRule($product->id, ...$tierData);
+        $product->refresh();
+        AuditLog::record(
+            'updated',
+            'product',
+            $product->id,
+            $product->name,
+            $before,
+            $this->auditPayload($product),
+        );
 
         return redirect()
             ->route('admin.products.index')
@@ -132,8 +151,10 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        $before = $this->auditPayload($product);
         app(ShippingRates::class)->saveProductRule($product->id, false);
         $product->delete();
+        AuditLog::record('deleted', 'product', $product->id, $product->name, $before, []);
 
         return redirect()
             ->route('admin.products.index')
@@ -142,8 +163,17 @@ class ProductController extends Controller
 
     public function toggleActive(Product $product)
     {
+        $before = $this->auditPayload($product);
         $product->active = ! (bool) $product->active;
         $product->save();
+        AuditLog::record(
+            'updated',
+            'product',
+            $product->id,
+            $product->name,
+            $before,
+            $this->auditPayload($product),
+        );
 
         return response()->json([
             'active' => $product->active,
@@ -152,8 +182,17 @@ class ProductController extends Controller
 
     public function toggleFeatured(Product $product)
     {
+        $before = $this->auditPayload($product);
         $product->featured = ! (bool) $product->featured;
         $product->save();
+        AuditLog::record(
+            'updated',
+            'product',
+            $product->id,
+            $product->name,
+            $before,
+            $this->auditPayload($product),
+        );
 
         return response()->json([
             'featured' => $product->featured,
@@ -173,5 +212,13 @@ class ProductController extends Controller
         );
 
         return [$enabled, $delivery, $pickup];
+    }
+
+    private function auditPayload(Product $product): array
+    {
+        $payload = $product->only($product->getFillable());
+        $payload['tier_pricing'] = app(ShippingRates::class)->ruleForProduct($product->id);
+
+        return $payload;
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Location;
 use App\Models\Setting;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -183,6 +184,10 @@ class ContentController extends Controller
         ]);
 
         $currentHeroImage = Setting::get('home_hero_image', null);
+        $before = ['home_hero_image' => $currentHeroImage];
+        foreach ($this->fields as $field) {
+            $before[$field] = Setting::get($field, null);
+        }
         $shouldDeleteFile = is_string($currentHeroImage)
             && trim($currentHeroImage) !== ''
             && ! Str::startsWith($currentHeroImage, ['http://', 'https://', '/']);
@@ -208,6 +213,13 @@ class ContentController extends Controller
         foreach ($data as $key => $value) {
             Setting::set($key, is_string($value) ? trim($value) : $value);
         }
+
+        $after = ['home_hero_image' => Setting::get('home_hero_image', null)];
+        foreach ($this->fields as $field) {
+            $after[$field] = Setting::get($field, null);
+        }
+
+        AuditLog::record('updated', 'cms', null, 'CMS-teksten en homepage', $before, $after);
 
         if ($request->wantsJson()) {
             return response()->json(['status' => 'ok']);
