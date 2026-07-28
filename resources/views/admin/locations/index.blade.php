@@ -21,7 +21,7 @@
                 <th class="p-3">Naam</th>
                 <th class="p-3">Adres</th>
                 <th class="p-3">Telefoon</th>
-                <th class="p-3">Kaart</th>
+                <th class="p-3">Zichtbaar op site</th>
                 <th class="p-3"></th>
             </tr>
         </thead>
@@ -32,9 +32,17 @@
                     <td class="p-3 text-gray-600">{{ $location->street }}<br>{{ $location->postcode_city }}</td>
                     <td class="p-3 text-gray-600">{{ $location->phone ?? '-' }}</td>
                     <td class="p-3">
-                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold {{ $location->show_on_map ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
-                            {{ $location->show_on_map ? 'Ja' : 'Nee' }}
-                        </span>
+                        <form method="POST" action="{{ route('admin.locations.toggle-visibility', $location) }}">
+                            @csrf
+                            @method('PATCH')
+                            <button
+                                type="submit"
+                                class="inline-flex min-w-20 items-center justify-center rounded-full px-3 py-1.5 text-xs font-semibold transition {{ $location->show_on_map ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}"
+                                title="Klik om de zichtbaarheid op de openbare site te wijzigen"
+                            >
+                                {{ $location->show_on_map ? 'Ja' : 'Nee' }}
+                            </button>
+                        </form>
                     </td>
                     <td class="p-3 text-right">
                         <a href="{{ route('admin.locations.edit', $location) }}" class="text-blue-600 mr-3">Bewerk</a>

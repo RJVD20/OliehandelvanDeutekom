@@ -6,6 +6,7 @@
 
 <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
     <div>
+        <a href="{{ route('admin.orders.index') }}" class="mb-2 inline-flex text-sm font-semibold text-gray-500 hover:text-gray-800">← Terug naar bestellingen</a>
         <h1 class="text-2xl font-bold">Bestelling #{{ $order->id }}</h1>
         <p class="text-sm text-gray-500 mt-1">
             Aangemaakt op {{ $order->created_at->format('d-m-Y') }}
@@ -14,7 +15,7 @@
             @endif
         </p>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="flex flex-wrap items-center gap-3">
         <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide
             @if($order->status->value === 'pending') bg-yellow-100 text-yellow-700
             @elseif($order->status->value === 'shipped') bg-blue-100 text-blue-700
@@ -24,6 +25,14 @@
             {{ ucfirst($order->status->value) }}
         </span>
         <span class="text-sm font-semibold text-green-700">€ {{ number_format($order->total, 2, ',', '.') }}</span>
+        @if($order->status !== \App\Enums\OrderStatus::SHIPPED && $order->status !== \App\Enums\OrderStatus::CANCELLED)
+            <form method="POST" action="{{ route('admin.orders.ship', $order) }}" onsubmit="return confirm('Bestelling als verzonden markeren en de verzendmail versturen?')">
+                @csrf
+                <button type="submit" class="rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
+                    Verzending mailen
+                </button>
+            </form>
+        @endif
     </div>
 </div>
 
@@ -51,6 +60,37 @@
                         Betaalverzoek versturen
                     </button>
                 </form>
+            @endif
+            @if($payment->events->isNotEmpty())
+                @php
+                    $paymentEventLabels = [
+                        'created' => 'Betaling aangemaakt',
+                        'webhook' => 'Status ontvangen van betaalprovider',
+                        'status_changed' => 'Betaalstatus gewijzigd',
+                        'manual_payment_request' => 'Betaalverzoek verstuurd',
+                        'admin_override' => 'Handmatig als betaald gemarkeerd',
+                        'expired' => 'Betaling verlopen',
+                    ];
+                @endphp
+                <details class="mt-4 border-t border-gray-100 pt-3">
+                    <summary class="cursor-pointer text-xs font-semibold text-blue-700">Betaalhistorie ({{ $payment->events->count() }})</summary>
+                    <ol class="mt-3 space-y-3 border-l border-gray-200 pl-4">
+                        @foreach($payment->events->sortByDesc('created_at') as $event)
+                            <li class="relative">
+                                <span class="absolute -left-[1.18rem] top-1 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-white"></span>
+                                <strong class="block text-xs text-gray-800">{{ $paymentEventLabels[$event->type] ?? str($event->type)->replace('_', ' ')->ucfirst() }}</strong>
+                                <span class="block text-[11px] text-gray-500">
+                                    {{ $event->created_at->format('d-m-Y H:i') }}
+                                    @if($event->actor)
+                                        · {{ $event->actor->name }}
+                                    @elseif($event->source)
+                                        · {{ ucfirst($event->source) }}
+                                    @endif
+                                </span>
+                            </li>
+                        @endforeach
+                    </ol>
+                </details>
             @endif
         @else
             <p class="text-sm text-gray-600">Geen betaling geregistreerd.</p>

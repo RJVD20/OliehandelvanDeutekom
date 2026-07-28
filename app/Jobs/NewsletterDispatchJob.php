@@ -4,13 +4,12 @@ namespace App\Jobs;
 
 use App\Models\Newsletter;
 use App\Models\NewsletterSend;
-use App\Models\NewsletterUnsubscribe;
+use App\Services\Newsletter\NewsletterRecipientResolver;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class NewsletterDispatchJob implements ShouldQueue
@@ -22,7 +21,7 @@ class NewsletterDispatchJob implements ShouldQueue
 
     public function __construct(public readonly int $newsletterId) {}
 
-    public function handle(): void
+    public function handle(NewsletterRecipientResolver $resolver): void
     {
         /** @var Newsletter|null $newsletter */
         $newsletter = Newsletter::find($this->newsletterId);
@@ -48,17 +47,10 @@ class NewsletterDispatchJob implements ShouldQueue
         $batchSize = (int) config('newsletter.batch_size', 50);
         $batchNumber = 1;
 
-        DB::table('users')
+        $resolver->queryForNewsletter($newsletter)
             ->select('id', 'name', 'email')
-            ->whereNotNull('email')
-            ->orderBy('id')
             ->chunkById(500, function ($users) use ($newsletter, $batchSize, &$batchNumber) {
-                $emails = collect($users)->pluck('email');
-                $unsubscribed = NewsletterUnsubscribe::whereIn('email', $emails)->pluck('email')->all();
-
-                $eligible = collect($users)->reject(fn ($u) => in_array($u->email, $unsubscribed, true));
-
-                foreach ($eligible->chunk($batchSize) as $chunk) {
+                foreach (collect($users)->chunk($batchSize) as $chunk) {
                     $recipients = [];
 
                     foreach ($chunk as $user) {

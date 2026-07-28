@@ -48,7 +48,7 @@
 
     <label class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm font-medium text-gray-800">
         <input type="checkbox" name="show_on_map" value="1" {{ old('show_on_map', $location->show_on_map) ? 'checked' : '' }} class="h-5 w-5 rounded border-gray-300">
-        <span>Toon op kaart</span>
+        <span>Zichtbaar op openbare site</span>
     </label>
 
     <div>

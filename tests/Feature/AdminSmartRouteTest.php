@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\DeliveryRoute;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -76,6 +77,66 @@ class AdminSmartRouteTest extends TestCase
             ->assertStatus(409);
 
         $this->assertDatabaseMissing('delivery_routes', ['name' => 'Dubbele route']);
+    }
+
+    public function test_admin_can_delete_a_route_without_deleting_its_orders(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        [$order] = $this->ordersWithCoordinates(1);
+        $route = DeliveryRoute::create([
+            'name' => 'Te verwijderen route',
+            'route_date' => now()->addDay(),
+            'admin_id' => $admin->id,
+        ]);
+        $order->update([
+            'delivery_route_id' => $route->id,
+            'assigned_admin_id' => $admin->id,
+            'route_date' => $route->route_date,
+            'route_sequence' => 1,
+            'route_travel_minutes' => 20,
+            'route_stop_minutes' => 10,
+            'route_notes' => 'Route-opmerking',
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.routes.destroy', $route))
+            ->assertRedirect(route('admin.routes.index', [
+                'route_date' => $route->route_date->toDateString(),
+            ]));
+
+        $this->assertDatabaseMissing('delivery_routes', ['id' => $route->id]);
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'delivery_route_id' => null,
+            'assigned_admin_id' => null,
+            'route_date' => null,
+            'route_sequence' => null,
+            'route_travel_minutes' => null,
+            'route_stop_minutes' => null,
+            'route_notes' => null,
+        ]);
+    }
+
+    public function test_route_name_must_be_unique(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        DeliveryRoute::create([
+            'name' => 'Unieke route',
+            'route_date' => now()->addDay(),
+        ]);
+
+        $this->actingAs($admin)
+            ->from(route('admin.routes.smart'))
+            ->post(route('admin.routes.store'), [
+                'name' => 'Unieke route',
+                'route_date' => now()->addDays(2)->toDateString(),
+            ])
+            ->assertRedirect(route('admin.routes.smart'))
+            ->assertSessionHasErrors([
+                'name' => 'Deze routenaam bestaat al. Kies een andere routenaam.',
+            ]);
+
+        $this->assertSame(1, DeliveryRoute::where('name', 'Unieke route')->count());
     }
 
     private function ordersWithCoordinates(int $count = 2): array

@@ -17,7 +17,7 @@
 
     {{-- Sidebar --}}
     <aside
-        class="turbo-admin-sidebar fixed inset-y-0 left-0 w-64 text-white flex flex-col px-4 py-6 transform transition-transform duration-200 md:translate-x-0 z-40"
+        class="turbo-admin-sidebar fixed inset-y-0 left-0 w-64 -translate-x-full text-white flex flex-col px-4 py-6 transform md:translate-x-0 z-40"
         :class="menuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
     >
 
@@ -78,6 +78,7 @@
 
                 <div
                     x-show="open"
+                    x-cloak
                     x-transition
                     class="mt-0.5 ml-3 space-y-0.5 border-l border-white/10 pl-3"
                 >
@@ -127,6 +128,7 @@
 
                 <div
                     x-show="open"
+                    x-cloak
                     x-transition:enter="transition ease-out duration-100"
                     x-transition:enter-start="opacity-0 -translate-y-1"
                     x-transition:enter-end="opacity-100 translate-y-0"

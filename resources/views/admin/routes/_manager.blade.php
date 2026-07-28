@@ -1,5 +1,4 @@
 @push('head')
-<link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet">
 <style>
     .smart-route-marker {
         display: flex;
@@ -20,37 +19,33 @@
 
 <section class="mb-8 rounded-2xl border border-gray-100 bg-white shadow-sm">
     <div class="border-b border-gray-100 p-5">
-        <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
             <div>
                 <h2 class="text-lg font-semibold">Routes op deze datum</h2>
                 <p class="mt-1 text-sm text-gray-500">Kies een route om de chauffeur, stops en verzending te beheren.</p>
             </div>
-            @if($selectedDeliveryRoute)
-                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                    {{ $existingRouteOrders->count() }} stops
-                </span>
-            @endif
+            <form id="existing-route-filter" method="GET" action="{{ route('admin.routes.index') }}">
+                <label class="block space-y-1 text-sm">
+                    <span class="font-medium text-gray-700">Bezorgdatum</span>
+                    <input type="date" name="route_date" value="{{ $routeDate }}" class="w-full rounded-xl border-gray-300 md:w-48">
+                </label>
+            </form>
         </div>
 
-        <form id="existing-route-filter" method="GET" action="{{ route('admin.routes.index') }}" class="mt-4 max-w-xs">
-            <label class="block space-y-1 text-sm">
-                <span class="font-medium text-gray-700">Bezorgdatum</span>
-                <input type="date" name="route_date" value="{{ $routeDate }}" class="w-full rounded-xl border-gray-300">
-            </label>
-        </form>
-
         @if($deliveryRoutes->isNotEmpty())
-            <div class="-mx-1 mt-4 flex snap-x gap-3 overflow-x-auto px-1 pb-2">
+            <div class="mt-5 grid gap-3 sm:grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
                 @foreach($deliveryRoutes as $deliveryRoute)
                     <a
                         href="{{ route('admin.routes.index', ['route_date' => $routeDate, 'route_id' => $deliveryRoute->id]) }}"
-                        class="min-w-[15rem] snap-start rounded-xl border p-4 transition {{ $selectedDeliveryRoute?->id === $deliveryRoute->id ? 'border-turbo-blue bg-blue-50 ring-2 ring-turbo-blue/10' : 'border-gray-200 bg-white hover:border-gray-300' }}"
+                        class="rounded-xl border p-4 transition {{ $selectedDeliveryRoute?->id === $deliveryRoute->id ? 'border-turbo-blue bg-blue-50 ring-2 ring-turbo-blue/10' : 'border-gray-200 bg-white hover:border-gray-300' }}"
                     >
-                        <strong class="block truncate text-sm text-gray-900">{{ $deliveryRoute->name }}</strong>
-                        <span class="mt-2 flex items-center justify-between gap-3 text-xs text-gray-500">
-                            <span>{{ $deliveryRoute->orders_count ?? $deliveryRoute->orders()->count() }} stops</span>
-                            <span>{{ $deliveryRoute->admin?->name ?? 'Geen chauffeur' }}</span>
+                        <span class="flex items-start justify-between gap-3">
+                            <strong class="min-w-0 truncate text-sm text-gray-900">{{ $deliveryRoute->name }}</strong>
+                            <span class="shrink-0 rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-gray-600">
+                                {{ $deliveryRoute->orders_count ?? $deliveryRoute->orders()->count() }} stops
+                            </span>
                         </span>
+                        <span class="mt-2 block truncate text-xs text-gray-500">{{ $deliveryRoute->admin?->name ?? 'Geen chauffeur' }}</span>
                     </a>
                 @endforeach
             </div>
@@ -65,6 +60,13 @@
                 @csrf
                 <input type="hidden" name="route_id" value="{{ $selectedDeliveryRoute->id }}">
                 <span class="block text-base font-semibold text-gray-900">{{ $selectedDeliveryRoute->name }}</span>
+                @if($selectedDeliveryRoute->startLocation || $selectedDeliveryRoute->endLocation)
+                    <span class="block text-xs text-gray-500">
+                        {{ $selectedDeliveryRoute->startLocation?->name ?? 'Geen startdepot' }}
+                        →
+                        {{ $selectedDeliveryRoute->endLocation?->name ?? 'Geen einddepot' }}
+                    </span>
+                @endif
                 <span class="block text-xs text-gray-500">Chauffeur koppelen</span>
                 <div class="flex gap-2">
                     <select name="admin_user_id" class="min-w-0 flex-1 rounded-xl border-gray-300">
@@ -77,7 +79,8 @@
                 </div>
             </form>
 
-            @if($existingRouteOrders->isNotEmpty())
+            <div class="flex flex-col gap-2 sm:flex-row">
+                @if($existingRouteOrders->isNotEmpty())
                 <form
                     method="POST"
                     action="{{ route('admin.routes.ship', $selectedDeliveryRoute) }}"
@@ -88,12 +91,66 @@
                         Verzendmail naar hele route
                     </button>
                 </form>
-            @endif
+                @endif
+
+                <form
+                    method="POST"
+                    action="{{ route('admin.routes.destroy', $selectedDeliveryRoute) }}"
+                    onsubmit="return confirm('Deze route verwijderen? De {{ $existingRouteOrders->count() }} gekoppelde bestelling(en) worden weer ongepland en blijven behouden.')"
+                >
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="w-full rounded-xl border border-red-200 bg-white px-5 py-3 text-sm font-semibold text-red-700 hover:bg-red-50 lg:w-auto">
+                        Route verwijderen
+                    </button>
+                </form>
+            </div>
         </div>
 
         @if($existingRouteOrders->isEmpty())
             <div class="p-6 text-sm text-gray-500">Deze route bevat nog geen stops.</div>
         @else
+            @php
+                $storedTravelMinutes = (int) $existingRouteOrders->sum(fn ($order) => (int) ($order->route_travel_minutes ?? 0));
+                $storedStopMinutes = (int) $existingRouteOrders->sum(fn ($order) => (int) ($order->route_stop_minutes ?? 0));
+                $storedTotalMinutes = $storedTravelMinutes + $storedStopMinutes;
+                $formatRouteMinutes = fn (int $minutes) => $minutes >= 60
+                    ? floor($minutes / 60).'u '.($minutes % 60).'m'
+                    : $minutes.' min';
+            @endphp
+
+            <div class="border-b border-gray-100 bg-gray-50/70 p-5">
+                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                    <div class="rounded-xl border border-gray-100 bg-white p-4">
+                        <span class="text-xs font-medium text-gray-500">Stops</span>
+                        <strong class="mt-1 block text-xl text-gray-900">{{ $existingRouteOrders->count() }}</strong>
+                    </div>
+                    <div class="rounded-xl border border-gray-100 bg-white p-4">
+                        <span class="text-xs font-medium text-gray-500">Reistijd</span>
+                        <strong id="route-summary-travel" class="mt-1 block text-xl text-gray-900">{{ $formatRouteMinutes($storedTravelMinutes) }}</strong>
+                    </div>
+                    <div class="rounded-xl border border-gray-100 bg-white p-4">
+                        <span class="text-xs font-medium text-gray-500">Stoptijd</span>
+                        <strong id="route-summary-stop" class="mt-1 block text-xl text-gray-900">{{ $formatRouteMinutes($storedStopMinutes) }}</strong>
+                    </div>
+                    <div class="rounded-xl border border-gray-100 bg-white p-4">
+                        <span class="text-xs font-medium text-gray-500">Totale duur</span>
+                        <strong id="route-summary-total" class="mt-1 block text-xl text-gray-900">{{ $formatRouteMinutes($storedTotalMinutes) }}</strong>
+                    </div>
+                    <div class="rounded-xl border border-gray-100 bg-white p-4">
+                        <span class="text-xs font-medium text-gray-500">Afstand</span>
+                        <strong id="route-summary-distance" class="mt-1 block text-xl text-gray-900">Wordt berekend…</strong>
+                    </div>
+                </div>
+                <p id="route-summary-note" class="mt-3 text-xs text-gray-500">
+                    @if(!$selectedDeliveryRoute->startLocation)
+                        Reistijd naar de eerste stop ontbreekt omdat geen startlocatie is ingesteld.
+                    @else
+                        Tijden zijn schattingen op basis van de actuele route.
+                    @endif
+                </p>
+            </div>
+
             <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)]">
                 <div>
                     <div class="mb-3 flex items-center justify-between gap-3">
@@ -119,6 +176,12 @@
                                             <div>
                                                 <strong class="text-sm">#{{ $order->id }} {{ $order->name }}</strong>
                                                 <p class="text-xs text-gray-500">{{ $order->address }}, {{ $order->postcode }} {{ $order->city }}</p>
+                                                <p class="mt-1 text-xs text-gray-500">
+                                                    Reistijd:
+                                                    <span data-travel-label>{{ $order->route_travel_minutes !== null ? $order->route_travel_minutes.' min' : 'wordt berekend…' }}</span>
+                                                    · Stoptijd:
+                                                    <span data-stop-label>{{ $order->route_stop_minutes !== null ? $order->route_stop_minutes.' min' : 'niet ingesteld' }}</span>
+                                                </p>
                                             </div>
                                             <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">Stop {{ $order->route_sequence ?? '—' }}</span>
                                         </div>
@@ -190,10 +253,25 @@
             'lng' => $order->geo_lng ? (float) $order->geo_lng : null,
             'lat' => $order->geo_lat ? (float) $order->geo_lat : null,
         ]);
+        $existingMapDepots = collect([
+            $selectedDeliveryRoute->startLocation ? [
+                'kind' => 'Start',
+                'name' => $selectedDeliveryRoute->startLocation->name,
+                'address' => trim($selectedDeliveryRoute->startLocation->street.', '.$selectedDeliveryRoute->startLocation->postcode_city, ' ,'),
+                'lng' => (float) $selectedDeliveryRoute->startLocation->lng,
+                'lat' => (float) $selectedDeliveryRoute->startLocation->lat,
+            ] : null,
+            $selectedDeliveryRoute->endLocation ? [
+                'kind' => 'Eind',
+                'name' => $selectedDeliveryRoute->endLocation->name,
+                'address' => trim($selectedDeliveryRoute->endLocation->street.', '.$selectedDeliveryRoute->endLocation->postcode_city, ' ,'),
+                'lng' => (float) $selectedDeliveryRoute->endLocation->lng,
+                'lat' => (float) $selectedDeliveryRoute->endLocation->lat,
+            ] : null,
+        ])->filter(fn ($depot) => $depot && $depot['lng'] && $depot['lat'])->values();
     @endphp
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
     <script>
-    (() => {
+    (async () => {
         const filter = document.getElementById('existing-route-filter');
         filter?.querySelectorAll('input, select').forEach(input => {
             input.addEventListener('change', () => filter.requestSubmit());
@@ -234,8 +312,42 @@
 
         const token = @json($mapboxToken);
         const stops = @json($existingMapStops);
+        const depots = @json($existingMapDepots);
+        const routeGeometry = @json($routeGeometry);
         const mapElement = document.getElementById('existing-route-map');
-        if (!token || !mapElement || !window.mapboxgl) return;
+        if (!token || !mapElement) return;
+
+        if (!document.querySelector('link[data-mapbox-styles]')) {
+            const stylesheet = document.createElement('link');
+            stylesheet.rel = 'stylesheet';
+            stylesheet.href = 'https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css';
+            stylesheet.dataset.mapboxStyles = 'true';
+            document.head.appendChild(stylesheet);
+        }
+
+        if (!window.mapboxgl) {
+            try {
+                await new Promise((resolve, reject) => {
+                    const existingScript = document.querySelector('script[data-mapbox-script]');
+                    if (existingScript) {
+                        existingScript.addEventListener('load', resolve, { once: true });
+                        existingScript.addEventListener('error', reject, { once: true });
+                        return;
+                    }
+
+                    const script = document.createElement('script');
+                    script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js';
+                    script.async = true;
+                    script.dataset.mapboxScript = 'true';
+                    script.addEventListener('load', resolve, { once: true });
+                    script.addEventListener('error', reject, { once: true });
+                    document.head.appendChild(script);
+                });
+            } catch {
+                mapElement.innerHTML = '<div class="flex h-full items-center justify-center p-6 text-sm text-gray-500">De routekaart kon niet worden geladen.</div>';
+                return;
+            }
+        }
 
         mapboxgl.accessToken = token;
         const map = new mapboxgl.Map({
@@ -274,6 +386,51 @@
             const coordinates = results.filter(Boolean);
             if (!coordinates.length) return;
 
+            let currentGeometry = routeGeometry;
+            let renderTimer = null;
+            const renderRouteLine = () => {
+                if (!currentGeometry) return;
+
+                if (!map.isStyleLoaded()) {
+                    window.clearTimeout(renderTimer);
+                    renderTimer = window.setTimeout(renderRouteLine, 100);
+                    return;
+                }
+
+                const feature = {
+                    type: 'Feature',
+                    geometry: currentGeometry
+                };
+
+                if (map.getSource('managed-route')) {
+                    map.getSource('managed-route').setData(feature);
+                } else {
+                    map.addSource('managed-route', { type: 'geojson', data: feature });
+                }
+
+                if (!map.getLayer('managed-route-outline')) {
+                    map.addLayer({
+                        id: 'managed-route-outline',
+                        type: 'line',
+                        source: 'managed-route',
+                        layout: { 'line-cap': 'round', 'line-join': 'round' },
+                        paint: { 'line-color': '#ffffff', 'line-width': 8, 'line-opacity': 0.95 }
+                    });
+                }
+                if (!map.getLayer('managed-route-line')) {
+                    map.addLayer({
+                        id: 'managed-route-line',
+                        type: 'line',
+                        source: 'managed-route',
+                        layout: { 'line-cap': 'round', 'line-join': 'round' },
+                        paint: { 'line-color': '#0f766e', 'line-width': 5, 'line-opacity': 1 }
+                    });
+                }
+            };
+
+            map.on('style.load', () => window.setTimeout(renderRouteLine, 100));
+            renderRouteLine();
+
             const bounds = new mapboxgl.LngLatBounds();
             coordinates.forEach(stop => {
                 const marker = document.createElement('div');
@@ -285,29 +442,81 @@
                     .addTo(map);
                 bounds.extend([stop.lng, stop.lat]);
             });
+            depots.forEach(depot => {
+                const marker = document.createElement('div');
+                marker.className = 'smart-route-marker';
+                marker.style.background = depot.kind === 'Start' ? '#16a34a' : '#dc2626';
+                marker.style.color = '#ffffff';
+                marker.textContent = depot.kind === 'Start' ? 'S' : 'E';
+                new mapboxgl.Marker(marker)
+                    .setLngLat([depot.lng, depot.lat])
+                    .setPopup(new mapboxgl.Popup().setHTML(`<strong>${depot.kind}: ${depot.name}</strong><br>${depot.address}`))
+                    .addTo(map);
+                bounds.extend([depot.lng, depot.lat]);
+            });
             map.fitBounds(bounds, { padding: 45, maxZoom: 12 });
 
-            if (coordinates.length < 2) return;
-            const pairs = coordinates.map(stop => `${stop.lng},${stop.lat}`).join(';');
-            fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${pairs}?overview=full&geometries=geojson&access_token=${token}`)
+            const startDepot = depots.find(depot => depot.kind === 'Start');
+            const endDepot = depots.find(depot => depot.kind === 'Eind');
+            const waypoints = [
+                ...(startDepot ? [{ lng: startDepot.lng, lat: startDepot.lat, orderId: null }] : []),
+                ...coordinates.map(stop => ({ lng: stop.lng, lat: stop.lat, orderId: stop.id })),
+                ...(endDepot ? [{ lng: endDepot.lng, lat: endDepot.lat, orderId: null }] : []),
+            ];
+
+            if (waypoints.length < 2) return;
+            if (currentGeometry) return;
+
+            const formatMinutes = minutes => {
+                const rounded = Math.max(0, Math.round(minutes));
+                return rounded >= 60
+                    ? `${Math.floor(rounded / 60)}u ${rounded % 60}m`
+                    : `${rounded} min`;
+            };
+            const pairs = waypoints.map(point => `${point.lng},${point.lat}`).join(';');
+            fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${pairs}?overview=full&geometries=geojson&annotations=duration&access_token=${token}`)
                 .then(response => response.json())
                 .then(data => {
-                    const geometry = data.routes?.[0]?.geometry;
+                    const route = data.routes?.[0];
+                    const geometry = route?.geometry;
                     if (!geometry) return;
-                    const addLine = () => {
-                        if (!map.isStyleLoaded()) return;
-                        if (!map.getSource('managed-route')) {
-                            map.addSource('managed-route', { type: 'geojson', data: { type: 'Feature', geometry } });
-                            map.addLayer({
-                                id: 'managed-route',
-                                type: 'line',
-                                source: 'managed-route',
-                                paint: { 'line-color': '#0f766e', 'line-width': 5, 'line-opacity': 0.95 }
-                            });
+                    currentGeometry = geometry;
+                    renderRouteLine();
+
+                    route.legs?.forEach((leg, index) => {
+                        const destinationOrderId = waypoints[index + 1]?.orderId;
+                        if (!destinationOrderId) return;
+
+                        const input = document.querySelector(
+                            `[data-order-id="${destinationOrderId}"] input[name="route_travel_minutes"]`
+                        );
+                        if (input) {
+                            const minutes = Math.max(0, Math.round((leg.duration || 0) / 60));
+                            input.value = minutes;
+                            const label = input.closest('[data-order-id]')?.querySelector('[data-travel-label]');
+                            if (label) label.textContent = `${minutes} min`;
                         }
-                    };
-                    addLine();
-                    map.on('style.load', addLine);
+                    });
+
+                    const travelMinutes = Math.round((route.duration || 0) / 60);
+                    const stopMinutes = [...document.querySelectorAll(
+                        '[data-order-id] input[name="route_stop_minutes"]'
+                    )].reduce((total, input) => total + (Number(input.value) || 0), 0);
+
+                    const travelSummary = document.getElementById('route-summary-travel');
+                    const stopSummary = document.getElementById('route-summary-stop');
+                    const totalSummary = document.getElementById('route-summary-total');
+                    const distanceSummary = document.getElementById('route-summary-distance');
+
+                    if (travelSummary) travelSummary.textContent = formatMinutes(travelMinutes);
+                    if (stopSummary) stopSummary.textContent = formatMinutes(stopMinutes);
+                    if (totalSummary) totalSummary.textContent = formatMinutes(travelMinutes + stopMinutes);
+                    if (distanceSummary) {
+                        distanceSummary.textContent = `${((route.distance || 0) / 1000).toLocaleString('nl-NL', {
+                            minimumFractionDigits: 1,
+                            maximumFractionDigits: 1
+                        })} km`;
+                    }
                 });
         });
     })();
