@@ -14,6 +14,7 @@
 @endphp
 
 @section('title', $pageTitle)
+@section('description', Str::limit(strip_tags($pageIntro), 155))
 
 @section('content')
 

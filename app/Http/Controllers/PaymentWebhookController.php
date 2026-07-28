@@ -49,7 +49,7 @@ class PaymentWebhookController extends Controller
         }
 
         if ($status === PaymentStatus::PAID) {
-            session()->forget(['cart', 'fulfillment_method']);
+            session()->forget(['cart', 'fulfillment_method', 'delivery_service']);
         }
 
         $message = $status === PaymentStatus::PAID

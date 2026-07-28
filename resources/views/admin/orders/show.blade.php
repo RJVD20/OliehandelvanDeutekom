@@ -103,7 +103,15 @@
 
         <p class="text-sm"><span class="text-gray-600">Naam</span><br><strong>{{ $order->name }}</strong></p>
         <p class="text-sm"><span class="text-gray-600">E-mail</span><br><strong>{{ $order->email ?: 'Niet opgegeven' }}</strong></p>
-        <p class="text-sm"><span class="text-gray-600">Ontvangst</span><br><strong>{{ $order->fulfillment_method === 'pickup' ? 'Afhalen bij depot' : 'Thuisbezorgen' }}</strong></p>
+        <p class="text-sm">
+            <span class="text-gray-600">Ontvangst</span><br>
+            <strong>
+                {{ $order->fulfillment_method === 'pickup' ? 'Afhalen bij depot' : ($order->delivery_service === 'express' ? 'Express Premium' : 'Thuisbezorgen') }}
+            </strong>
+            @if((float) $order->shipping_cost > 0)
+                <br><span class="text-xs text-gray-500">Bezorgkosten: € {{ number_format($order->shipping_cost, 2, ',', '.') }}</span>
+            @endif
+        </p>
         @if($order->fulfillment_method === 'pickup' && $order->pickup_location_name)
             <p class="text-sm">
                 <span class="text-gray-600">Gekozen depot</span><br>

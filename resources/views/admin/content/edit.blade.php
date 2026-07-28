@@ -45,6 +45,8 @@
 
             <div class="px-3 py-3 border-b bg-gray-50">
                 <div class="grid grid-cols-2 gap-2">
+                    <button type="button" data-section="bedrijf" data-preview="{{ route('privacy') }}" class="section-tab px-3 py-2 rounded-lg text-sm font-semibold bg-white border">Bedrijf</button>
+                    <button type="button" data-section="juridisch" data-preview="{{ route('privacy') }}" class="section-tab px-3 py-2 rounded-lg text-sm font-semibold bg-white border">Juridisch</button>
                     <button type="button" data-section="home" data-preview="{{ route('home') }}" class="section-tab px-3 py-2 rounded-lg text-sm font-semibold bg-gray-900 text-white">Home</button>
                     <button type="button" data-section="bezorging" data-preview="{{ route('home') }}" class="section-tab px-3 py-2 rounded-lg text-sm font-semibold bg-white border">Bezorging</button>
                     <button type="button" data-section="informatie" data-preview="{{ route('informatie') }}" class="section-tab px-3 py-2 rounded-lg text-sm font-semibold bg-white border">Informatie</button>
@@ -61,6 +63,63 @@
 
             <form method="POST" action="{{ route('admin.content.update') }}" id="content-form" class="space-y-6 overflow-y-auto p-4 pb-24" enctype="multipart/form-data">
                 @csrf
+
+                <section class="hidden space-y-4" data-section-panel="bedrijf">
+                    <div>
+                        <h2 class="text-base font-semibold">Bedrijfsgegevens</h2>
+                        <p class="mt-1 text-xs text-gray-500">Deze gegevens verschijnen in de footer en op juridische pagina’s. Vul vóór livegang alle velden in.</p>
+                    </div>
+                    <div class="grid gap-4">
+                        @foreach([
+                            'company_name' => ['Bedrijfs-/handelsnaam', 'Kachelvloeistof.nl'],
+                            'company_email' => ['E-mailadres', 'info@kachelvloeistof.nl'],
+                            'company_phone' => ['Telefoonnummer', ''],
+                            'company_address' => ['Vestigingsadres', 'Straat 1, 1234 AB Plaats'],
+                            'company_kvk' => ['KvK-nummer', ''],
+                            'company_vat' => ['Btw-identificatienummer', ''],
+                        ] as $field => [$label, $placeholder])
+                            <div>
+                                <label class="text-sm font-medium">{{ $label }}</label>
+                                <input type="text" name="{{ $field }}" value="{{ $values[$field] ?? '' }}" placeholder="{{ $placeholder }}" class="w-full rounded-lg border px-3 py-2">
+                            </div>
+                        @endforeach
+                    </div>
+                </section>
+
+                <section class="hidden space-y-4" data-section-panel="juridisch">
+                    <div>
+                        <h2 class="text-base font-semibold">Juridische pagina’s</h2>
+                        <p class="mt-1 text-xs leading-5 text-gray-500">
+                            Gebruik <code>## Tussenkop</code> voor koppen, <code>- item</code> voor opsommingen en een lege regel voor een nieuwe alinea.
+                            De placeholders <code>{company_name}</code>, <code>{company_email}</code> en <code>{returns_url}</code> worden automatisch ingevuld.
+                        </p>
+                    </div>
+
+                    @foreach([
+                        'privacy' => ['Privacyverklaring', route('privacy')],
+                        'terms' => ['Algemene voorwaarden', route('terms')],
+                        'returns' => ['Retourneren', route('returns')],
+                        'cookies' => ['Cookieverklaring', route('cookies')],
+                    ] as $legalPage => [$label, $previewUrl])
+                        <details class="group overflow-hidden rounded-xl border">
+                            <summary class="flex cursor-pointer select-none items-center justify-between bg-gray-50 px-4 py-3">
+                                <span class="text-sm font-semibold">{{ $label }}</span>
+                                <span class="text-emerald-600 transition-transform duration-200 group-open:rotate-45">+</span>
+                            </summary>
+                            <div class="grid gap-3 bg-white p-4">
+                                <div>
+                                    <label class="text-sm font-medium">Paginatitel</label>
+                                    <input type="text" name="legal_{{ $legalPage }}_title" value="{{ $values['legal_'.$legalPage.'_title'] ?? '' }}" class="mt-1 w-full rounded-lg border px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="text-sm font-medium">Inhoud</label>
+                                    <textarea name="legal_{{ $legalPage }}_content" rows="18" class="mt-1 w-full rounded-lg border px-3 py-2 font-mono text-xs leading-5">{{ $values['legal_'.$legalPage.'_content'] ?? '' }}</textarea>
+                                </div>
+                                <a href="{{ $previewUrl }}" target="_blank" class="text-sm font-semibold text-blue-600">Open pagina in nieuw tabblad →</a>
+                            </div>
+                        </details>
+                    @endforeach
+                </section>
 
                 <section class="space-y-4" data-section-panel="home">
                     <h2 class="text-base font-semibold">Homepage</h2>

@@ -147,6 +147,32 @@ class ShippingRates
         return $price === null ? round($fallback, 2) : round((float) $price, 2);
     }
 
+    public function tierProgressForProduct(
+        int $productId,
+        string $fulfillmentMethod,
+        int $quantity,
+        float $currentPrice,
+    ): ?array {
+        $rule = $this->ruleForProduct($productId);
+        $tiers = collect($rule[$fulfillmentMethod] ?? [])->sortBy('quantity')->values();
+
+        if ($tiers->isEmpty()) {
+            return null;
+        }
+
+        $current = $tiers->last(fn (array $tier) => $quantity >= $tier['quantity']);
+        $next = $tiers->first(fn (array $tier) => $quantity < $tier['quantity']);
+
+        return [
+            'current' => $current,
+            'next' => $next,
+            'quantity_needed' => $next ? $next['quantity'] - $quantity : 0,
+            'extra_discount_total' => $next
+                ? round(max(0, ($currentPrice - $next['price']) * $next['quantity']), 2)
+                : 0.0,
+        ];
+    }
+
     public function priceFor(
         ?string $rateGroup,
         string $fulfillmentMethod,

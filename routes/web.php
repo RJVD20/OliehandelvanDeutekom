@@ -82,6 +82,15 @@ Route::get('/over-ons', function () {
     return view('themes.default.pages.over-ons');
 })->name('over-ons');
 
+Route::view('/privacy', 'themes.default.pages.legal', ['page' => 'privacy'])
+    ->name('privacy');
+Route::view('/algemene-voorwaarden', 'themes.default.pages.legal', ['page' => 'terms'])
+    ->name('terms');
+Route::view('/retourneren', 'themes.default.pages.legal', ['page' => 'returns'])
+    ->name('returns');
+Route::view('/cookies', 'themes.default.pages.legal', ['page' => 'cookies'])
+    ->name('cookies');
+
 Route::get('/locaties', function () {
     $locaties = Location::where('show_on_map', true)->orderBy('name')->get();
     return view('themes.default.pages.locaties', compact('locaties'));
@@ -342,9 +351,11 @@ Route::get('/search/suggest', function (Request $request) {
 
 Route::get('/winkelmand', function (CartPricing $pricing) {
     $fulfillmentMethod = session('fulfillment_method', 'delivery');
+    $deliveryService = session('delivery_service', 'standard');
     $cart = $pricing->calculate(session('cart', []), $fulfillmentMethod);
+    $deliveryCosts = $pricing->deliveryCosts($cart, $fulfillmentMethod, $deliveryService);
 
-    return view('themes.default.pages.cart', compact('cart', 'fulfillmentMethod'));
+    return view('themes.default.pages.cart', compact('cart', 'fulfillmentMethod', 'deliveryService', 'deliveryCosts'));
 })->name('cart.index');
 
 Route::post('/winkelmand/levering', function (Request $request) {
@@ -356,6 +367,29 @@ Route::post('/winkelmand/levering', function (Request $request) {
 
     return back();
 })->name('cart.fulfillment');
+
+Route::post('/winkelmand/bezorgkeuze', function (Request $request) {
+    $data = $request->validate([
+        'delivery_option' => ['required', Rule::in(['standard', 'express', 'pickup'])],
+    ]);
+
+    session([
+        'fulfillment_method' => $data['delivery_option'] === 'pickup' ? 'pickup' : 'delivery',
+        'delivery_service' => $data['delivery_option'] === 'express' ? 'express' : 'standard',
+    ]);
+
+    return back();
+})->name('cart.delivery-choice');
+
+Route::post('/winkelmand/bezorgservice', function (Request $request) {
+    $data = $request->validate([
+        'delivery_service' => ['required', Rule::in(['standard', 'express'])],
+    ]);
+
+    session(['delivery_service' => $data['delivery_service']]);
+
+    return back();
+})->name('cart.delivery-service');
 
 Route::post('/winkelmand/toevoegen/{id}', function ($id) {
 
@@ -400,7 +434,9 @@ Route::post('/winkelmand/bijwerken/{id}', function (Request $request, $id, CartP
     }
 
     if ($request->expectsJson()) {
-        $pricedCart = $pricing->calculate($cart, session('fulfillment_method', 'delivery'));
+        $fulfillmentMethod = session('fulfillment_method', 'delivery');
+        $deliveryService = session('delivery_service', 'standard');
+        $pricedCart = $pricing->calculate($cart, $fulfillmentMethod);
         $item = $pricedCart[$id] ?? null;
 
         abort_unless($item, 404);
@@ -409,9 +445,17 @@ Route::post('/winkelmand/bijwerken/{id}', function (Request $request, $id, CartP
             'count' => collect($pricedCart)->sum('quantity'),
             'quantity' => $item['quantity'],
             'unit_price' => $item['price'],
+            'base_price' => $item['base_price'],
             'item_subtotal' => round($item['price'] * $item['quantity'], 2),
-            'total' => $pricing->total($pricedCart),
+            'total' => $pricing->total($pricedCart, $fulfillmentMethod, $deliveryService),
+            'delivery_costs' => $pricing->deliveryCosts($pricedCart, $fulfillmentMethod, $deliveryService),
+            'base_total' => round(collect($pricedCart)->sum(
+                fn (array $cartItem) => $cartItem['base_price'] * $cartItem['quantity']
+            ), 2),
             'tier_applied' => $item['tier_applied'],
+            'discount_total' => $item['discount_total'],
+            'cart_discount_total' => round(collect($pricedCart)->sum('discount_total'), 2),
+            'tier_progress' => $item['tier_progress'],
         ]);
     }
 
@@ -438,16 +482,21 @@ Route::permanentRedirect('/cart', '/winkelmand');
 
 Route::get('/checkout', function (CartPricing $pricing) {
     $fulfillmentMethod = session('fulfillment_method', 'delivery');
+    $deliveryService = session('delivery_service', 'standard');
     $cart = $pricing->calculate(session('cart', []), $fulfillmentMethod);
+    $deliveryCosts = $pricing->deliveryCosts($cart, $fulfillmentMethod, $deliveryService);
     $provinces = nl_provinces();
     $paymentMethods = config('payments.methods', []);
     $pickupLocations = Location::query()->orderBy('name')->get();
 
-    return view('themes.default.pages.checkout', compact('cart', 'provinces', 'paymentMethods', 'fulfillmentMethod', 'pickupLocations'));
+    return view('themes.default.pages.checkout', compact('cart', 'provinces', 'paymentMethods', 'fulfillmentMethod', 'deliveryService', 'deliveryCosts', 'pickupLocations'));
 })->name('checkout.index');
 
 Route::post('/checkout', function (Request $request, CartPricing $pricing) {
     $fulfillmentMethod = session('fulfillment_method', 'delivery');
+    $deliveryService = $fulfillmentMethod === 'delivery'
+        ? session('delivery_service', 'standard')
+        : 'standard';
 
     $request->validate([
         'name'     => 'required|string|max:255',
@@ -472,6 +521,7 @@ Route::post('/checkout', function (Request $request, CartPricing $pricing) {
 
     $cart = $pricing->calculate(session('cart', []), $fulfillmentMethod);
     abort_if(empty($cart), 400);
+    $deliveryCosts = $pricing->deliveryCosts($cart, $fulfillmentMethod, $deliveryService);
 
     $pickupLocation = $fulfillmentMethod === 'pickup'
         ? Location::findOrFail($request->integer('pickup_location_id'))
@@ -486,13 +536,15 @@ Route::post('/checkout', function (Request $request, CartPricing $pricing) {
         'city'     => $request->city,
         'province' => $request->province,
         'fulfillment_method' => $fulfillmentMethod,
+        'delivery_service' => $deliveryService,
+        'shipping_cost' => $deliveryCosts['total'],
         'pickup_location_id' => $pickupLocation?->id,
         'pickup_location_name' => $pickupLocation?->name,
         'pickup_location_address' => $pickupLocation
             ? trim($pickupLocation->street.', '.$pickupLocation->postcode_city, ' ,')
             : null,
         'pickup_location_opening' => $pickupLocation?->opening,
-    ], OrderStatus::AWAITING_PAYMENT);
+    ], OrderStatus::AWAITING_PAYMENT, $deliveryCosts['total']);
 
     $payment = Payment::create([
         'order_id'           => $order->id,
@@ -1120,14 +1172,20 @@ require __DIR__.'/auth.php';
 
 // Sitemap
 Route::get('/sitemap.xml', function () {
+    abort_if(str_starts_with(request()->getHost(), 'dev.') || app()->environment(['local', 'development', 'testing']), 404);
+
     $products = Product::where('active', true)->get();
     $categories = Category::all();
 
     $urls = [];
 
     $urls[] = ['loc' => url('/'), 'priority' => '1.0'];
+    $urls[] = ['loc' => route('products.liquids'), 'priority' => '0.9'];
+    $urls[] = ['loc' => route('products.heaters'), 'priority' => '0.8'];
+    $urls[] = ['loc' => route('products.index'), 'priority' => '0.7'];
     $urls[] = ['loc' => route('informatie'), 'priority' => '0.6'];
     $urls[] = ['loc' => route('locaties'), 'priority' => '0.6'];
+    $urls[] = ['loc' => route('over-ons'), 'priority' => '0.5'];
 
     foreach ($categories as $cat) {
         $urls[] = ['loc' => route('category.show', $cat->slug), 'priority' => '0.7'];

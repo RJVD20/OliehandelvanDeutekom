@@ -19,7 +19,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-turbo-gold-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 1 0 0-4h14a2 2 0 1 0 0 4M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8" />
                     </svg>
-                    <span class="font-semibold">Gratis geleverd vanaf 5 jerrycans</span>
+                    <span class="font-semibold">Gratis geleverd vanaf 3 jerrycans</span>
                 </div>
                 <div class="flex items-center gap-2 px-3 py-1 rounded-full">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-turbo-gold-light" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -379,7 +379,7 @@
             </div>
 
             <div class="mx-4 mb-5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-xs leading-5 text-white/65">
-                Gratis geleverd vanaf 5 jerrycans
+                Gratis geleverd vanaf 3 jerrycans
             </div>
         </div>
     </div>

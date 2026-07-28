@@ -15,12 +15,7 @@
     </div>
 @else
 
-@if($fulfillmentMethod === 'delivery')
-    @include('themes.default.components.delivery-notice', [
-        'detailed' => true,
-        'attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => 'mb-6']),
-    ])
-@else
+@if($fulfillmentMethod === 'pickup')
     <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
         <strong>Afhalen gekozen.</strong> Kies hieronder bij welk depot je de bestelling wilt ophalen.
     </div>
@@ -232,7 +227,7 @@
             </h2>
 
             <div class="mb-4 rounded-xl px-4 py-3 text-sm font-semibold {{ $fulfillmentMethod === 'delivery' ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800' }}">
-                {{ $fulfillmentMethod === 'delivery' ? 'Thuisbezorgen' : 'Afhalen bij een depot' }}
+                {{ $fulfillmentMethod === 'delivery' ? ($deliveryService === 'express' ? 'Express Premium' : 'Standaard thuisbezorgen') : 'Afhalen bij een depot' }}
                 <a href="{{ route('cart.index') }}" class="float-right text-xs underline">Wijzigen</a>
             </div>
 
@@ -256,10 +251,24 @@
                     </div>
                 @endforeach
 
+                @if($fulfillmentMethod === 'delivery')
+                    <div class="flex justify-between border-t pt-3 text-gray-700">
+                        <span>
+                            Bezorging
+                            @if($deliveryService === 'express')
+                                <small class="block text-gray-400">Vast tarief per bestelling</small>
+                            @elseif($deliveryCosts['standard'] === 0.0)
+                                <small class="block text-gray-400">Gratis vanaf 3 jerrycans</small>
+                            @endif
+                        </span>
+                        <span>{{ $deliveryCosts['total'] > 0 ? '€ '.number_format($deliveryCosts['total'], 2, ',', '.') : 'Gratis' }}</span>
+                    </div>
+                @endif
+
                 <div class="border-t pt-4 flex justify-between text-base font-semibold">
                     <span>Totaal</span>
                     <span class="product-card__price">
-                        € {{ number_format($total, 2, ',', '.') }}
+                        € {{ number_format($total + $deliveryCosts['total'], 2, ',', '.') }}
                     </span>
                 </div>
             </div>
@@ -308,12 +317,20 @@
                 @enderror
             </fieldset>
 
+            <p class="mt-4 text-xs leading-5 text-gray-500">
+                Door je bestelling te plaatsen ga je akkoord met onze
+                <a href="{{ route('terms') }}" target="_blank" class="font-semibold text-turbo-blue hover:underline">algemene voorwaarden</a>
+                en bevestig je dat je de
+                <a href="{{ route('returns') }}" target="_blank" class="font-semibold text-turbo-blue hover:underline">informatie over retourneren</a>
+                hebt kunnen lezen.
+            </p>
+
             <button
                 form="checkout-form"
                 type="submit"
                 class="turbo-button w-full mt-5 py-3.5 text-base"
             >
-                Bestelling plaatsen
+                Bestelling plaatsen en betalen
             </button>
         </div>
     </div>

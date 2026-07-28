@@ -15,6 +15,8 @@ class Order extends Model
         'status',
         'source',
         'fulfillment_method',
+        'delivery_service',
+        'shipping_cost',
         'pickup_location_id',
         'pickup_location_name',
         'pickup_location_address',
@@ -42,6 +44,7 @@ class Order extends Model
     protected $casts = [
         'route_date' => 'date',
         'status'     => OrderStatus::class,
+        'shipping_cost' => 'decimal:2',
     ];
 
     public function items()
@@ -86,13 +89,14 @@ class Order extends Model
         array $cart,
         array $customer,
         OrderStatus $status = OrderStatus::PENDING,
+        float $additionalCosts = 0,
     ): self
     {
         if ($cart === []) {
             throw new InvalidArgumentException('Kan geen bestelling maken van een lege winkelmand.');
         }
 
-        return DB::transaction(function () use ($cart, $customer, $status) {
+        return DB::transaction(function () use ($cart, $customer, $status, $additionalCosts) {
             $items = collect($cart)->map(function (array $item, int|string $productId) {
                 $quantity = max(1, (int) ($item['quantity'] ?? 0));
                 $price = round((float) ($item['price'] ?? 0), 2);
@@ -114,7 +118,7 @@ class Order extends Model
                 'status' => $status,
                 'total' => round($items->sum(
                     fn (array $item) => $item['price'] * $item['quantity']
-                ), 2),
+                ) + max(0, $additionalCosts), 2),
             ]);
 
             $order->items()->createMany($items->all());

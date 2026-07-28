@@ -1,24 +1,11 @@
 @extends('themes.default.layouts.app')
 
 @section('title', $product->name)
+@section('description', Str::limit(strip_tags($product->short_description ?: $product->description ?: $product->name.' bestellen bij Kachelvloeistof.nl.'), 155))
+@section('social_image', $product->image ? asset('storage/'.$product->image) : asset('images/apple-touch-icon.png'))
+@section('og_type', 'product')
 
 @section('meta')
-    <meta name="description" content="{{ Str::limit(strip_tags($product->description ?? ''), 160) }}">
-    <link rel="canonical" href="{{ url()->current() }}">
-
-    <!-- Open Graph -->
-    <meta property="og:title" content="{{ $product->name }}">
-    <meta property="og:description" content="{{ Str::limit(strip_tags($product->description ?? ''), 200) }}">
-    <meta property="og:type" content="product">
-    <meta property="og:url" content="{{ url()->current() }}">
-    @if($product->image)
-        <meta property="og:image" content="{{ asset('storage/' . $product->image) }}">
-    @endif
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $product->name }}">
-    <meta name="twitter:description" content="{{ Str::limit(strip_tags($product->description ?? ''), 200) }}">
 
     <!-- JSON-LD structured data: Product -->
     <script type="application/ld+json">
@@ -29,13 +16,26 @@
             'image' => $product->image ? asset('storage/' . $product->image) : null,
             'description' => strip_tags($product->description ?? ''),
             'sku' => $product->id,
-            'brand' => ['@type' => 'Brand', 'name' => $product->category->name ?? ''],
+            'brand' => filled($product->brand)
+                ? ['@type' => 'Brand', 'name' => $product->brand]
+                : null,
             'offers' => [
                 '@type' => 'Offer',
                 'url' => url()->current(),
                 'priceCurrency' => 'EUR',
                 'price' => number_format($product->price, 2, '.', ''),
                 'availability' => $product->active ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            ],
+        ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}
+    </script>
+    <script type="application/ld+json">
+        {!! json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => [
+                ['@type' => 'ListItem', 'position' => 1, 'name' => 'Home', 'item' => route('home')],
+                ['@type' => 'ListItem', 'position' => 2, 'name' => $product->category->name ?? 'Producten', 'item' => $product->category ? route('category.show', $product->category->slug) : route('products.index')],
+                ['@type' => 'ListItem', 'position' => 3, 'name' => $product->name, 'item' => url()->current()],
             ],
         ], JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) !!}
     </script>
@@ -71,11 +71,7 @@
     $hasStructuredSummary = filled($product->short_description);
     $summaryParagraphs = $hasStructuredSummary
         ? array_values(array_filter(preg_split('/\R\s*\R/u', trim($product->short_description))))
-        : (count($contentParagraphs) > 2 ? array_slice($contentParagraphs, 0, 2) : $contentParagraphs);
-
-    $detailParagraphs = $hasStructuredSummary
-        ? $contentParagraphs
-        : (count($contentParagraphs) > 2 ? array_slice($contentParagraphs, 2) : []);
+        : array_slice($contentParagraphs, 0, 1);
 
     $specifications = collect($product->specifications ?: [])
         ->map(fn (array $specification) => [
@@ -101,72 +97,100 @@
     }
 @endphp
 
-<div class="max-w-6xl mx-auto px-1 pb-20 sm:px-0 sm:pb-0">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10 lg:gap-12">
-
-        <!-- Afbeelding -->
-        <div class="turbo-card overflow-hidden">
+<div class="mx-auto max-w-6xl px-1 pb-20 sm:px-0 sm:pb-0">
+    <section class="grid gap-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(24rem,0.92fr)] lg:items-start" aria-labelledby="product-title">
+        <div class="turbo-card overflow-hidden bg-white">
             @if($product->image)
-                <div class="h-64 sm:h-72 md:h-80 bg-white flex items-center justify-center p-4 sm:p-6">
+                <div class="flex min-h-72 items-center justify-center p-2 sm:min-h-96 sm:p-3 lg:min-h-[32rem]">
                     <img
                         src="{{ asset('storage/' . $product->image) }}"
                         alt="{{ $product->name }}"
-                        class="w-full h-full object-contain"
-                        loading="lazy"
+                        class="max-h-[32rem] w-full object-contain"
                     >
                 </div>
             @else
-                <div class="h-64 sm:h-72 md:h-80 bg-turbo-gray flex items-center justify-center px-8">
+                <div class="flex min-h-72 items-center justify-center bg-turbo-gray px-8 sm:min-h-96 lg:min-h-[32rem]">
                     <div class="text-center">
-                        <div class="text-green-700 text-lg font-semibold">
-                            {{ $product->name }}
-                        </div>
-                        <div class="text-sm text-green-600 mt-1">
-                            Geen afbeelding beschikbaar
-                        </div>
+                        <div class="text-lg font-semibold text-turbo-ink">{{ $product->name }}</div>
+                        <div class="mt-1 text-sm text-turbo-blue">Geen afbeelding beschikbaar</div>
                     </div>
                 </div>
             @endif
         </div>
 
-        <!-- Info -->
-        <div class="turbo-card p-5 md:p-8 space-y-4">
-            <div class="mb-4">
+        <div class="turbo-card p-5 sm:p-6 lg:p-7">
+            @if($product->category)
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-turbo-gray text-turbo-ink border border-turbo-gold/35">
                     {{ $product->category->name }}
                 </span>
-            </div>
+            @endif
 
-            <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            <h1 id="product-title" class="mt-3 text-2xl font-bold tracking-tight text-turbo-ink sm:text-3xl lg:text-4xl">
                 {{ $product->name }}
             </h1>
 
-            <div class="space-y-3 text-gray-600 leading-7 text-[15px] md:text-lg md:leading-relaxed">
-                @forelse($summaryParagraphs as $paragraph)
-                    <p>{{ trim($paragraph) }}</p>
-                @empty
-                    <p>Geen beschrijving beschikbaar.</p>
-                @endforelse
+            @if(count($summaryParagraphs))
+                <div class="mt-3">
+                    <p class="line-clamp-3 text-[15px] leading-6 text-gray-600">
+                        {{ trim(implode(' ', $summaryParagraphs)) }}
+                    </p>
+                    @if(count($contentParagraphs))
+                        <a href="#productinformatie" class="mt-1.5 inline-flex text-sm font-bold text-turbo-blue hover:text-turbo-gold">
+                            Lees meer
+                        </a>
+                    @endif
+                </div>
+            @endif
+
+            @if($specifications->isNotEmpty())
+                <div class="mt-4 grid gap-2 sm:grid-cols-2" aria-label="Belangrijkste kenmerken">
+                    @foreach($specifications->take(4) as [$label, $value])
+                        <div class="rounded-lg border border-turbo-blue/10 bg-turbo-gray/50 px-3 py-2">
+                            <span class="block text-[11px] font-semibold uppercase tracking-wide text-gray-500">{{ $label }}</span>
+                            <strong class="mt-0.5 block text-sm text-turbo-ink">{{ $value }}</strong>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            <div class="mt-4">
+                @include('themes.default.components.delivery-notice', ['attributes' => new \Illuminate\View\ComponentAttributeBag()])
             </div>
 
-            @include('themes.default.components.delivery-notice', ['attributes' => new \Illuminate\View\ComponentAttributeBag(['class' => 'pt-2'])])
+            <div class="mt-4 flex items-center justify-between gap-4 border-t border-turbo-blue/10 pt-4">
+                <div>
+                    <span class="product-card__price text-2xl sm:text-3xl">
+                        € {{ number_format($product->price, 2, ',', '.') }}
+                    </span>
+                    <span class="mt-0.5 block text-xs font-semibold {{ $product->active ? 'text-emerald-700' : 'text-red-600' }}">
+                        {{ $product->active ? 'Beschikbaar' : 'Niet beschikbaar' }}
+                    </span>
+                </div>
+
+                @if($product->active)
+                    <form method="POST" action="{{ route('cart.add', $product->id) }}" class="hidden sm:block">
+                        @csrf
+                        <button type="submit" class="turbo-button px-6 py-3">In winkelmand</button>
+                    </form>
+                @endif
+            </div>
 
             @if($productRule && (!empty($productRule['delivery']) || !empty($productRule['pickup'])))
-                <div class="rounded-xl border border-turbo-gold/35 bg-turbo-gray/70 p-4">
-                    <div class="mb-3">
-                        <h2 class="text-sm font-bold text-turbo-ink">Voordeel bij meerdere stuks</h2>
-                        <p class="mt-0.5 text-xs text-turbo-blue">De juiste stukprijs wordt automatisch in je winkelmand toegepast.</p>
+                <div class="mt-4 rounded-xl border border-turbo-gold/35 bg-turbo-gray/60 p-3">
+                    <div class="flex flex-wrap items-baseline justify-between gap-1">
+                        <h2 class="text-sm font-bold text-turbo-ink">Staffelprijzen</h2>
+                        <p class="text-[11px] text-turbo-blue">Automatisch toegepast in je winkelmand</p>
                     </div>
 
-                    <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="mt-2 grid gap-2 sm:grid-cols-2">
                         @foreach(['delivery' => 'Thuisbezorgen', 'pickup' => 'Afhalen'] as $method => $label)
                             @continue(empty($productRule[$method]))
                             <div class="overflow-hidden rounded-lg border border-turbo-blue/15 bg-white">
-                                <h3 class="border-b border-turbo-gold/35 bg-turbo-gold/15 px-3 py-2 text-xs font-bold text-turbo-ink">{{ $label }}</h3>
-                                <div class="divide-y divide-gray-100">
+                                <h3 class="border-b border-turbo-gold/25 bg-turbo-gold/10 px-2.5 py-1.5 text-[11px] font-bold text-turbo-ink">{{ $label }}</h3>
+                                <div class="divide-y divide-gray-100 px-2.5">
                                     @foreach($productRule[$method] as $tier)
-                                        <div class="flex items-center justify-between gap-3 px-3 py-2 text-xs">
-                                            <span class="text-gray-600">Vanaf {{ $tier['quantity'] }} stuks</span>
+                                        <div class="flex items-center justify-between gap-2 py-1.5 text-xs">
+                                            <span class="text-gray-600">{{ $tier['quantity'] }}+ stuks</span>
                                             <strong class="whitespace-nowrap text-turbo-ink">€ {{ number_format((float) $tier['price'], 2, ',', '.') }} p/st.</strong>
                                         </div>
                                     @endforeach
@@ -176,52 +200,18 @@
                     </div>
                 </div>
             @endif
-
-            <div class="mt-6 pt-4 border-t flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div class="product-card__price text-2xl md:text-3xl">
-                    € {{ number_format($product->price, 2, ',', '.') }}
-                </div>
-
-                <form method="POST" action="{{ route('cart.add', $product->id) }}" class="hidden w-full sm:block sm:w-auto">
-                    @csrf
-                    <button
-                        type="submit"
-                        class="turbo-button w-full sm:w-auto px-6 py-3"
-                    >
-                        In winkelmand
-                    </button>
-                </form>
-            </div>
         </div>
-    </div>
-
-    <section class="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" aria-label="Productvoordelen">
-        @foreach([
-            ['Geurloos', 'M4 12h16M12 4v16'],
-            ['Veilig en schoon', 'M12 3 5 6v5c0 4.6 2.9 8 7 10 4.1-2 7-5.4 7-10V6l-7-3Z'],
-            ['Vrij te transporteren', 'M3 7h11v10H3zM14 10h3l4 4v3h-7zM7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z'],
-            ['Breed toepasbaar', 'M4 5h16v14H4zM8 9h8M8 13h5'],
-        ] as [$benefit, $path])
-            <div class="turbo-card flex items-center gap-3 p-3 sm:p-4">
-                <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-turbo-navy text-turbo-gold-light">
-                    <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="{{ $path }}" />
-                    </svg>
-                </span>
-                <span class="text-xs sm:text-sm font-semibold text-turbo-ink">{{ $benefit }}</span>
-            </div>
-        @endforeach
     </section>
 
-    @if(count($detailParagraphs) || $specifications->isNotEmpty())
+    @if(count($contentParagraphs) || $specifications->isNotEmpty())
         <section class="mt-8 sm:mt-12 grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)] lg:items-start">
-            @if(count($detailParagraphs))
-                <article class="turbo-card p-5 sm:p-7 md:p-8">
+            @if(count($contentParagraphs))
+                <article id="productinformatie" class="turbo-card scroll-mt-28 p-5 sm:p-7 md:p-8">
                     <p class="turbo-section-label mb-2">Productinformatie</p>
                     <h2 class="text-xl font-semibold sm:text-2xl">Meer over {{ $product->name }}</h2>
 
                     <div class="mt-5 space-y-5 text-[15px] leading-7 text-gray-700 sm:text-base">
-                        @foreach($detailParagraphs as $index => $paragraph)
+                        @foreach($contentParagraphs as $index => $paragraph)
                             @php
                                 $paragraph = trim($paragraph);
                                 $looksLikeHeading = mb_strlen($paragraph) <= 100
@@ -297,7 +287,7 @@
                             <h3 class="font-semibold text-gray-900 mb-1">
                                 <a
                                     href="{{ route('product.show', $suggested->slug) }}"
-                                    class="hover:text-green-700 transition"
+                                    class="transition hover:text-turbo-gold"
                                 >
                                     {{ $suggested->name }}
                                 </a>
@@ -332,10 +322,14 @@
             <p class="truncate text-xs font-semibold text-gray-500">{{ $product->name }}</p>
             <p class="product-card__price text-lg">€ {{ number_format($product->price, 2, ',', '.') }}</p>
         </div>
-        <form method="POST" action="{{ route('cart.add', $product->id) }}" class="shrink-0">
-            @csrf
-            <button type="submit" class="turbo-button px-5 py-3 text-sm">In winkelmand</button>
-        </form>
+        @if($product->active)
+            <form method="POST" action="{{ route('cart.add', $product->id) }}" class="shrink-0">
+                @csrf
+                <button type="submit" class="turbo-button px-5 py-3 text-sm">In winkelmand</button>
+            </form>
+        @else
+            <span class="shrink-0 rounded-lg bg-gray-100 px-4 py-2.5 text-sm font-semibold text-gray-500">Niet beschikbaar</span>
+        @endif
     </div>
 </div>
 

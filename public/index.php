@@ -29,12 +29,14 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
         http_response_code(503);
         header('Content-Type: text/html; charset=UTF-8');
         header('Retry-After: 3600');
+        header('X-Robots-Tag: noindex, nofollow');
 
         echo '<!doctype html>';
         echo '<html lang="nl">';
         echo '<head>';
         echo '<meta charset="utf-8">';
         echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
+        echo '<meta name="robots" content="noindex, nofollow">';
         echo '<title>Onderhoud</title>';
         echo '</head>';
         echo '<body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:#f3f4f6; margin:0; padding:24px;">';
@@ -61,4 +63,3 @@ require __DIR__.'/../vendor/autoload.php';
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
 $app->handleRequest(Request::capture());
-

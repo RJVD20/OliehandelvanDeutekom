@@ -1,6 +1,11 @@
 @extends('themes.default.layouts.app')
 
-@section('title', $title)
+@section('title', $title.' kopen')
+@section('description', match($type) {
+    'vloeistof' => 'Bestel kachelvloeistof en petroleum in handige jerrycans. Bekijk onze staffelprijzen en profiteer van gratis bezorging vanaf 3 jerrycans.',
+    'kachel' => 'Bekijk ons assortiment nieuwe en gebruikte kachels. Vind een passende kachel met persoonlijk advies en betrouwbare service.',
+    default => 'Bekijk ons assortiment toebehoren en overige producten voor kachels en verwarming. Eenvoudig online bestellen bij Kachelvloeistof.nl.',
+})
 
 @section('content')
 

@@ -19,7 +19,7 @@
         $cmsValue('delivery_rule_1', 'Verwachte levering binnen 4–8 werkdagen.'),
         $cmsValue('delivery_rule_2', 'Vanaf 3 jerrycans van 20 liter bezorgen we gratis.'),
         $cmsValue('delivery_rule_3', 'Onder 3 jerrycans geldt €5 bezorgvergoeding per bestelling.'),
-        $cmsValue('delivery_rule_4', 'Express Premium: voor 12.00 uur besteld, de volgende dag geleverd voor €7,50 extra per jerrycan.'),
+        $cmsValue('delivery_rule_4', 'Express Premium: voor 12.00 uur besteld, de volgende dag geleverd voor €10 per bestelling.'),
     ];
 @endphp
 
