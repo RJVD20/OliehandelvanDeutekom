@@ -244,21 +244,12 @@
 
 @if(($promotions ?? collect())->isNotEmpty())
 <section class="mb-12 space-y-6 sm:mb-16" aria-labelledby="acties-heading">
-    <div><p class="turbo-section-label">Tijdelijk voordeel</p><h2 id="acties-heading" class="mt-1 text-2xl font-bold sm:text-3xl">Acties</h2></div>
-    @foreach($promotions as $promotion)
-        <article class="overflow-hidden rounded-3xl border border-turbo-gold/35 bg-turbo-navy text-white shadow-2xl">
-            <div class="grid lg:grid-cols-[minmax(0,1fr)_minmax(22rem,.8fr)]">
-                @if($promotion->imageUrl())<img src="{{ $promotion->imageUrl() }}" alt="{{ $promotion->image_alt ?: $promotion->title }}" class="aspect-square h-full w-full object-cover">@endif
-                <div class="flex flex-col justify-center p-6 sm:p-9 lg:p-12">
-                    <span class="w-fit rounded-full bg-turbo-gold px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-turbo-navy">Aanbieding</span>
-                    <h3 class="mt-4 text-3xl font-bold !text-white">{{ $promotion->title }}</h3>
-                    @if($promotion->short_description)<p class="mt-3 leading-7 text-white/75">{{ $promotion->short_description }}</p>@endif
-                    <ul class="mt-5 space-y-2 text-sm text-white/85">@foreach($promotion->items as $item)<li class="flex gap-2"><span class="font-bold text-turbo-gold">✓</span>{{ $item->quantity }}× {{ $item->label ?: $item->product->name }} @if($item->role === 'free')<strong class="text-turbo-gold">gratis</strong>@endif</li>@endforeach @if($promotion->free_shipping)<li class="flex gap-2"><span class="font-bold text-turbo-gold">✓</span>Gratis standaardverzending</li>@endif</ul>
-                    <div class="mt-7 flex flex-wrap items-center gap-5"><div><span class="block text-xs text-white/50 line-through">Normaal € {{ number_format($promotion->normalValue(),2,',','.') }}</span><strong class="text-4xl text-turbo-gold">€ {{ number_format($promotion->fixed_price,2,',','.') }}</strong></div><form method="POST" action="{{ route('cart.add-promotion',$promotion) }}">@csrf<button class="turbo-button px-6 py-3">Voeg bundel toe</button></form></div>
-                </div>
-            </div>
-        </article>
-    @endforeach
+    <div class="flex items-end justify-between gap-4"><div><p class="turbo-section-label">Tijdelijk voordeel</p><h2 id="acties-heading" class="mt-1 text-2xl font-bold sm:text-3xl">Acties</h2><p class="mt-2 text-sm text-gray-500">Complete voordeelsets met gratis standaardverzending.</p></div><span class="hidden text-xs font-semibold text-gray-400 sm:block">{{ $promotions->count() }} aanbiedingen</span></div>
+    <div class="promotion-grid">
+        @foreach($promotions as $promotion)
+            @include('themes.default.components.promotion-card', ['promotion' => $promotion])
+        @endforeach
+    </div>
 </section>
 @endif
 
