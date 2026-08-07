@@ -14,7 +14,10 @@
             <img x-cloak x-show="imagePreview" :src="imagePreview" alt="Voorbeeld van de gekozen productafbeelding" class="max-h-40 max-w-full object-contain">
 
             @if($hasProductImage)
-                <img x-show="!imagePreview && !removeImage" src="{{ asset('storage/' . $product->image) }}" alt="Huidige afbeelding van {{ $product->name }}" class="max-h-40 max-w-full object-contain">
+                <div x-show="!imagePreview && !removeImage" class="w-full text-center">
+                    <img src="{{ asset('storage/' . $product->image) }}" alt="Huidige afbeelding van {{ $product->name }}" class="mx-auto max-h-40 max-w-full object-contain" onerror="this.hidden=true; this.nextElementSibling.hidden=false">
+                    <p hidden class="px-3 text-xs font-semibold leading-5 text-red-600">Het opgeslagen afbeeldingsbestand kan niet worden geladen. Kies hieronder een nieuwe afbeelding.</p>
+                </div>
                 <div x-cloak x-show="!imagePreview && removeImage" class="px-3 text-center text-xs font-semibold leading-5 text-red-600">De huidige afbeelding wordt verwijderd wanneer je opslaat.</div>
             @else
                 <div x-show="!imagePreview" class="px-3 text-center text-gray-400"><span class="block text-3xl" aria-hidden="true">🖼️</span><span class="mt-2 block text-xs font-semibold">Nog geen afbeelding ingesteld</span></div>
@@ -23,7 +26,10 @@
 
         <div>
             @if($hasProductImage)
-                <p x-show="!imagePreview && !removeImage" class="mb-3 text-sm font-semibold text-green-700">Huidige afbeelding</p>
+                <div x-show="!imagePreview && !removeImage" class="mb-3">
+                    <p class="text-sm font-semibold text-green-700">Huidige afbeelding</p>
+                    <a href="{{ asset('storage/' . $product->image) }}" target="_blank" class="mt-1 inline-block text-xs font-semibold text-blue-700 underline">Open huidige afbeelding apart</a>
+                </div>
             @endif
             <button type="button" @click="$refs.fileInput.click()" class="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white hover:bg-blue-700 sm:w-auto">{{ $hasProductImage ? 'Afbeelding vervangen' : 'Afbeelding toevoegen' }}</button>
             <button x-cloak x-show="imagePreview" type="button" @click="imagePreview = null; $refs.fileInput.value = ''" class="mt-2 block text-xs font-semibold text-red-600">Gekozen afbeelding annuleren</button>

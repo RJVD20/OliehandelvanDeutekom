@@ -38,8 +38,6 @@
 >
     @csrf
 
-    @include('admin.products._image-upload')
-
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-5">
         <h2 class="text-sm font-bold uppercase tracking-wide text-gray-400">Basisinformatie</h2>
 
@@ -168,6 +166,8 @@
             <p class="text-xs text-gray-400">Houd dit overzichtelijk met korte alinea’s. Technische gegevens horen bij Productspecificaties.</p>
         </div>
     </div>
+
+    @include('admin.products._image-upload')
 
     @include('admin.products._specifications')
 
