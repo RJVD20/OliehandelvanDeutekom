@@ -199,7 +199,7 @@
         >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
             <p class="text-sm text-gray-500">{{ $product->image ? 'Nieuwe afbeelding uploaden' : 'Klik om een afbeelding te kiezen' }}</p>
-            <p class="text-xs text-gray-400">JPG, PNG, WebP — max 2 MB</p>
+            <p class="text-xs text-gray-400">JPG, PNG of WebP — max. 8 MB. De nieuwe afbeelding vervangt de huidige na opslaan.</p>
         </div>
 
         <input

@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Promotion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -68,6 +69,7 @@ class PromotionController extends Controller
     public function destroy(Promotion $promotion)
     {
         AuditLog::record('deleted', 'promotion', $promotion->id, $promotion->name, $promotion->toArray(), []);
+        $this->deleteUploadedImage($promotion->image_path);
         $promotion->delete();
         return redirect()->route('admin.promotions.index')->with('toast', 'Actie verwijderd.');
     }
@@ -86,7 +88,7 @@ class PromotionController extends Controller
             'ends_at' => ['nullable', 'date', 'after:starts_at'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:65535'],
             'image' => ['nullable', 'image', 'max:8192'],
-            'existing_image_path' => ['nullable', 'string', 'max:500'],
+            'remove_image' => ['sometimes', 'boolean'],
             'image_alt' => ['nullable', 'string', 'max:255'],
             'items' => ['nullable', 'array', 'max:20'],
             'items.*.product_id' => ['required', 'distinct', Rule::exists('products', 'id')],
@@ -103,12 +105,27 @@ class PromotionController extends Controller
             $data[$field] = $request->boolean($field);
         }
         $data['sort_order'] = $data['sort_order'] ?? 0;
-        $data['image_path'] = $data['existing_image_path'] ?? $promotion?->image_path;
-        unset($data['existing_image_path'], $data['image']);
+        $oldImagePath = $promotion?->image_path;
+        $data['image_path'] = $oldImagePath;
+        unset($data['remove_image'], $data['image']);
+
+        if ($request->boolean('remove_image')) {
+            $data['image_path'] = null;
+            $this->deleteUploadedImage($oldImagePath);
+        }
+
         if ($request->hasFile('image')) {
+            $this->deleteUploadedImage($oldImagePath);
             $data['image_path'] = $request->file('image')->store('promotions', 'public');
         }
         return $data;
+    }
+
+    private function deleteUploadedImage(?string $path): void
+    {
+        if ($path && ! str_starts_with($path, 'images/')) {
+            Storage::disk('public')->delete($path);
+        }
     }
 
     private function syncItems(Promotion $promotion, array $items): void

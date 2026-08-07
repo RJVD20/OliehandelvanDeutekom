@@ -182,7 +182,7 @@
         >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m4 16 4-4 4 4 4-6 4 6M4 20h16M4 4h16"/></svg>
             <p class="text-sm text-gray-500">Klik om een afbeelding te kiezen</p>
-            <p class="text-xs text-gray-400">JPG, PNG, WebP — max 2 MB</p>
+            <p class="text-xs text-gray-400">JPG, PNG of WebP — max. 8 MB. Gebruik bij voorkeur een vierkante, scherpe afbeelding.</p>
         </div>
 
         <div x-show="imagePreview" x-cloak class="space-y-3">

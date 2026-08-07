@@ -6,7 +6,7 @@
 @endphp
 <div class="mb-6"><a href="{{ route('admin.promotions.index') }}" class="text-sm font-bold text-gray-500">← Terug naar acties</a><h1 class="mt-2 text-2xl font-bold">{{ $promotion->exists ? 'Actie bewerken' : 'Nieuwe actie' }}</h1></div>
 @if($errors->any())<div class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"><strong>Controleer de invoer.</strong><ul class="mt-2 list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-<form method="POST" enctype="multipart/form-data" action="{{ $promotion->exists ? route('admin.promotions.update', $promotion) : route('admin.promotions.store') }}" class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]" x-data="{ items: {{ Illuminate\Support\Js::from($itemRows) }} }">
+<form method="POST" enctype="multipart/form-data" action="{{ $promotion->exists ? route('admin.promotions.update', $promotion) : route('admin.promotions.store') }}" class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]" x-data="{ items: {{ Illuminate\Support\Js::from($itemRows) }}, imagePreview: null, removeImage: false }">
     @csrf @if($promotion->exists) @method('PUT') @endif
     <div class="space-y-6">
         <section class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><h2 class="font-bold">Campagne</h2><div class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -33,7 +33,32 @@
             <label class="block text-sm font-bold">Einde <x-admin.field-help text="Na dit moment stopt de actie automatisch. Leeg betekent dat de actie geen automatische einddatum heeft." /><input type="datetime-local" name="ends_at" value="{{ old('ends_at', $promotion->ends_at?->format('Y-m-d\TH:i')) }}" class="mt-1 w-full rounded-xl border-gray-200"></label>
             <label class="block text-sm font-bold">Volgorde <x-admin.field-help text="Een lager getal wordt eerder getoond wanneer meerdere acties tegelijk zichtbaar zijn." /><input type="number" name="sort_order" min="0" value="{{ old('sort_order', $promotion->sort_order ?? 0) }}" class="mt-1 w-full rounded-xl border-gray-200"></label>
         </div></section>
-        <section class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><h2 class="font-bold">Afbeelding</h2>@if($promotion->imageUrl())<img src="{{ $promotion->imageUrl() }}" alt="" class="mt-3 aspect-square w-full rounded-xl object-cover">@endif<input type="hidden" name="existing_image_path" value="{{ old('existing_image_path', $promotion->image_path) }}"><input type="file" name="image" accept="image/*" class="mt-3 block w-full text-xs"><label class="mt-3 block text-sm font-bold">Alt-tekst <x-admin.field-help text="Een korte beschrijving van de afbeelding voor slechtzienden en wanneer de afbeelding niet laadt." /><input name="image_alt" value="{{ old('image_alt', $promotion->image_alt) }}" class="mt-1 w-full rounded-xl border-gray-200"></label></section>
+        <section class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <h2 class="font-bold">Actieafbeelding</h2>
+            <p class="mt-1 text-xs leading-5 text-gray-500">JPG, PNG of WebP — max. 8 MB. Gebruik bij voorkeur een liggende afbeelding zonder belangrijke tekst dicht langs de randen.</p>
+
+            @if($promotion->imageUrl())
+                <div x-show="!imagePreview && !removeImage" class="mt-4 space-y-2">
+                    <p class="text-xs font-semibold text-gray-500">Huidige afbeelding</p>
+                    <img src="{{ $promotion->imageUrl() }}" alt="{{ $promotion->image_alt }}" class="max-h-64 w-full rounded-xl border border-gray-100 bg-gray-50 object-contain">
+                    <button type="button" @click="removeImage = true" class="text-xs font-semibold text-red-600 hover:text-red-800">Afbeelding verwijderen</button>
+                </div>
+                <div x-cloak x-show="removeImage && !imagePreview" class="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">De huidige afbeelding wordt verwijderd wanneer je opslaat. <button type="button" @click="removeImage = false" class="font-bold underline">Ongedaan maken</button></div>
+            @endif
+
+            <div x-cloak x-show="imagePreview" class="mt-4 space-y-2">
+                <p class="text-xs font-semibold text-green-700">Nieuwe afbeelding — voorbeeld</p>
+                <img :src="imagePreview" alt="Voorbeeld van de gekozen afbeelding" class="max-h-64 w-full rounded-xl border border-green-200 bg-gray-50 object-contain">
+                <button type="button" @click="imagePreview = null; $refs.promotionImage.value = ''; removeImage = false" class="text-xs font-semibold text-red-600">Keuze annuleren</button>
+            </div>
+
+            <button type="button" @click="$refs.promotionImage.click()" class="mt-4 w-full rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 px-4 py-5 text-sm font-semibold text-gray-600 hover:border-green-400 hover:bg-green-50">{{ $promotion->imageUrl() ? 'Andere afbeelding kiezen' : 'Afbeelding kiezen' }}</button>
+            <input x-ref="promotionImage" type="file" name="image" accept="image/jpeg,image/png,image/webp" class="hidden" @change="imagePreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : null; removeImage = false">
+            <input type="hidden" name="remove_image" :value="removeImage ? 1 : 0">
+            @error('image')<p class="mt-2 text-xs font-semibold text-red-600">{{ $message }}</p>@enderror
+
+            <label class="mt-4 block text-sm font-bold">Alt-tekst <x-admin.field-help text="Een korte beschrijving van de afbeelding voor slechtzienden en wanneer de afbeelding niet laadt." /><input name="image_alt" value="{{ old('image_alt', $promotion->image_alt) }}" class="mt-1 w-full rounded-xl border-gray-200"></label>
+        </section>
         <button class="w-full rounded-xl bg-emerald-600 px-5 py-3 font-bold text-white">Actie opslaan</button>
         @if($promotion->exists)<button form="delete-promotion" type="submit" class="w-full text-sm font-bold text-red-600" onclick="return confirm('Actie definitief verwijderen?')">Actie verwijderen</button>@endif
     </aside>
