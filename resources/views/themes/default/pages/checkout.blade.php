@@ -243,6 +243,10 @@
                     <div class="flex justify-between">
                         <span class="text-gray-700">
                             {{ $item['quantity'] }}× {{ $item['name'] }}
+                            @if(!empty($item['promotion_id']))
+                                <strong class="block text-xs text-emerald-700">{{ $item['promotion_title'] }}</strong>
+                                @foreach($item['promotion_items'] as $bundleItem)<small class="block text-gray-400">+ {{ $bundleItem['quantity'] }}× {{ $bundleItem['label'] ?: $bundleItem['name'] }}</small>@endforeach
+                            @endif
                             <small class="block text-gray-400">€ {{ number_format($item['price'], 2, ',', '.') }} per stuk</small>
                         </span>
                         <span>
@@ -258,7 +262,7 @@
                             @if($deliveryService === 'express')
                                 <small class="block text-gray-400">Vast tarief per bestelling</small>
                             @elseif($deliveryCosts['standard'] === 0.0)
-                                <small class="block text-gray-400">Gratis vanaf 3 jerrycans</small>
+                                <small class="block text-gray-400">{{ collect($cart)->contains(fn($item) => !empty($item['free_shipping'])) ? 'Gratis door actie' : 'Gratis vanaf 3 jerrycans' }}</small>
                             @endif
                         </span>
                         <span>{{ $deliveryCosts['total'] > 0 ? '€ '.number_format($deliveryCosts['total'], 2, ',', '.') : 'Gratis' }}</span>
@@ -278,7 +282,7 @@
         <div class="turbo-card p-5 sm:p-6">
             <fieldset>
                 <legend class="text-lg sm:text-xl font-semibold text-turbo-ink">Betaalmethode</legend>
-                <p class="mt-1 text-sm text-gray-500">Je gaat direct naar de gekozen beveiligde betaalomgeving.</p>
+                <p class="mt-1 text-sm text-gray-500">Kies online betalen of reken het volledige bedrag contant af bij levering of afhalen.</p>
 
                 <div class="mt-4 grid gap-3">
                     @foreach($paymentMethods as $method => $details)
@@ -296,6 +300,12 @@
                                 <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-turbo-navy text-turbo-gold-light">
                                     @if($method === 'ideal')
                                         <span class="text-xs font-extrabold">iDEAL</span>
+                                    @elseif($method === 'cash')
+                                        <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+                                            <rect x="3" y="6" width="18" height="12" rx="2" />
+                                            <circle cx="12" cy="12" r="2.5" />
+                                            <path d="M7 9h.01M17 15h.01" />
+                                        </svg>
                                     @else
                                         <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
                                             <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -325,12 +335,16 @@
                 hebt kunnen lezen.
             </p>
 
+            <p class="mt-3 border-t border-gray-100 pt-3 text-[11px] leading-5 text-gray-400">
+                Kachelvloeistof.nl · KvK 77355431 · Btw-id NL003184350B48
+            </p>
+
             <button
                 form="checkout-form"
                 type="submit"
                 class="turbo-button w-full mt-5 py-3.5 text-base"
             >
-                Bestelling plaatsen en betalen
+                Bestelling plaatsen
             </button>
         </div>
     </div>

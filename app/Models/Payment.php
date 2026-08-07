@@ -58,6 +58,7 @@ class Payment extends Model
         return match ($this->handling()) {
             'payment_link', 'online' => 'Online betaallink',
             'pay_on_delivery' => 'Betalen bij levering',
+            'cash_on_delivery' => 'Contant bij levering of afhalen',
             'bank_transfer' => 'Bankoverschrijving',
             'paid_cash' => 'Contant betaald',
             'paid_bank' => 'Per bank betaald',
@@ -83,6 +84,17 @@ class Payment extends Model
             && $this->order?->source === 'manual'
             && filled($this->order->email)
             && filled($this->pay_link);
+    }
+
+    public function isCash(): bool
+    {
+        return $this->handling() === 'cash_on_delivery'
+            || ($this->meta['payment_method'] ?? null) === 'cash';
+    }
+
+    public function isCashPending(): bool
+    {
+        return $this->isCash() && $this->status === PaymentStatus::OPEN;
     }
 
 }

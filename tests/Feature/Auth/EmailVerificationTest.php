@@ -38,7 +38,27 @@ class EmailVerificationTest extends TestCase
 
         Event::assertDispatched(Verified::class);
         $this->assertTrue($user->fresh()->hasVerifiedEmail());
-        $response->assertRedirect(route('dashboard', absolute: false).'?verified=1');
+        $response
+            ->assertRedirect(route('profile.edit'))
+            ->assertSessionHas('toast', 'Gelukt! Je e-mailadres is bevestigd en je account is nu actief.');
+    }
+
+    public function test_email_can_be_verified_on_another_device_without_being_logged_in(): void
+    {
+        $user = User::factory()->unverified()->create();
+
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+
+        $response = $this->get($verificationUrl);
+
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
+        $response
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('status', 'Gelukt! Je e-mailadres is bevestigd en je account is nu actief. Je kunt nu inloggen.');
     }
 
     public function test_email_is_not_verified_with_invalid_hash(): void

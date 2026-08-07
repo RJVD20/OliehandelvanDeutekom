@@ -52,7 +52,8 @@
                                     <p style="margin:0 0 6px 0;font-size:13px;font-weight:700;color:#D9A42E;">Kachelvloeistof.nl</p>
                                     <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.6);line-height:1.7;">
                                         Specialist in kachels en kachelvloeistof<br>
-                                        <a href="mailto:info@kachelvloeistof.nl" style="color:#D9A42E;text-decoration:none;">info@kachelvloeistof.nl</a>
+                                        <a href="mailto:info@kachelvloeistof.nl" style="color:#D9A42E;text-decoration:none;">info@kachelvloeistof.nl</a><br>
+                                        KvK 77355431 · Btw-id NL003184350B48
                                     </p>
                                 </td>
                                 <td align="right" style="vertical-align:top;">

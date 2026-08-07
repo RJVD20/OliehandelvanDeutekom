@@ -11,8 +11,8 @@
         'email' => Setting::get('company_email', 'info@kachelvloeistof.nl') ?: 'info@kachelvloeistof.nl',
         'phone' => Setting::get('company_phone', ''),
         'address' => Setting::get('company_address', ''),
-        'kvk' => Setting::get('company_kvk', ''),
-        'vat' => Setting::get('company_vat', ''),
+        'kvk' => Setting::get('company_kvk', '77355431') ?: '77355431',
+        'vat' => Setting::get('company_vat', 'NL003184350B48') ?: 'NL003184350B48',
     ];
 
     $title = Setting::get("legal_{$page}_title", config("legal.{$page}.title"))

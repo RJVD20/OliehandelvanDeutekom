@@ -38,7 +38,7 @@
             <span>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
             </span>
-            <div><strong>Stop afgerond</strong><small>{{ session('toast') }}</small></div>
+            <div><strong>Route bijgewerkt</strong><small>{{ session('toast') }}</small></div>
         </div>
     @endif
 
@@ -134,7 +134,12 @@
             @else
                 <div class="driver-stop-list">
                     @foreach($orders as $order)
-                        @php($isCompleted = $order->status->value === 'completed')
+                        @php
+                            $isCompleted = $order->status->value === 'completed';
+                            $payment = $order->latestPayment;
+                            $isCash = $payment?->isCash() ?? false;
+                            $cashPending = $payment?->isCashPending() ?? false;
+                        @endphp
                         <article class="driver-stop {{ $isCompleted ? 'driver-stop--completed' : '' }}">
                             <div class="driver-stop__rail">
                                 <span class="driver-stop__number">
@@ -164,6 +169,32 @@
                                     </span>
                                     <p>{{ $order->address }}<br><strong>{{ $order->postcode }} {{ $order->city }}</strong></p>
                                 </div>
+
+                                @if($isCash)
+                                    <div class="driver-cash {{ $cashPending ? 'driver-cash--open' : 'driver-cash--paid' }}">
+                                        <span class="driver-cash__icon" aria-hidden="true">
+                                            @if($cashPending)
+                                                <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M7 9h.01M17 15h.01"/></svg>
+                                            @else
+                                                <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>
+                                            @endif
+                                        </span>
+                                        <div>
+                                            <small>Contante betaling</small>
+                                            <strong>€ {{ number_format($payment->amount, 2, ',', '.') }}</strong>
+                                            <p>{{ $cashPending ? 'Nog te ontvangen van de klant' : 'Ontvangen op '.$payment->paid_at?->format('d-m-Y H:i') }}</p>
+                                        </div>
+                                        @if($cashPending)
+                                            <form method="POST" action="{{ route('driver.orders.cash-received', $order) }}" onsubmit="return confirm('Bevestig dat je € {{ number_format($payment->amount, 2, ',', '.') }} contant hebt ontvangen.')">
+                                                @csrf
+                                                <button type="submit">
+                                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+                                                    Contant ontvangen
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                @endif
 
                                 @if($order->route_notes)
                                     <div class="driver-note">

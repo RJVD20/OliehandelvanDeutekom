@@ -157,6 +157,16 @@
                 @include('themes.default.components.delivery-notice', ['attributes' => new \Illuminate\View\ComponentAttributeBag()])
             </div>
 
+            @if($promotion)
+                <div class="mt-4 rounded-2xl border-2 border-turbo-gold bg-turbo-gold/10 p-4">
+                    <span class="rounded-full bg-turbo-navy px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-turbo-gold">Actiebundel</span>
+                    <h2 class="mt-3 text-lg font-bold">{{ $promotion->title }}</h2>
+                    @if($promotion->short_description)<p class="mt-1 text-sm text-gray-600">{{ $promotion->short_description }}</p>@endif
+                    <ul class="mt-3 space-y-1.5 text-xs text-gray-700">@foreach($promotion->items as $item)<li>✓ {{ $item->quantity }}× {{ $item->label ?: $item->product->name }} @if($item->role === 'free')<strong class="text-emerald-700">gratis</strong>@endif</li>@endforeach @if($promotion->free_shipping)<li class="font-bold text-emerald-700">✓ Gratis standaardverzending</li>@endif</ul>
+                    <div class="mt-4 flex items-end justify-between gap-3"><div><span class="block text-xs text-gray-400 line-through">Normaal € {{ number_format($promotion->normalValue(),2,',','.') }}</span><strong class="text-2xl text-emerald-700">€ {{ number_format($promotion->fixed_price,2,',','.') }}</strong></div><form method="POST" action="{{ route('cart.add-promotion',$promotion) }}">@csrf<button class="turbo-button px-5 py-2.5">Kies actie</button></form></div>
+                </div>
+            @endif
+
             <div class="mt-4 flex items-center justify-between gap-4 border-t border-turbo-blue/10 pt-4">
                 <div>
                     <span class="product-card__price text-2xl sm:text-3xl">

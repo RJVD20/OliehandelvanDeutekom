@@ -1,0 +1,41 @@
+@extends('admin.layouts.app')
+@section('title', $promotion->exists ? 'Actie bewerken' : 'Nieuwe actie')
+@section('content')
+@php
+    $itemRows = old('items', $promotion->items?->map(fn($item) => ['product_id' => $item->product_id, 'quantity' => $item->quantity, 'role' => $item->role, 'label' => $item->label])->values()->all() ?? []);
+@endphp
+<div class="mb-6"><a href="{{ route('admin.promotions.index') }}" class="text-sm font-bold text-gray-500">← Terug naar acties</a><h1 class="mt-2 text-2xl font-bold">{{ $promotion->exists ? 'Actie bewerken' : 'Nieuwe actie' }}</h1></div>
+@if($errors->any())<div class="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"><strong>Controleer de invoer.</strong><ul class="mt-2 list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+<form method="POST" enctype="multipart/form-data" action="{{ $promotion->exists ? route('admin.promotions.update', $promotion) : route('admin.promotions.store') }}" class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]" x-data="{ items: {{ Illuminate\Support\Js::from($itemRows) }} }">
+    @csrf @if($promotion->exists) @method('PUT') @endif
+    <div class="space-y-6">
+        <section class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><h2 class="font-bold">Campagne</h2><div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <label class="sm:col-span-2 text-sm font-bold">Interne naam<input name="name" value="{{ old('name', $promotion->name) }}" required class="mt-1 w-full rounded-xl border-gray-200"></label>
+            <label class="text-sm font-bold">Slug<input name="slug" value="{{ old('slug', $promotion->slug) }}" class="mt-1 w-full rounded-xl border-gray-200" placeholder="automatisch"></label>
+            <label class="text-sm font-bold">Publieke titel<input name="title" value="{{ old('title', $promotion->title) }}" required class="mt-1 w-full rounded-xl border-gray-200"></label>
+            <label class="sm:col-span-2 text-sm font-bold">Korte omschrijving<textarea name="short_description" rows="2" class="mt-1 w-full rounded-xl border-gray-200">{{ old('short_description', $promotion->short_description) }}</textarea></label>
+            <label class="sm:col-span-2 text-sm font-bold">Uitgebreide omschrijving<textarea name="description" rows="5" class="mt-1 w-full rounded-xl border-gray-200">{{ old('description', $promotion->description) }}</textarea></label>
+        </div></section>
+        <section class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><h2 class="font-bold">Bundel en prijs</h2><div class="mt-4 grid gap-4 sm:grid-cols-2">
+            <label class="sm:col-span-2 text-sm font-bold">Hoofdproduct<select name="main_product_id" required class="mt-1 w-full rounded-xl border-gray-200"><option value="">Kies product</option>@foreach($products as $product)<option value="{{ $product->id }}" @selected((int)old('main_product_id', $promotion->main_product_id)===$product->id)>{{ $product->name }} — € {{ number_format($product->price,2,',','.') }}</option>@endforeach</select></label>
+            <label class="text-sm font-bold">Vaste bundelprijs (€)<input type="number" step="0.01" min="0.01" name="fixed_price" value="{{ old('fixed_price', $promotion->fixed_price) }}" required class="mt-1 w-full rounded-xl border-gray-200"></label>
+            <label class="flex items-center gap-2 self-end rounded-xl bg-amber-50 p-3 text-sm font-bold"><input type="checkbox" name="free_shipping" value="1" @checked(old('free_shipping', $promotion->free_shipping))> Gratis standaardverzending</label>
+        </div>
+        <div class="mt-5 border-t pt-5"><div class="flex items-center justify-between"><div><h3 class="font-bold">Inbegrepen producten</h3><p class="text-xs text-gray-500">Deze worden als aparte orderregels vastgelegd.</p></div><button type="button" @click="items.push({product_id:'',quantity:1,role:'included',label:''})" class="rounded-lg border px-3 py-2 text-xs font-bold">+ Product</button></div>
+            <template x-for="(item,index) in items" :key="index"><div class="mt-3 grid gap-2 rounded-xl bg-gray-50 p-3 sm:grid-cols-[1fr_6rem_8rem_auto]"><select :name="`items[${index}][product_id]`" x-model="item.product_id" required class="rounded-lg border-gray-200"><option value="">Product</option>@foreach($products as $product)<option value="{{ $product->id }}">{{ $product->name }}</option>@endforeach</select><input type="number" min="1" :name="`items[${index}][quantity]`" x-model="item.quantity" class="rounded-lg border-gray-200"><select :name="`items[${index}][role]`" x-model="item.role" class="rounded-lg border-gray-200"><option value="included">Inbegrepen</option><option value="free">Gratis</option></select><button type="button" @click="items.splice(index,1)" class="px-2 text-red-600">✕</button><input :name="`items[${index}][label]`" x-model="item.label" class="rounded-lg border-gray-200 sm:col-span-4" placeholder="Optioneel label, bijvoorbeeld Gratis hevelpomp"></div></template>
+        </div></section>
+    </div>
+    <aside class="space-y-6">
+        <section class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><h2 class="font-bold">Publicatie</h2><div class="mt-4 space-y-3">
+            @foreach(['active'=>'Actief','show_home'=>'Homepage','show_product'=>'Productpagina','show_cart'=>'Winkelmand'] as $field=>$label)<label class="flex items-center gap-2 text-sm font-bold"><input type="checkbox" name="{{ $field }}" value="1" @checked(old($field, $promotion->{$field}))>{{ $label }}</label>@endforeach
+            <label class="block text-sm font-bold">Start<input type="datetime-local" name="starts_at" value="{{ old('starts_at', $promotion->starts_at?->format('Y-m-d\TH:i')) }}" class="mt-1 w-full rounded-xl border-gray-200"></label>
+            <label class="block text-sm font-bold">Einde<input type="datetime-local" name="ends_at" value="{{ old('ends_at', $promotion->ends_at?->format('Y-m-d\TH:i')) }}" class="mt-1 w-full rounded-xl border-gray-200"></label>
+            <label class="block text-sm font-bold">Volgorde<input type="number" name="sort_order" min="0" value="{{ old('sort_order', $promotion->sort_order ?? 0) }}" class="mt-1 w-full rounded-xl border-gray-200"></label>
+        </div></section>
+        <section class="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"><h2 class="font-bold">Afbeelding</h2>@if($promotion->imageUrl())<img src="{{ $promotion->imageUrl() }}" alt="" class="mt-3 aspect-square w-full rounded-xl object-cover">@endif<input type="hidden" name="existing_image_path" value="{{ old('existing_image_path', $promotion->image_path) }}"><input type="file" name="image" accept="image/*" class="mt-3 block w-full text-xs"><label class="mt-3 block text-sm font-bold">Alt-tekst<input name="image_alt" value="{{ old('image_alt', $promotion->image_alt) }}" class="mt-1 w-full rounded-xl border-gray-200"></label></section>
+        <button class="w-full rounded-xl bg-emerald-600 px-5 py-3 font-bold text-white">Actie opslaan</button>
+        @if($promotion->exists)<button form="delete-promotion" type="submit" class="w-full text-sm font-bold text-red-600" onclick="return confirm('Actie definitief verwijderen?')">Actie verwijderen</button>@endif
+    </aside>
+</form>
+@if($promotion->exists)<form id="delete-promotion" method="POST" action="{{ route('admin.promotions.destroy',$promotion) }}">@csrf @method('DELETE')</form>@endif
+@endsection

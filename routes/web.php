@@ -46,6 +46,8 @@ use App\Models\Location;
 use App\Models\Order;
 use App\Models\Setting;
 use App\Models\Payment;
+use App\Models\PaymentEvent;
+use App\Models\Promotion;
 use App\Models\User;
 use App\Models\DeliveryRoute;
 use App\Enums\PaymentStatus;
@@ -53,6 +55,7 @@ use App\Enums\OrderStatus;
 use App\Services\Payments\PaymentService;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\PromotionController;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -70,8 +73,9 @@ Route::get('/', function () {
         $products = Product::where('active', true)->take(8)->get();
     }
     $categories = Category::all();
+    $promotions = Promotion::currentlyActive()->where('show_home', true)->with(['mainProduct', 'items.product'])->orderBy('sort_order')->get();
 
-    return view('themes.default.pages.home', compact('products', 'categories'));
+    return view('themes.default.pages.home', compact('products', 'categories', 'promotions'));
 })->name('home');
 
 Route::get('/informatie', function () {
@@ -124,6 +128,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
         $orders = $selectedRoute
             ? Order::query()
+                ->with('latestPayment')
                 ->where('delivery_route_id', $selectedRoute->id)
                 ->orderByRaw('route_sequence IS NULL')
                 ->orderBy('route_sequence')
@@ -158,10 +163,46 @@ Route::middleware(['auth', 'admin'])->group(function () {
         $assignedAdminId = $order->deliveryRoute?->admin_id;
         abort_unless((int) $assignedAdminId === (int) auth()->id(), 403);
 
+        if ($order->latestPayment?->isCashPending()) {
+            return back()->with('toast', 'Vink eerst aan dat het contante bedrag is ontvangen.');
+        }
+
         $order->update(['status' => 'completed']);
 
         return back()->with('toast', 'Stop afgehandeld.');
     })->name('driver.orders.complete');
+
+    Route::post('/app/orders/{order}/cash-received', function (Order $order) {
+        $assignedAdminId = $order->deliveryRoute?->admin_id;
+        abort_unless((int) $assignedAdminId === (int) auth()->id(), 403);
+
+        $payment = $order->latestPayment;
+        abort_unless($payment?->isCash(), 422);
+
+        if ($payment->status === PaymentStatus::PAID) {
+            return back()->with('toast', 'De contante betaling was al afgevinkt.');
+        }
+
+        $oldStatus = $payment->status;
+        $payment->update([
+            'status' => PaymentStatus::PAID,
+            'paid_at' => now(),
+        ]);
+
+        PaymentEvent::create([
+            'payment_id' => $payment->id,
+            'type' => 'cash_received',
+            'source' => 'driver',
+            'actor_id' => auth()->id(),
+            'data' => [
+                'from' => $oldStatus->value,
+                'to' => PaymentStatus::PAID->value,
+                'amount' => $payment->amount,
+            ],
+        ]);
+
+        return back()->with('toast', 'Contante betaling van € '.number_format($payment->amount, 2, ',', '.').' ontvangen.');
+    })->name('driver.orders.cash-received');
 });
 
 /*
@@ -173,6 +214,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
 Route::get('/product/{slug}', function ($slug, ShippingRates $rates) {
     $product = Product::with('category')->where('slug', $slug)->firstOrFail();
     $productRule = $rates->ruleForProduct($product->id);
+    $promotion = Promotion::currentlyActive()
+        ->where('show_product', true)
+        ->where('main_product_id', $product->id)
+        ->with(['items.product', 'mainProduct'])
+        ->orderBy('sort_order')
+        ->first();
 
     $suggestedProducts = Product::query()
         ->where('active', true)
@@ -196,7 +243,7 @@ Route::get('/product/{slug}', function ($slug, ShippingRates $rates) {
         $suggestedProducts = $suggestedProducts->concat($moreProducts)->values();
     }
 
-    return view('themes.default.pages.product', compact('product', 'suggestedProducts', 'productRule'));
+    return view('themes.default.pages.product', compact('product', 'suggestedProducts', 'productRule', 'promotion'));
 })->name('product.show');
 
 Route::get('/categories/{slug}', function ($slug) {
@@ -422,6 +469,23 @@ Route::post('/winkelmand/toevoegen/{id}', function ($id) {
     return back();
 })->name('cart.add');
 
+Route::post('/winkelmand/actie/{promotion}', function (Promotion $promotion) {
+    abort_unless($promotion->isCurrentlyActive() && $promotion->mainProduct?->active, 404);
+    $cart = session()->get('cart', []);
+    $productId = $promotion->main_product_id;
+    $quantity = isset($cart[$productId]) && (int) ($cart[$productId]['promotion_id'] ?? 0) === $promotion->id
+        ? max(1, (int) $cart[$productId]['quantity']) + 1
+        : 1;
+    $cart[$productId] = [
+        'name' => $promotion->mainProduct->name,
+        'price' => $promotion->fixed_price,
+        'quantity' => $quantity,
+        'promotion_id' => $promotion->id,
+    ];
+    session()->put('cart', $cart);
+    return redirect()->route('cart.index')->with('toast', 'Actiebundel toegevoegd aan je winkelmand.');
+})->name('cart.add-promotion');
+
 Route::post('/winkelmand/bijwerken/{id}', function (Request $request, $id, CartPricing $pricing) {
     $validated = $request->validate([
         'quantity' => ['required', 'integer', 'min:1', 'max:999'],
@@ -527,6 +591,8 @@ Route::post('/checkout', function (Request $request, CartPricing $pricing) {
         ? Location::findOrFail($request->integer('pickup_location_id'))
         : null;
 
+    $isCashPayment = $request->payment_method === 'cash';
+
     $order = Order::createFromCart($cart, [
         'user_id'  => auth()->id(),
         'name'     => $request->name,
@@ -544,21 +610,24 @@ Route::post('/checkout', function (Request $request, CartPricing $pricing) {
             ? trim($pickupLocation->street.', '.$pickupLocation->postcode_city, ' ,')
             : null,
         'pickup_location_opening' => $pickupLocation?->opening,
-    ], OrderStatus::AWAITING_PAYMENT, $deliveryCosts['total']);
+    ], $isCashPayment ? OrderStatus::PENDING : OrderStatus::AWAITING_PAYMENT, $deliveryCosts['total']);
 
     $payment = Payment::create([
         'order_id'           => $order->id,
-        'provider'           => config('payments.provider', 'mock'),
+        'provider'           => $isCashPayment ? 'manual' : config('payments.provider', 'mock'),
         'status'             => PaymentStatus::OPEN,
         'amount'             => $order->total,
         'currency'           => 'EUR',
-        'due_date'           => now()->addDays(14),
+        'due_date'           => $isCashPayment ? null : now()->addDays(14),
         'meta'                => [
             'payment_method' => $request->payment_method,
+            'handling' => $isCashPayment ? 'cash_on_delivery' : 'online',
         ],
     ]);
 
-    app(PaymentService::class)->ensurePayLink($payment);
+    if (! $isCashPayment) {
+        app(PaymentService::class)->ensurePayLink($payment);
+    }
 
     if (auth()->check()) {
         auth()->user()->update([
@@ -567,6 +636,27 @@ Route::post('/checkout', function (Request $request, CartPricing $pricing) {
             'city'     => $request->city,
             'province' => $request->province,
         ]);
+    }
+
+    if ($isCashPayment) {
+        session()->forget(['cart', 'fulfillment_method', 'delivery_service']);
+
+        app()->terminating(function () use ($order): void {
+            try {
+                Mail::to($order->email)->send(new OrderConfirmationMail($order));
+            } catch (\Throwable $exception) {
+                Log::error('Cash order confirmation email could not be sent.', [
+                    'order_id' => $order->id,
+                    'exception' => $exception,
+                ]);
+            }
+        });
+
+        $message = 'Bestelling geplaatst. Je betaalt € '.number_format($order->total, 2, ',', '.').' contant bij '.($fulfillmentMethod === 'pickup' ? 'het afhalen.' : 'de bezorging.');
+
+        return auth()->check()
+            ? redirect()->route('account.orders')->with('toast', $message)
+            : redirect()->route('home')->with('toast', $message);
     }
 
     if ($payment->pay_link) {
@@ -595,29 +685,74 @@ Route::middleware('auth')->group(function () {
     Route::get('/account', fn () => redirect()->route('profile.edit'))
         ->name('account.dashboard');
 
-    Route::get('/account/bestellingen', fn () => view('account.orders'))->name('account.orders');
+    Route::get('/account/bestellingen', function () {
+        $orders = auth()->user()
+            ->orders()
+            ->placed()
+            ->withCount('items')
+            ->latest()
+            ->get();
+
+        return view('account.orders', compact('orders'));
+    })->name('account.orders');
 
     Route::get('/account/bestellingen/{order}', function (Order $order) {
         abort_unless($order->user_id === auth()->id() && ! $order->isAwaitingPayment(), 404);
+        $order->load('items.product');
+
         return view('account.order-show', compact('order'));
     })->name('account.orders.show');
 
-    // Re-order: place the same order again
+    // Re-order: restore available products to the cart and use the normal checkout flow.
     Route::post('/account/bestellingen/{order}/reorder', function (Order $order) {
         abort_unless($order->user_id === auth()->id() && ! $order->isAwaitingPayment(), 404);
 
-        $new = $order->duplicate();
+        $order->load('items');
+        $productIds = $order->items->pluck('product_id')->filter()->unique();
+        $products = Product::query()
+            ->whereIn('id', $productIds)
+            ->where('active', true)
+            ->get()
+            ->keyBy('id');
+        $cart = session('cart', []);
+        $added = 0;
 
-        try {
-            Mail::to($new->email)->send(new OrderConfirmationMail($new));
-        } catch (\Throwable $exception) {
-            Log::error('Reorder confirmation email could not be sent.', [
-                'order_id' => $new->id,
-                'exception' => $exception,
-            ]);
+        foreach ($order->items as $item) {
+            $product = $products->get($item->product_id);
+
+            if (! $product) {
+                continue;
+            }
+
+            $currentQuantity = (int) ($cart[$product->id]['quantity'] ?? 0);
+            $cart[$product->id] = [
+                'name' => $product->name,
+                'price' => $product->price,
+                'quantity' => $currentQuantity + $item->quantity,
+            ];
+            $added++;
         }
 
-        return redirect()->route('account.orders')->with('toast', 'Bestelling opnieuw geplaatst');
+        if ($added === 0) {
+            return back()->with('toast', 'De producten uit deze bestelling zijn niet meer beschikbaar.');
+        }
+
+        session([
+            'cart' => $cart,
+            'fulfillment_method' => in_array($order->fulfillment_method, ['delivery', 'pickup'], true)
+                ? $order->fulfillment_method
+                : 'delivery',
+            'delivery_service' => in_array($order->delivery_service, ['standard', 'express'], true)
+                ? $order->delivery_service
+                : 'standard',
+        ]);
+
+        $unavailable = $order->items->count() - $added;
+        $message = $unavailable > 0
+            ? 'Beschikbare producten zijn toegevoegd. '.$unavailable.' product(en) zijn niet meer leverbaar.'
+            : 'Alle producten zijn toegevoegd aan je winkelmand. Controleer de actuele prijzen en rond je bestelling af.';
+
+        return redirect()->route('cart.index')->with('toast', $message);
     })->name('account.orders.reorder');
 
     // Download invoice PDF
@@ -649,6 +784,8 @@ Route::middleware(['auth', 'admin'])
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->name('dashboard');
+
+        Route::view('/help', 'admin.help')->name('help');
 
         Route::get('/audit', [AuditLogController::class, 'index'])
             ->name('audit.index');
@@ -694,12 +831,14 @@ Route::middleware(['auth', 'admin'])
         Route::post('/orders', [ManualOrderController::class, 'store'])
             ->name('orders.store');
 
+        Route::resource('promotions', PromotionController::class)->except('show');
+
         Route::get('/orders', function (Request $request) {
             $provinces = nl_provinces();
 
             $filters = $request->validate([
                 'search' => ['nullable', 'string', 'max:100'],
-                'tab' => ['nullable', Rule::in(['all', 'new', 'paid', 'unpaid', 'planned', 'shipped', 'cancelled'])],
+                'tab' => ['nullable', Rule::in(['all', 'new', 'paid', 'unpaid', 'planned', 'shipped', 'completed', 'cancelled'])],
                 'province' => ['nullable', Rule::in($provinces)],
                 'order_date' => ['nullable', 'date'],
                 'payment_status' => ['nullable', Rule::in(array_column(PaymentStatus::cases(), 'value'))],
@@ -737,6 +876,7 @@ Route::middleware(['auth', 'admin'])
                 ))
                 ->when(($filters['tab'] ?? 'all') === 'planned', fn ($q) => $q->whereNotNull('delivery_route_id'))
                 ->when(($filters['tab'] ?? 'all') === 'shipped', fn ($q) => $q->where('status', OrderStatus::SHIPPED))
+                ->when(($filters['tab'] ?? 'all') === 'completed', fn ($q) => $q->where('status', OrderStatus::COMPLETED))
                 ->when(($filters['tab'] ?? 'all') === 'cancelled', fn ($q) => $q->where('status', OrderStatus::CANCELLED))
                 ->orderByDesc('created_at')
                 ->paginate(25)
@@ -766,7 +906,7 @@ Route::middleware(['auth', 'admin'])
 
         Route::get('/orders/{order}', function (Order $order) {
             abort_if($order->isAwaitingPayment(), 404);
-            $order->load(['items', 'latestPayment.events.actor']);
+            $order->load(['items.product', 'latestPayment.events.actor']);
 
             $provinces = nl_provinces();
             $routeDate = $order->route_date?->toDateString() ?? now()->toDateString();
@@ -819,6 +959,31 @@ Route::middleware(['auth', 'admin'])
 
             return back()->with('toast', $order->email ? 'Verzendmail verstuurd' : 'Bestelling gemarkeerd als verzonden');
         })->name('orders.ship');
+
+        Route::post('/orders/{order}/complete', function (Order $order) {
+            abort_if($order->isAwaitingPayment(), 404);
+            abort_unless(in_array($order->status, [OrderStatus::PENDING, OrderStatus::SHIPPED], true), 422);
+
+            $order->update(['status' => OrderStatus::COMPLETED]);
+
+            return back()->with('toast', 'Bestelling #'.$order->id.' is afgerond.');
+        })->name('orders.complete');
+
+        Route::patch('/orders/{order}/notes', function (Request $request, Order $order) {
+            abort_if($order->isAwaitingPayment(), 404);
+
+            $data = $request->validate([
+                'route_notes' => ['nullable', 'string', 'max:2000'],
+            ]);
+
+            $order->update([
+                'route_notes' => filled($data['route_notes'] ?? null)
+                    ? trim($data['route_notes'])
+                    : null,
+            ]);
+
+            return back()->with('toast', 'Opmerking bij bestelling #'.$order->id.' opgeslagen.');
+        })->name('orders.notes');
 
         // Routes (planning overzicht)
         Route::get('/routes/slim-plannen', [SmartRouteController::class, 'index'])
@@ -1083,7 +1248,7 @@ Route::middleware(['auth', 'admin'])
                 'route_sequence'       => ['nullable', 'integer', 'min:1', 'max:65535'],
                 'route_travel_minutes' => ['nullable', 'integer', 'min:0', 'max:1440'],
                 'route_stop_minutes'   => ['nullable', 'integer', 'min:0', 'max:1440'],
-                'route_notes'          => ['nullable', 'string'],
+                'route_notes'          => ['nullable', 'string', 'max:2000'],
             ]);
 
             $order->update($data);
@@ -1099,7 +1264,6 @@ Route::middleware(['auth', 'admin'])
                 'route_sequence'       => null,
                 'route_travel_minutes' => null,
                 'route_stop_minutes'   => null,
-                'route_notes'          => null,
             ]);
 
             return back()->with('toast', 'Stop verwijderd uit route');

@@ -126,6 +126,20 @@
         .driver-note svg { width: 1rem; flex: 0 0 auto; margin-top: .1rem; }
         .driver-note p, .driver-note strong { display: block; margin: 0; font-size: .75rem; }
         .driver-note strong { margin-bottom: .1rem; }
+        .driver-cash { display: flex; align-items: center; gap: .75rem; margin-top: 1rem; padding: .85rem; border: 1px solid; border-radius: .75rem; }
+        .driver-cash--open { color: #714d00; border-color: #efd17a; background: #fff8e5; }
+        .driver-cash--paid { color: #176d49; border-color: #bfe5d4; background: #edfaf4; }
+        .driver-cash__icon { display: grid; width: 2.35rem; height: 2.35rem; flex: 0 0 auto; place-items: center; border-radius: .6rem; background: rgba(255,255,255,.72); }
+        .driver-cash__icon svg { width: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .driver-cash > div { min-width: 0; flex: 1; }
+        .driver-cash small, .driver-cash strong, .driver-cash p { display: block; margin: 0; }
+        .driver-cash small { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .72; }
+        .driver-cash strong { margin-top: .1rem; font: 800 1rem Manrope, sans-serif; }
+        .driver-cash p { margin-top: .1rem; font-size: .7rem; }
+        .driver-cash form { flex: 0 0 auto; }
+        .driver-cash button { display: inline-flex; align-items: center; gap: .4rem; padding: .65rem .8rem; color: white; border-radius: .6rem; background: #176d49; font-size: .7rem; font-weight: 800; cursor: pointer; }
+        .driver-cash button:hover { background: #105a3c; }
+        .driver-cash button svg { width: .9rem; fill: none; stroke: currentColor; stroke-width: 2; }
         .driver-stop__actions { display: flex; gap: .6rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #edf0f3; }
         .driver-stop__actions form { flex: 1; }
         .driver-button { display: inline-flex; height: 2.65rem; align-items: center; justify-content: center; gap: .45rem; padding: 0 1rem; border-radius: .65rem; font-size: .76rem; font-weight: 700; cursor: pointer; transition: .18s ease; }
@@ -203,6 +217,8 @@
             .driver-stop__actions { align-items: stretch; flex-direction: column; }
             .driver-stop__actions form { width: 100%; }
             .driver-button { width: 100%; height: 2.9rem; }
+            .driver-cash { align-items: stretch; flex-wrap: wrap; }
+            .driver-cash form, .driver-cash button { width: 100%; justify-content: center; }
         }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }

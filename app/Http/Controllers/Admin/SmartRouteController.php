@@ -165,7 +165,6 @@ class SmartRouteController extends Controller
                 'route_sequence' => null,
                 'route_travel_minutes' => null,
                 'route_stop_minutes' => null,
-                'route_notes' => null,
             ]);
 
             $deliveryRoute->delete();

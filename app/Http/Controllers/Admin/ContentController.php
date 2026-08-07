@@ -23,8 +23,8 @@ class ContentController extends Controller
             'company_email' => 'info@kachelvloeistof.nl',
             'company_phone' => '',
             'company_address' => '',
-            'company_kvk' => '',
-            'company_vat' => '',
+            'company_kvk' => '77355431',
+            'company_vat' => 'NL003184350B48',
 
             // Juridische pagina's
             'legal_privacy_title' => config('legal.privacy.title'),

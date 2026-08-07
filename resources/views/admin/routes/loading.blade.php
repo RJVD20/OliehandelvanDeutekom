@@ -99,6 +99,27 @@
             Deze route bevat nog geen producten om in te laden.
         </div>
     @else
+        @php
+            $ordersWithNotes = $deliveryRoute->orders->filter(fn ($order) => filled($order->route_notes));
+        @endphp
+
+        @if($ordersWithNotes->isNotEmpty())
+            <section class="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 loading-notes">
+                <div class="mb-3 flex items-center justify-between gap-3">
+                    <h2 class="font-bold text-amber-950">Opmerkingen bij bestellingen</h2>
+                    <span class="text-xs font-semibold text-amber-800">{{ $ordersWithNotes->count() }} {{ $ordersWithNotes->count() === 1 ? 'opmerking' : 'opmerkingen' }}</span>
+                </div>
+                <div class="grid gap-3 md:grid-cols-2">
+                    @foreach($ordersWithNotes as $notedOrder)
+                        <article class="rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm break-inside-avoid">
+                            <strong class="block text-amber-950">Stop {{ $notedOrder->route_sequence ?? '—' }} · Order #{{ $notedOrder->id }} · {{ $notedOrder->name }}</strong>
+                            <p class="mt-1 whitespace-pre-line leading-5 text-gray-700">{{ $notedOrder->route_notes }}</p>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         <section class="loading-screen-only mb-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>

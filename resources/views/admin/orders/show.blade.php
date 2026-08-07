@@ -3,11 +3,26 @@
 @section('title', 'Bestelling #' . $order->id)
 
 @section('content')
+@php
+    $adminStatusPresentation = [
+        'pending' => ['Nieuw', 'bg-amber-100 text-amber-800'],
+        'shipped' => ['Verzonden', 'bg-blue-100 text-blue-800'],
+        'completed' => ['Afgerond', 'bg-emerald-100 text-emerald-800'],
+        'cancelled' => ['Geannuleerd', 'bg-red-100 text-red-700'],
+    ];
+    [$adminStatusLabel, $adminStatusClasses] = $adminStatusPresentation[$order->status->value]
+        ?? [ucfirst(str_replace('_', ' ', $order->status->value)), 'bg-gray-100 text-gray-700'];
+@endphp
 
-<div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+<div class="admin-order-header mb-6 flex flex-wrap items-center justify-between gap-5">
     <div>
         <a href="{{ route('admin.orders.index') }}" class="mb-2 inline-flex text-sm font-semibold text-gray-500 hover:text-gray-800">← Terug naar bestellingen</a>
-        <h1 class="text-2xl font-bold">Bestelling #{{ $order->id }}</h1>
+        <div class="flex items-center gap-3">
+            <span class="admin-order-header__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M7 3h10v18l-2.5-1.7L12 21l-2.5-1.7L7 21V3Z" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 8h4m-4 4h4" stroke-width="1.7" stroke-linecap="round"/></svg>
+            </span>
+            <h1 class="text-2xl font-bold">Bestelling #{{ $order->id }}</h1>
+        </div>
         <p class="text-sm text-gray-500 mt-1">
             Aangemaakt op {{ $order->created_at->format('d-m-Y') }}
             @if($order->source === 'manual')
@@ -16,16 +31,11 @@
         </p>
     </div>
     <div class="flex flex-wrap items-center gap-3">
-        <span class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide
-            @if($order->status->value === 'pending') bg-yellow-100 text-yellow-700
-            @elseif($order->status->value === 'shipped') bg-blue-100 text-blue-700
-            @elseif($order->status->value === 'completed') bg-green-100 text-green-700
-            @endif
-        ">
-            {{ ucfirst($order->status->value) }}
+        <span class="rounded-full px-3 py-1.5 text-xs font-semibold {{ $adminStatusClasses }}">
+            {{ $adminStatusLabel }}
         </span>
-        <span class="text-sm font-semibold text-green-700">€ {{ number_format($order->total, 2, ',', '.') }}</span>
-        @if($order->status !== \App\Enums\OrderStatus::SHIPPED && $order->status !== \App\Enums\OrderStatus::CANCELLED)
+        <span class="admin-order-header__total">€ {{ number_format($order->total, 2, ',', '.') }}</span>
+        @if($order->status === \App\Enums\OrderStatus::PENDING)
             <form method="POST" action="{{ route('admin.orders.ship', $order) }}" onsubmit="return confirm('Bestelling als verzonden markeren en de verzendmail versturen?')">
                 @csrf
                 <button type="submit" class="rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
@@ -33,19 +43,41 @@
                 </button>
             </form>
         @endif
+        @if(in_array($order->status, [\App\Enums\OrderStatus::PENDING, \App\Enums\OrderStatus::SHIPPED], true))
+            <form method="POST" action="{{ route('admin.orders.complete', $order) }}" onsubmit="return confirm('Weet je zeker dat je bestelling #{{ $order->id }} als afgerond wilt markeren?')">
+                @csrf
+                <button type="submit" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100">
+                    Bestelling afronden
+                </button>
+            </form>
+        @endif
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-8 2xl:grid-cols-12">
 
     <!-- Betaling -->
-    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-2 lg:col-span-1">
+    <div class="admin-order-panel bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-2 lg:col-span-4 2xl:col-span-3">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold">Betaling</h2>
             <span class="text-xs text-gray-500">Status</span>
         </div>
         @php $payment = $order->latestPayment; @endphp
         @if($payment)
+            @if($payment->isCash())
+                <div class="rounded-xl border {{ $payment->isCashPending() ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-emerald-300 bg-emerald-50 text-emerald-800' }} p-4">
+                    <p class="text-xs font-bold uppercase tracking-wide">Contante bestelling</p>
+                    <p class="mt-1 text-lg font-bold">€ {{ number_format($payment->amount, 2, ',', '.') }}</p>
+                    <p class="mt-1 text-xs">{{ $payment->isCashPending() ? 'Nog niet als ontvangen afgevinkt.' : 'Ontvangen op '.$payment->paid_at?->format('d-m-Y H:i') }}</p>
+                    @if($payment->isCashPending())
+                        <form method="POST" action="{{ route('admin.payments.mark-paid', $payment) }}" class="mt-3" onsubmit="return confirm('Bevestig dat € {{ number_format($payment->amount, 2, ',', '.') }} contant is ontvangen.')">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="w-full rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Contant ontvangen afvinken</button>
+                        </form>
+                    @endif
+                </div>
+            @endif
             <p class="text-sm flex items-center justify-between"><span class="text-gray-600">Status</span><strong>{{ ucfirst($payment->status->value) }}</strong></p>
             <p class="text-sm flex items-center justify-between"><span class="text-gray-600">Betaalwijze</span><strong>{{ $payment->handlingLabel() }}</strong></p>
             <p class="text-sm"><strong>Vervaldatum:</strong> {{ optional($payment->due_date)->format('d-m-Y') }}</p>
@@ -69,6 +101,7 @@
                         'status_changed' => 'Betaalstatus gewijzigd',
                         'manual_payment_request' => 'Betaalverzoek verstuurd',
                         'admin_override' => 'Handmatig als betaald gemarkeerd',
+                        'cash_received' => 'Contante betaling ontvangen',
                         'expired' => 'Betaling verlopen',
                     ];
                 @endphp
@@ -98,7 +131,7 @@
     </div>
 
     <!-- Klantgegevens -->
-    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-2">
+    <div class="admin-order-panel bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-2 lg:col-span-4 2xl:col-span-3">
         <h2 class="font-semibold">Klant</h2>
 
         <p class="text-sm"><span class="text-gray-600">Naam</span><br><strong>{{ $order->name }}</strong></p>
@@ -135,13 +168,20 @@
     </div>
 
     <!-- Bestelling -->
-    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm lg:col-span-2">
-        <h2 class="font-semibold">Producten</h2>
+    <div class="admin-order-panel bg-white p-6 rounded-2xl border border-gray-100 shadow-sm lg:col-span-8 2xl:col-span-6">
+        <div class="flex items-center justify-between gap-3">
+            <h2 class="font-semibold">Producten</h2>
+            <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">{{ $order->items->sum('quantity') }} artikelen</span>
+        </div>
+        @if($promotionName = $order->items->pluck('promotion_name')->filter()->first())
+            <div class="mt-4 rounded-xl border border-turbo-gold/40 bg-turbo-gold/10 p-3 text-sm"><strong>Actiebundel:</strong> {{ $promotionName }}</div>
+        @endif
 
         <div class="hidden md:block overflow-x-auto mt-4">
             <table class="w-full text-sm">
                 <thead>
                     <tr class="border-b text-gray-500">
+                        <th class="w-14 p-2"><span class="sr-only">Afbeelding</span></th>
                         <th class="text-left p-2">Product</th>
                         <th class="p-2">Aantal</th>
                         <th class="p-2">Prijs</th>
@@ -151,6 +191,15 @@
                 <tbody>
                     @foreach($order->items as $item)
                         <tr class="border-b">
+                            <td class="p-2">
+                                <div class="admin-order-product-image">
+                                    @if($item->product?->image)
+                                        <img src="{{ asset('storage/' . $item->product->image) }}" alt="" loading="lazy">
+                                    @else
+                                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 8h12l-1 12H7L6 8Zm3 0V6a3 3 0 0 1 6 0v2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    @endif
+                                </div>
+                            </td>
                             <td class="p-2">{{ $item->product_name }}</td>
                             <td class="p-2 text-center">{{ $item->quantity }}</td>
                             <td class="p-2 text-right">
@@ -169,7 +218,16 @@
             @foreach($order->items as $item)
                 <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 shadow-sm">
                     <div class="flex items-start justify-between gap-3">
-                        <p class="font-semibold leading-tight">{{ $item->product_name }}</p>
+                        <div class="flex items-center gap-3">
+                            <div class="admin-order-product-image">
+                                @if($item->product?->image)
+                                    <img src="{{ asset('storage/' . $item->product->image) }}" alt="" loading="lazy">
+                                @else
+                                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 8h12l-1 12H7L6 8Zm3 0V6a3 3 0 0 1 6 0v2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                @endif
+                            </div>
+                            <p class="font-semibold leading-tight">{{ $item->product_name }}</p>
+                        </div>
                         <p class="text-sm text-gray-600">x{{ $item->quantity }}</p>
                     </div>
                     <div class="mt-2 flex items-center justify-between text-sm">
@@ -187,16 +245,33 @@
 
 </div>
 
-@if($order->route_notes)
-    <div class="mt-6 rounded-2xl border border-purple-100 bg-purple-50/60 p-5">
-        <h2 class="font-semibold text-purple-900">Interne notitie</h2>
-        <p class="mt-2 whitespace-pre-line text-sm text-purple-900">{{ $order->route_notes }}</p>
+<section class="admin-order-panel mt-6 rounded-2xl border border-amber-200 bg-amber-50/60 p-5 shadow-sm">
+    <div class="flex items-start gap-3">
+        <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="h-5 w-5"><path d="M7 4h10a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-5l-4 3v-3H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <div>
+            <h2 class="font-semibold text-amber-950">Opmerking voor uitvoering</h2>
+            <p class="mt-1 text-xs leading-5 text-amber-800">Deze opmerking verschijnt op de paklijst, in de routeplanning en in de chauffeursapp.</p>
+        </div>
     </div>
-@endif
+    <form method="POST" action="{{ route('admin.orders.notes', $order) }}" class="mt-4">
+        @csrf
+        @method('PATCH')
+        <label for="order-notes" class="sr-only">Opmerking voor uitvoering</label>
+        <textarea id="order-notes" name="route_notes" rows="3" maxlength="2000" placeholder="Bijvoorbeeld: achterom leveren, klant vooraf bellen of verpakking controleren…" class="w-full rounded-xl border-amber-200 bg-white p-3 text-sm">{{ old('route_notes', $order->route_notes) }}</textarea>
+        @error('route_notes')
+            <p class="mt-1 text-xs font-medium text-red-600">{{ $message }}</p>
+        @enderror
+        <div class="mt-3 flex justify-end">
+            <button type="submit" class="rounded-xl bg-turbo-navy px-4 py-2.5 text-sm font-semibold text-white hover:bg-turbo-dark">Opmerking opslaan</button>
+        </div>
+    </form>
+</section>
 
 <!-- Routeplanning en acties -->
-<div class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-gradient-to-br from-white via-white to-emerald-50/40 p-6 rounded-2xl border border-emerald-100/60 shadow-sm">
+<div class="mt-6">
+    <div class="admin-order-panel bg-gradient-to-br from-white via-white to-emerald-50/40 p-6 rounded-2xl border border-emerald-100/60 shadow-sm">
         <div class="flex items-center justify-between mb-3">
             <div class="flex items-center gap-2">
                 <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
@@ -211,7 +286,7 @@
             @endif
         </div>
 
-        <form id="order-plan-form" method="POST" action="{{ route('admin.orders.plan', $order) }}" class="space-y-4">
+        <form id="order-plan-form" method="POST" action="{{ route('admin.orders.plan', $order) }}" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             @csrf
             @method('PATCH')
 
@@ -240,7 +315,7 @@
                 </select>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="contents">
                 <div class="space-y-1">
                     <label class="block text-sm text-gray-600">Route datum</label>
                     <input
