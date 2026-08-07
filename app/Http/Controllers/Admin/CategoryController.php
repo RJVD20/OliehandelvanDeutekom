@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class CategoryController extends Controller
@@ -53,11 +54,16 @@ class CategoryController extends Controller
 
         $data['slug'] = $data['slug'] ? Str::slug($data['slug']) : Str::slug($data['name']);
 
-        $category->update($data);
+        DB::transaction(function () use ($category, $data) {
+            $category->update($data);
+
+            // De categorie is de enige bron voor het technische producttype.
+            $category->products()->update(['type' => $data['type'] ?? null]);
+        });
 
         return redirect()
             ->route('admin.categories.index')
-            ->with('toast', 'Categorie bijgewerkt');
+            ->with('toast', 'Categorie en gekoppelde producten bijgewerkt');
     }
 
     public function destroy(Category $category)

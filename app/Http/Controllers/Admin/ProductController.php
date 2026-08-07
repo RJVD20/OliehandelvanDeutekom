@@ -72,10 +72,7 @@ class ProductController extends Controller
         $data['active']   = $request->boolean('active');
         $data['featured'] = $request->boolean('featured');
         $data['used']     = $request->boolean('used');
-        $categoryType = Category::find($data['category_id'])?->type;
-        if ($categoryType !== null) {
-            $data['type'] = $categoryType;
-        }
+        $data['type'] = Category::find($data['category_id'])?->type;
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
@@ -115,10 +112,7 @@ class ProductController extends Controller
         $data['active']   = $request->boolean('active');
         $data['featured'] = $request->boolean('featured');
         $data['used']     = $request->boolean('used');
-        $categoryType = Category::find($data['category_id'])?->type;
-        if ($categoryType !== null) {
-            $data['type'] = $categoryType;
-        }
+        $data['type'] = Category::find($data['category_id'])?->type;
 
         if ($request->boolean('remove_image') && $product->image) {
             Storage::disk('public')->delete($product->image);

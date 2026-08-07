@@ -48,14 +48,14 @@
         </div>
 
         <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">Type</label>
+            <label class="block text-sm font-semibold text-gray-700">Producttype <x-admin.field-help text="Dit is de technische hoofdgroep die het gedrag en de filters van alle producten in deze categorie bepaalt. Je hoeft het type niet per product in te stellen." /></label>
             <select name="type" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                 <option value="">— Geen type —</option>
                 @foreach(['kachel' => 'Kachel', 'vloeistof' => 'Vloeistof', 'pellet' => 'Pellet', 'accessoire' => 'Accessoire'] as $value => $label)
                     <option value="{{ $value }}" @selected(old('type') === $value)>{{ $label }}</option>
                 @endforeach
             </select>
-            <p class="text-xs text-gray-400">Bepaalt onder welk producttype deze categorie valt en wordt automatisch overgenomen door producten in deze categorie.</p>
+            <div class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-800"><strong>Automatisch:</strong> ieder product dat je aan deze categorie koppelt krijgt dit producttype.</div>
             @error('type') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 
