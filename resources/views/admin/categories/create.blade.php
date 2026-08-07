@@ -60,7 +60,7 @@
         </div>
 
         <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">URL-slug</label>
+            <label class="block text-sm font-semibold text-gray-700">URL-slug <x-admin.field-help text="Het leesbare laatste deel van het webadres van deze categorie. Dit wordt automatisch gemaakt van de categorienaam." /></label>
             <div class="flex rounded-lg border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-green-500">
                 <span class="px-3 py-2.5 bg-gray-50 text-xs text-gray-400 border-r border-gray-200 whitespace-nowrap">/categorie/</span>
                 <input
@@ -71,7 +71,6 @@
                     placeholder="automatisch gegenereerd"
                 >
             </div>
-            <p class="text-xs text-gray-400">Wordt automatisch ingevuld op basis van de naam.</p>
             @error('slug') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 

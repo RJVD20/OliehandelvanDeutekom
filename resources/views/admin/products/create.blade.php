@@ -57,7 +57,7 @@
 
         {{-- Slug --}}
         <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">URL-slug</label>
+            <label class="block text-sm font-semibold text-gray-700">URL-slug <x-admin.field-help text="Het leesbare laatste deel van het webadres. Bijvoorbeeld ‘zibro-lc-150’ in /product/zibro-lc-150. Laat dit bij voorkeur automatisch invullen." /></label>
             <div class="flex rounded-lg border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-green-500">
                 <span class="px-3 py-2.5 bg-gray-50 text-xs text-gray-400 border-r border-gray-200 whitespace-nowrap">/product/</span>
                 <input
@@ -69,7 +69,6 @@
                     placeholder="automatisch gegenereerd"
                 >
             </div>
-            <p class="text-xs text-gray-400">Wordt automatisch ingevuld op basis van de naam. Aanpassen is optioneel.</p>
         </div>
 
         {{-- Categorie --}}
