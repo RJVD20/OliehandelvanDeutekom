@@ -97,7 +97,7 @@ class Order extends Model
         }
 
         return DB::transaction(function () use ($cart, $customer, $status, $additionalCosts) {
-            $items = collect($cart)->map(function (array $item, int|string $productId) {
+            $items = collect($cart)->flatMap(function (array $item, int|string $productId) {
                 $quantity = max(1, (int) ($item['quantity'] ?? 0));
                 $price = round((float) ($item['price'] ?? 0), 2);
 
@@ -105,12 +105,38 @@ class Order extends Model
                     throw new InvalidArgumentException('De winkelmand bevat ongeldige productgegevens.');
                 }
 
-                return [
+                $promotionId = isset($item['promotion_id']) ? (int) $item['promotion_id'] : null;
+                $promotionName = $promotionId ? (string) ($item['promotion_name'] ?? $item['promotion_title'] ?? 'Actie') : null;
+                $main = [
                     'product_id' => (int) $productId,
+                    'promotion_id' => $promotionId,
                     'product_name' => (string) $item['name'],
+                    'promotion_name' => $promotionName,
                     'price' => $price,
                     'quantity' => $quantity,
+                    'promotion_meta' => $promotionId ? [
+                        'title' => $item['promotion_title'] ?? $promotionName,
+                        'normal_value' => $item['base_price'] ?? null,
+                        'fixed_price' => $price,
+                        'free_shipping' => (bool) ($item['free_shipping'] ?? false),
+                        'items' => $item['promotion_items'] ?? [],
+                    ] : null,
                 ];
+
+                $included = collect($item['promotion_items'] ?? [])->map(fn (array $bundleItem) => [
+                    'product_id' => (int) $bundleItem['product_id'],
+                    'promotion_id' => $promotionId,
+                    'product_name' => (string) ($bundleItem['label'] ?: $bundleItem['name']),
+                    'promotion_name' => $promotionName,
+                    'price' => 0,
+                    'quantity' => max(1, (int) $bundleItem['quantity']) * $quantity,
+                    'promotion_meta' => [
+                        'role' => $bundleItem['role'],
+                        'source_product_name' => $bundleItem['name'],
+                    ],
+                ]);
+
+                return collect([$main])->concat($included)->all();
             })->values();
 
             $order = static::create([
@@ -163,9 +189,12 @@ class Order extends Model
             $copy->items()->createMany(
                 $this->items->map(fn (OrderItem $item) => [
                     'product_id' => $item->product_id,
+                    'promotion_id' => $item->promotion_id,
                     'product_name' => $item->product_name,
+                    'promotion_name' => $item->promotion_name,
                     'price' => $item->price,
                     'quantity' => $item->quantity,
+                    'promotion_meta' => $item->promotion_meta,
                 ])->all()
             );
 

@@ -57,7 +57,7 @@
 
         {{-- Slug --}}
         <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">URL-slug</label>
+            <label class="block text-sm font-semibold text-gray-700">URL-slug <x-admin.field-help text="Het leesbare laatste deel van het webadres. Bijvoorbeeld ‘zibro-lc-150’ in /product/zibro-lc-150. Laat dit bij voorkeur automatisch invullen." /></label>
             <div class="flex rounded-lg border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-green-500">
                 <span class="px-3 py-2.5 bg-gray-50 text-xs text-gray-400 border-r border-gray-200 whitespace-nowrap">/product/</span>
                 <input
@@ -69,7 +69,6 @@
                     placeholder="automatisch gegenereerd"
                 >
             </div>
-            <p class="text-xs text-gray-400">Wordt automatisch ingevuld op basis van de naam. Aanpassen is optioneel.</p>
         </div>
 
         {{-- Categorie --}}
@@ -168,39 +167,11 @@
         </div>
     </div>
 
+    @include('admin.products._image-upload')
+
     @include('admin.products._specifications')
 
     @include('admin.products._tier-pricing')
-
-    {{-- Afbeelding --}}
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
-        <h2 class="text-sm font-bold uppercase tracking-wide text-gray-400">Afbeelding</h2>
-
-        <div
-            class="relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-8 text-center hover:border-green-400 transition-colors cursor-pointer"
-            @click="$refs.fileInput.click()"
-            x-show="!imagePreview"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m4 16 4-4 4 4 4-6 4 6M4 20h16M4 4h16"/></svg>
-            <p class="text-sm text-gray-500">Klik om een afbeelding te kiezen</p>
-            <p class="text-xs text-gray-400">JPG, PNG, WebP — max 2 MB</p>
-        </div>
-
-        <div x-show="imagePreview" x-cloak class="space-y-3">
-            <img :src="imagePreview" class="h-40 w-auto rounded-xl border border-gray-100 object-contain bg-gray-50 mx-auto">
-            <button type="button" @click="imagePreview = null; $refs.fileInput.value = ''" class="text-xs text-red-500 hover:text-red-700 block mx-auto">× Afbeelding verwijderen</button>
-        </div>
-
-        <input
-            type="file"
-            name="image"
-            accept="image/*"
-            x-ref="fileInput"
-            class="hidden"
-            @change="imagePreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : null"
-        >
-        @error('image') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
-    </div>
 
     {{-- Instellingen --}}
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-3">

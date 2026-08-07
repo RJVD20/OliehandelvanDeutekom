@@ -12,6 +12,11 @@ return [
             'label' => 'Creditcard',
             'description' => 'Betaal veilig met Visa, Mastercard of een andere ondersteunde kaart.',
         ],
+        'cash' => [
+            'label' => 'Contant betalen',
+            'description' => 'Betaal het volledige bedrag contant bij bezorging of afhalen.',
+            'offline' => true,
+        ],
     ],
 
     'provider_options' => [

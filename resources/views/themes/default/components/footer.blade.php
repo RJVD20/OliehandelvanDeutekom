@@ -5,8 +5,8 @@
     $companyEmail = Setting::get('company_email', 'info@kachelvloeistof.nl') ?: 'info@kachelvloeistof.nl';
     $companyPhone = Setting::get('company_phone', '');
     $companyAddress = Setting::get('company_address', '');
-    $companyKvk = Setting::get('company_kvk', '');
-    $companyVat = Setting::get('company_vat', '');
+    $companyKvk = Setting::get('company_kvk', '77355431') ?: '77355431';
+    $companyVat = Setting::get('company_vat', 'NL003184350B48') ?: 'NL003184350B48';
 @endphp
 
 <footer class="turbo-footer mt-16 text-white/80 border-t">

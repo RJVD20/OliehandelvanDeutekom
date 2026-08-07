@@ -89,6 +89,12 @@
                                 <div class="flex items-start justify-between gap-2">
                                     <div>
                                         <a href="{{ route('product.show', $item['slug']) }}" class="font-bold leading-snug text-turbo-ink hover:text-turbo-gold">{{ $item['name'] }}</a>
+                                        @if(!empty($item['promotion_id']))
+                                            <div class="mt-2 rounded-lg border border-turbo-gold/40 bg-turbo-gold/10 p-2.5 text-xs">
+                                                <strong class="block text-turbo-navy">{{ $item['promotion_title'] }}</strong>
+                                                <ul class="mt-1 space-y-0.5 text-gray-600">@foreach($item['promotion_items'] as $bundleItem)<li>+ {{ $bundleItem['quantity'] }}× {{ $bundleItem['label'] ?: $bundleItem['name'] }} @if($bundleItem['role']==='free')<strong class="text-emerald-700">gratis</strong>@endif</li>@endforeach @if($item['free_shipping'])<li class="font-bold text-emerald-700">+ Gratis standaardverzending</li>@endif</ul>
+                                            </div>
+                                        @endif
                                         <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                             <span data-cart-unit-price="{{ $id }}">€ {{ number_format($item['price'], 2, ',', '.') }} per stuk</span>
                                             <span data-cart-base-price="{{ $id }}" @class([
@@ -98,7 +104,7 @@
                                             <span data-cart-tier="{{ $id }}" @class([
                                                 'rounded-full bg-emerald-100 px-2 py-0.5 font-bold text-emerald-700',
                                                 'hidden' => $item['discount_total'] <= 0,
-                                            ])>Staffelkorting</span>
+                                            ])>{{ !empty($item['promotion_id']) ? 'Actievoordeel' : 'Staffelkorting' }}</span>
                                         </div>
                                         <p data-cart-item-discount="{{ $id }}" @class([
                                             'mt-1.5 text-xs font-semibold text-emerald-700',
@@ -294,7 +300,7 @@
                             'flex justify-between gap-4 font-semibold text-emerald-700',
                             'hidden' => $totalDiscount <= 0,
                         ])>
-                            <span>Staffelkorting</span>
+                            <span>Prijsvoordeel</span>
                             <span data-cart-discount>− € {{ number_format($totalDiscount, 2, ',', '.') }}</span>
                         </div>
                         <div class="flex justify-between gap-4 text-gray-600">

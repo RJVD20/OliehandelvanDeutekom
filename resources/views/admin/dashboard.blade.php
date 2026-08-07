@@ -49,6 +49,22 @@
     </section>
 @endif
 
+<section class="mb-6 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm" aria-labelledby="tasks-heading">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+        <div><h2 id="tasks-heading" class="font-bold text-gray-900">Wat vraagt aandacht?</h2><p class="mt-1 text-sm text-gray-500">Werk deze lijst van boven naar beneden af. Een nul betekent dat er niets openstaat.</p></div>
+        <a href="{{ route('admin.help') }}" class="text-sm font-semibold text-blue-700">Bekijk de beheerhandleiding →</a>
+    </div>
+    <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        @foreach($attentionItems as $item)
+            @php $colors = ['amber' => 'bg-amber-50 text-amber-800 border-amber-100', 'purple' => 'bg-purple-50 text-purple-800 border-purple-100', 'red' => 'bg-red-50 text-red-800 border-red-100', 'blue' => 'bg-blue-50 text-blue-800 border-blue-100']; @endphp
+            <a href="{{ $item['route'] }}" class="flex items-center gap-3 rounded-xl border p-3 transition hover:-translate-y-0.5 {{ $colors[$item['tone']] }}">
+                <strong class="inline-flex h-9 min-w-9 items-center justify-center rounded-lg bg-white/80 text-lg">{{ $item['count'] }}</strong>
+                <span class="text-xs font-semibold leading-5">{{ $item['label'] }}</span>
+            </a>
+        @endforeach
+    </div>
+</section>
+
 <section class="mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Belangrijkste cijfers">
     @foreach([
         ['Bestellingen vandaag', $ordersToday, 'admin.orders.index', ['order_date' => today()->toDateString()], 'bg-blue-50 text-blue-700', 'B'],

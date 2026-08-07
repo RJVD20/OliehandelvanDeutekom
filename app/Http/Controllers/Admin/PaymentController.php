@@ -19,7 +19,7 @@ class PaymentController extends Controller
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
             'tab' => ['nullable', 'in:all,open,overdue,soon,paid,failed'],
-            'handling' => ['nullable', 'in:online,payment_link,pay_on_delivery,bank_transfer,manual'],
+            'handling' => ['nullable', 'in:online,payment_link,pay_on_delivery,cash_on_delivery,bank_transfer,manual'],
             'due_before' => ['nullable', 'date'],
             'due_after'  => ['nullable', 'date'],
         ]);
@@ -45,7 +45,7 @@ class PaymentController extends Controller
             ->when($filters['due_after'] ?? null, fn ($q, $date) => $q->whereDate('due_date', '>=', $date))
             ->when($filters['handling'] ?? null, function ($query, $handling) {
                 match ($handling) {
-                    'pay_on_delivery', 'bank_transfer' => $query->where('meta->handling', $handling),
+                    'pay_on_delivery', 'cash_on_delivery', 'bank_transfer' => $query->where('meta->handling', $handling),
                     'payment_link' => $query->whereNotNull('pay_link'),
                     'online' => $query->where('provider', '!=', 'manual'),
                     'manual' => $query->where('provider', 'manual'),
@@ -98,7 +98,7 @@ class PaymentController extends Controller
 
         PaymentEvent::create([
             'payment_id' => $payment->id,
-            'type'       => 'admin_override',
+            'type'       => $payment->isCash() ? 'cash_received' : 'admin_override',
             'source'     => 'admin',
             'actor_id'   => auth()->id(),
             'data'       => ['from' => $old->value ?? (string) $old, 'to' => PaymentStatus::PAID->value],
@@ -112,7 +112,9 @@ class PaymentController extends Controller
             ['status' => PaymentStatus::PAID->value],
         );
 
-        return back()->with('toast', 'Gemarkeerd als betaald');
+        return back()->with('toast', $payment->isCash()
+            ? 'Contante betaling van € '.number_format($payment->amount, 2, ',', '.').' ontvangen.'
+            : 'Gemarkeerd als betaald');
     }
 
     public function sendPaymentRequest(Payment $payment)
@@ -158,7 +160,7 @@ class PaymentController extends Controller
             ->where(function ($query) {
                 $query
                     ->whereNull('meta->handling')
-                    ->orWhere('meta->handling', '!=', 'pay_on_delivery');
+                    ->orWhereNotIn('meta->handling', ['pay_on_delivery', 'cash_on_delivery']);
             });
     }
 
@@ -170,7 +172,7 @@ class PaymentController extends Controller
             ->where(function ($query) {
                 $query
                     ->whereNull('meta->handling')
-                    ->orWhere('meta->handling', '!=', 'pay_on_delivery');
+                    ->orWhereNotIn('meta->handling', ['pay_on_delivery', 'cash_on_delivery']);
             });
     }
 }

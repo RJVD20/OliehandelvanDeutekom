@@ -20,7 +20,9 @@
     x-data="{
         name: '{{ old('name', $category->name) }}',
         slug: '{{ old('slug', $category->slug) }}',
-        slugEdited: true
+        slugEdited: true,
+        originalType: '{{ $category->type }}',
+        selectedType: '{{ old('type', $category->type) }}'
     }"
 >
     @csrf
@@ -40,19 +42,20 @@
         </div>
 
         <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">Type</label>
-            <select name="type" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+            <label class="block text-sm font-semibold text-gray-700">Producttype <x-admin.field-help text="Dit is de technische hoofdgroep die het gedrag en de filters van alle producten in deze categorie bepaalt. De categorie is hiervoor de enige bron." /></label>
+            <select name="type" x-model="selectedType" class="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                 <option value="">— Geen type —</option>
                 @foreach(['kachel' => 'Kachel', 'vloeistof' => 'Vloeistof', 'pellet' => 'Pellet', 'accessoire' => 'Accessoire'] as $value => $label)
                     <option value="{{ $value }}" @selected(old('type', $category->type) === $value)>{{ $label }}</option>
                 @endforeach
             </select>
-            <p class="text-xs text-gray-400">Het type wordt automatisch overgenomen door alle producten in deze categorie.</p>
+            <div class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-800"><strong>Automatisch:</strong> bij opslaan krijgen alle <strong>{{ $category->products()->count() }}</strong> gekoppelde producten dit producttype.</div>
+            <div x-cloak x-show="selectedType !== originalType" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900"><strong>Let op:</strong> je wijzigt hiermee ook het type van {{ $category->products()->count() }} gekoppelde {{ $category->products()->count() === 1 ? 'product' : 'producten' }}.</div>
             @error('type') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 
         <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">URL-slug</label>
+            <label class="block text-sm font-semibold text-gray-700">URL-slug <x-admin.field-help text="Het laatste deel van het categorie-webadres. Laat dit staan tenzij het webadres echt moet veranderen." /></label>
             <div class="flex rounded-lg border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-green-500">
                 <span class="px-3 py-2.5 bg-gray-50 text-xs text-gray-400 border-r border-gray-200 whitespace-nowrap">/categorie/</span>
                 <input

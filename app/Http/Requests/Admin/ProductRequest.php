@@ -25,7 +25,7 @@ class ProductRequest extends FormRequest
             'specifications' => 'nullable|array|max:50',
             'specifications.*.name' => 'required|string|max:100',
             'specifications.*.value' => 'required|string|max:255',
-            'image'       => 'nullable|image|max:2048',
+            'image'       => 'nullable|image|max:8192',
             'active'      => 'sometimes|boolean',
             'featured'     => 'sometimes|boolean',
             'remove_image' => 'sometimes|boolean',

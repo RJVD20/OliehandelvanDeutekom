@@ -55,7 +55,7 @@
 
         {{-- Slug --}}
         <div class="space-y-1.5">
-            <label class="block text-sm font-semibold text-gray-700">URL-slug</label>
+            <label class="block text-sm font-semibold text-gray-700">URL-slug <x-admin.field-help text="Het laatste deel van het webadres. Pas dit alleen aan als dat nodig is: oude links naar dit product werken daarna mogelijk niet meer." /></label>
             <div class="flex rounded-lg border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-green-500">
                 <span class="px-3 py-2.5 bg-gray-50 text-xs text-gray-400 border-r border-gray-200 whitespace-nowrap">/product/</span>
                 <input
@@ -161,57 +161,11 @@
         </div>
     </div>
 
+    @include('admin.products._image-upload')
+
     @include('admin.products._specifications')
 
     @include('admin.products._tier-pricing')
-
-    {{-- Afbeelding --}}
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
-        <h2 class="text-sm font-bold uppercase tracking-wide text-gray-400">Afbeelding</h2>
-
-        {{-- Huidige afbeelding --}}
-        @if($product->image)
-            <div x-show="!imagePreview && !removeImage" class="space-y-3">
-                <p class="text-xs text-gray-400 font-medium">Huidige afbeelding</p>
-                <img src="{{ asset('storage/' . $product->image) }}" class="h-36 w-auto rounded-xl border border-gray-100 object-contain bg-gray-50">
-                <label class="inline-flex items-center gap-2 text-sm text-red-500 cursor-pointer">
-                    <input type="checkbox" name="remove_image" value="1" x-model="removeImage" class="h-4 w-4 rounded border-gray-300 text-red-500">
-                    Huidige afbeelding verwijderen
-                </label>
-            </div>
-            <div x-show="removeImage" x-cloak class="rounded-lg bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-600">
-                De afbeelding wordt verwijderd bij opslaan.
-                <button type="button" @click="removeImage = false" class="underline ml-2">Ongedaan maken</button>
-            </div>
-        @endif
-
-        {{-- Nieuwe afbeelding preview --}}
-        <div x-show="imagePreview" x-cloak class="space-y-3">
-            <p class="text-xs text-gray-400 font-medium">Nieuwe afbeelding</p>
-            <img :src="imagePreview" class="h-36 w-auto rounded-xl border border-gray-100 object-contain bg-gray-50">
-            <button type="button" @click="imagePreview = null; $refs.fileInput.value = ''" class="text-xs text-red-500 hover:text-red-700">× Selectie annuleren</button>
-        </div>
-
-        {{-- Upload zone --}}
-        <div
-            class="relative flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-6 text-center hover:border-green-400 transition-colors cursor-pointer"
-            @click="$refs.fileInput.click()"
-        >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-            <p class="text-sm text-gray-500">{{ $product->image ? 'Nieuwe afbeelding uploaden' : 'Klik om een afbeelding te kiezen' }}</p>
-            <p class="text-xs text-gray-400">JPG, PNG, WebP — max 2 MB</p>
-        </div>
-
-        <input
-            type="file"
-            name="image"
-            accept="image/*"
-            x-ref="fileInput"
-            class="hidden"
-            @change="imagePreview = $event.target.files[0] ? URL.createObjectURL($event.target.files[0]) : null; removeImage = false"
-        >
-        @error('image') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
-    </div>
 
     {{-- Instellingen --}}
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-3">

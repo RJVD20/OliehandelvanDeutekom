@@ -3,25 +3,45 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class VerifyEmailController extends Controller
 {
     /**
      * Mark the authenticated user's email address as verified.
      */
-    public function __invoke(EmailVerificationRequest $request): RedirectResponse
+    public function __invoke(Request $request, int $id, string $hash): RedirectResponse
     {
-        if ($request->user()->hasVerifiedEmail()) {
-            return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
+        $user = User::findOrFail($id);
+
+        abort_unless(hash_equals(sha1($user->getEmailForVerification()), $hash), 403);
+
+        if ($user->hasVerifiedEmail()) {
+            return $this->redirectAfterVerification(
+                $request,
+                'Je e-mailadres was al bevestigd. Je account is klaar voor gebruik.'
+            );
         }
 
-        if ($request->user()->markEmailAsVerified()) {
-            event(new Verified($request->user()));
+        if ($user->markEmailAsVerified()) {
+            event(new Verified($user));
         }
 
-        return redirect()->intended(route('dashboard', absolute: false).'?verified=1');
+        return $this->redirectAfterVerification(
+            $request,
+            'Gelukt! Je e-mailadres is bevestigd en je account is nu actief.'
+        );
+    }
+
+    private function redirectAfterVerification(Request $request, string $message): RedirectResponse
+    {
+        if ($request->user()) {
+            return redirect()->route('profile.edit')->with('toast', $message);
+        }
+
+        return redirect()->route('login')->with('status', $message.' Je kunt nu inloggen.');
     }
 }

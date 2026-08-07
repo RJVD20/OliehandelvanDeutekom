@@ -242,6 +242,17 @@
     </div>
 </section>
 
+@if(($promotions ?? collect())->isNotEmpty())
+<section class="mb-12 space-y-6 sm:mb-16" aria-labelledby="acties-heading">
+    <div class="flex items-end justify-between gap-4"><div><p class="turbo-section-label">Tijdelijk voordeel</p><h2 id="acties-heading" class="mt-1 text-2xl font-bold sm:text-3xl">Acties</h2><p class="mt-2 text-sm text-gray-500">Complete voordeelsets met gratis standaardverzending.</p></div><span class="hidden text-xs font-semibold text-gray-400 sm:block">{{ $promotions->count() }} aanbiedingen</span></div>
+    <div class="promotion-grid">
+        @foreach($promotions as $promotion)
+            @include('themes.default.components.promotion-card', ['promotion' => $promotion])
+        @endforeach
+    </div>
+</section>
+@endif
+
 <!-- PRODUCT GRID -->
 <section id="producten" class="mb-12 sm:mb-20 md:mb-24">
     <div class="mb-6 sm:mb-8 md:mb-10">

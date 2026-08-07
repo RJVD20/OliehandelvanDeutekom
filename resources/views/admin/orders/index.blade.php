@@ -12,6 +12,7 @@
         'unpaid' => 'Onbetaald',
         'planned' => 'Ingepland',
         'shipped' => 'Verzonden',
+        'completed' => 'Afgerond',
         'cancelled' => 'Geannuleerd',
     ];
     $statusPresentation = [
@@ -163,7 +164,7 @@
                         <td class="px-5 py-4">
                             @if($payment)
                                 <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $payment->status->value === 'paid' ? 'bg-emerald-100 text-emerald-700' : ($payment->status->value === 'open' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700') }}">
-                                    {{ $payment->statusLabel() }}
+                                    {{ $payment->isCash() ? ($payment->isCashPending() ? 'Cash open' : 'Cash ontvangen') : $payment->statusLabel() }}
                                 </span>
                             @else
                                 <span class="text-xs text-gray-400">Niet geregistreerd</span>
@@ -208,7 +209,7 @@
                     <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $statusClasses }}">{{ $statusLabel }}</span>
                     <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">{{ $order->fulfillment_method === 'pickup' ? 'Afhalen' : 'Bezorgen' }}</span>
                     @if($payment)
-                        <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $payment->status->value === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">{{ $payment->statusLabel() }}</span>
+                        <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $payment->status->value === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">{{ $payment->isCash() ? ($payment->isCashPending() ? 'Cash open' : 'Cash ontvangen') : $payment->statusLabel() }}</span>
                     @endif
                 </div>
                 <a href="{{ route('admin.orders.show', $order) }}" class="mt-4 flex w-full items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700">

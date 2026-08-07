@@ -10,7 +10,7 @@ use Illuminate\Notifications\Notifiable;
 
 use App\Models\Order;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 

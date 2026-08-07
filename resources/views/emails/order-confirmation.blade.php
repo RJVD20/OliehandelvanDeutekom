@@ -21,6 +21,9 @@
 </table>
 
 {{-- Order items --}}
+@if($promotionName = $order->items->pluck('promotion_name')->filter()->first())
+<p style="margin:0 0 14px;padding:12px 14px;background:#FFF8E5;border:1px solid #F0D68A;border-radius:8px;color:#4B3A12;font-size:14px;"><strong>Actiebundel:</strong> {{ $promotionName }}</p>
+@endif
 <p style="margin:0 0 10px 0;font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#10263D;">Bestelde producten</p>
 <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border:1px solid #E9EDF2;border-radius:8px;overflow:hidden;margin-bottom:20px;">
     <thead>
@@ -62,6 +65,17 @@
                style="display:inline-block;background-color:#D9A42E;color:#03182B;font-size:15px;font-weight:700;text-decoration:none;padding:14px 36px;border-radius:8px;letter-spacing:-0.01em;">
                 Bestelling betalen →
             </a>
+        </td>
+    </tr>
+</table>
+@endif
+
+@if($order->latestPayment?->isCash())
+<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:28px;">
+    <tr>
+        <td style="background-color:#FFF8E5;border:1px solid #F0D68A;border-radius:8px;padding:16px 18px;">
+            <p style="margin:0 0 5px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9A6A00;">Contant betalen</p>
+            <p style="margin:0;color:#4B3A12;font-size:14px;line-height:1.6;">Je betaalt <strong>€ {{ number_format($order->total, 2, ',', '.') }}</strong> contant bij {{ $order->fulfillment_method === 'pickup' ? 'het afhalen' : 'de bezorging' }}. Houd het bedrag bij voorkeur gepast gereed.</p>
         </td>
     </tr>
 </table>

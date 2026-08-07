@@ -11,7 +11,9 @@
 
 <p>
     <strong>Kachelvloeistof.nl</strong><br>
-    info@kachelvloeistof.nl
+    info@kachelvloeistof.nl<br>
+    KvK: 77355431<br>
+    Btw-id: NL003184350B48
 </p>
 
 <hr>
@@ -22,6 +24,10 @@
     {{ $order->address }}<br>
     {{ $order->postcode }} {{ $order->city }}
 </p>
+
+@if($promotionName = $order->items->pluck('promotion_name')->filter()->first())
+<p><strong>Actiebundel:</strong> {{ $promotionName }}</p>
+@endif
 
 <table width="100%" cellpadding="6" cellspacing="0" border="1">
     <thead>

@@ -78,6 +78,7 @@
             <option value="online" @selected(($filters['handling'] ?? '') === 'online')>Online betaling</option>
             <option value="payment_link" @selected(($filters['handling'] ?? '') === 'payment_link')>Betaallink</option>
             <option value="pay_on_delivery" @selected(($filters['handling'] ?? '') === 'pay_on_delivery')>Betalen bij levering</option>
+            <option value="cash_on_delivery" @selected(($filters['handling'] ?? '') === 'cash_on_delivery')>Contant bij levering/afhalen</option>
             <option value="bank_transfer" @selected(($filters['handling'] ?? '') === 'bank_transfer')>Bankoverschrijving</option>
             <option value="manual" @selected(($filters['handling'] ?? '') === 'manual')>Handmatig</option>
         </select>
@@ -114,7 +115,7 @@
                 @forelse($payments as $payment)
                     @php
                         $isOpen = $payment->status === \App\Enums\PaymentStatus::OPEN;
-                        $isDeliveryPayment = $payment->handling() === 'pay_on_delivery';
+                        $isDeliveryPayment = in_array($payment->handling(), ['pay_on_delivery', 'cash_on_delivery'], true);
                         $isOverdue = $isOpen && !$isDeliveryPayment && $payment->due_date?->lt(today());
                         $isDueSoon = $isOpen && !$isDeliveryPayment && !$isOverdue && $payment->due_date?->lte(today()->addDays(3));
                         $statusClasses = match($payment->status->value) {
@@ -186,7 +187,7 @@
         @forelse($payments as $payment)
             @php
                 $isOpen = $payment->status === \App\Enums\PaymentStatus::OPEN;
-                $isDeliveryPayment = $payment->handling() === 'pay_on_delivery';
+                $isDeliveryPayment = in_array($payment->handling(), ['pay_on_delivery', 'cash_on_delivery'], true);
                 $isOverdue = $isOpen && !$isDeliveryPayment && $payment->due_date?->lt(today());
             @endphp
             <article class="p-4">
