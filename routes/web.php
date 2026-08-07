@@ -73,7 +73,13 @@ Route::get('/', function () {
         $products = Product::where('active', true)->take(8)->get();
     }
     $categories = Category::all();
-    $promotions = Promotion::currentlyActive()->where('show_home', true)->with(['mainProduct', 'items.product'])->orderBy('sort_order')->get();
+    $promotions = Promotion::currentlyActive()
+        ->where('show_home', true)
+        ->with(['mainProduct', 'items.product'])
+        ->orderBy('sort_order')
+        ->orderBy('id')
+        ->limit(3)
+        ->get();
 
     return view('themes.default.pages.home', compact('products', 'categories', 'promotions'));
 })->name('home');
